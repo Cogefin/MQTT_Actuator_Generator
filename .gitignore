@@ -220,6 +220,7 @@ backup
 .jupyter
 *.old
 *.bak
-
-
-
+tmp
+example
+config.h
+config.yaml
