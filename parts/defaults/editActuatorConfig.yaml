@@ -1,0 +1,296 @@
+platform:
+  network_hardware:
+    network_type: wifi # wifi , ethernet , none
+    ethernet_chip_select: "D10" # イーサネットのチップセレクトピン番号
+  rtc:
+    rtc_type: none # RTC8564NB , DS1307 , DS3231 , PCF8523 , RV8803 , RX8025 , RX8900 , none
+  color_led:
+    use_led: true # true(使う) , false(使わない)
+    led_pin: "D6" # ピン番号
+    led_duration: 3000 # 時間(単位:ミリ秒)
+    led_short_duration: 1000 # 時間(単位:ミリ秒)
+  sd:
+    use_sd: false # true(使う) , false(使わない)
+    sd_chip_select: "D8" # ピン番号
+  wdt:
+    wdt_duration: 20000 # 時間(単位:ミリ秒)
+    wdt_short_duration: 500 # 時間(単位:ミリ秒)
+  advanced:
+    hardware_serial: "Serial"
+    buffer_size: 512
+
+common:
+  serial:
+    speed: 9600 # コンソールのシリアル速度(bps)
+  log:
+    host_name: "UnoR4_WiFi" # ホスト名(文字列)
+    app_name: "AusEx_mqtt_client" # アプリ名(文字列)
+    use_logfile: false # true(使う) , false(使わない)
+    use_serial_log: true # true(使う) , false(使わない)
+    logfile_name_hdr: "/syslog" # ログファイル名
+    logfile_size_max: 10000000 # ログファイルの最大値(バイト)
+    log_rotate: false # true(使う) , false(使わない) 現在未対応
+  clock:
+    use_ntp : false # true(使う) , false(使わない)
+    update_rtc_by_ntp : false # true(使う) , false(使わない)
+
+network:
+  wifi:
+    ssid: "Buffalo-G-9C50" # ssid名
+    wifi_pass: "jxgdekvmujfyh" # wifiパスワード
+  ethernet:
+    mac_addr: [ '0x90', '0xa2', '0xda', '0x10', '0x11', '0x51']  # macアドレス
+  ip:
+    use_dhcp: true # true(使う) , false(使わない)
+    ip_addr: [10, 1, 1, 111] # ipアドレス
+    dns_server:  [10, 1, 1, 254] # DNSサーバ
+    gateway: [10, 1, 1, 254] # gateway
+    netmask: [255, 255, 255, 0] # マスク
+  mqtt:
+    mqtt_auth: false # true(使う) , false(使わない)
+    mqtt_user: "foo" # ユーザ名(文字列)
+    mqtt_pass: "bar" # パスワード(文字列)
+    mqtt_topic: "arduino/UnoR4_WiFi" # MQTTトピック (文字列)
+    mqtt_server: "192.168.1.254" # mqttサーバIPアドレス
+    mqtt_port: 1883 # mqttポート番号
+
+safety:
+  use_wdt: true # true(使う) , false(使わない)
+
+#
+# Character LCD
+#
+
+#
+# Grove character lcd RGB Backlight
+# USE_GROVE_LCD
+grove_lcd:
+  use_grove_lcd: false # true(使う) , false(使わない)
+
+#
+# ACM1602NI
+# USE_ACM1602NI
+acm1602ni:
+  use_acm1602ni: false # true(使う) , false(使わない)
+
+#
+# Liquid crystal library
+# USE_SC1602BSLB/USE_SC2004CSLB
+liquid_crystal:
+  use_liquid_crystal:   false # true(使う) , false(使わない)
+  liquid_crystal_type:      0 # 0(USE_SC1602BSLB), 1(USE_SC2004CSLB)
+  liquid_crystal_rs_pin: "D4" # LIQUID_CRYSTAL_PIN_RS
+  liquid_crystal_es_pin: "D5" # LIQUID_CRYSTAL_PIN_ES
+  liquid_crystal_d4_pin: "D2" # LIQUID_CRYSTAL_PIN_D4
+  liquid_crystal_d5_pin: "D3" # LIQUID_CRYSTAL_PIN_D5
+  liquid_crystal_d6_pin: "D0" # LIQUID_CRYSTAL_PIN_D6
+  liquid_crystal_d7_pin: "D1" # LIQUID_CRYSTAL_PIN_D7
+
+#
+# さまざまなLED
+#
+
+#
+# Simple mono LED
+# USE_SIMPLE_COLOR_LED
+simple_mono_led:
+  use_simple_mono_led: false # true(使う) , false(使わない)
+  simple_mono_led_type: true # GROVE_MONO_LED_PIN_TYPE  true(PULL_UP), false(PULL_DOWN)
+  simple_mono_led_pin:  "D2" # GROVE_MONO_LED_PIN
+
+#
+# Anode/Cathod common RGB LED
+# USE_SIMPLE_COLOR_LED
+simple_color_led:
+  use_simple_color_led:      false # true(使う) , false(使わない)
+  simple_color_led_type:      true # USE_SIMPLE_COLOR_LED_PIN_TYPE  true(PULL_UP), false(PULL_DOWN)
+  simple_color_led_red_pin:   "D3" # SIMPLE_COLOR_LED_RED_PIN
+  simple_color_led_green_pin: "D4" # SIMPLE_COLOR_LED_GREEN_PIN
+  simple_color_led_blue_pin:  "D2" # SIMPLE_COLOR_LED_BLUE_PIN
+
+#
+# Grove LED bar
+# GROVE_LED_BAR
+grove_led_bar:
+  use_grove_led_bar:      false # true(使う) , false(使わない)
+  grove_led_bar_leds:        10 # GROVE_LED_BAR_NUM_OF_LED
+  grove_led_bar_direction:    0 # GROVE_LED_BAR_DIRECTION 0(forward) , 1(backward)
+  grove_led_bar_clk_pin :  "D3" # GROVE_LED_BAR_PIN_CLK
+  grove_led_bar_data_pin : "D2" # GROVE_LED_BAR_PIN_DATA
+
+#
+# Grove LED circular
+# GROVE_LED_CIRCULAR
+grove_led_circular:
+  use_grove_led_circular:      false # true(使う) , false(使わない)
+  grove_led_circular_leds:        10 # GROVE_LED_CIRCLE_NUM_OF_LED
+  grove_led_circular_direction:    0 # GROVE_LED_CIRCLE_DIRECTION 0(forward) , 1(backward)
+  grove_led_circular_clk_pin :  "D3" # GROVE_LED_CIRCLE_PIN_CLK
+  grove_led_circular_data_pin : "D2" # GROVE_LED_CIRCLE_PIN_DATA
+
+#
+# Grove chainable LED
+# GROVE_CHAINABLE_LED
+grove_chainable_led:
+  use_grove_chainable_led:      false # true(使う) , false(使わない)
+  grove_chainable_led_leds:         3 # GROVE_CHAINABLE_LED_NUM_OF_LED
+  grove_chainable_led_clk_pin:   "D2" # GROVE_CHAINABLE_LED_PIN_CLK
+  grove_chainable_led_data_pin : "D3" # GROVE_CHAINABLE_LED_PIN_DATA
+
+#
+# Adafruit NeoPixel
+# GROVE_NEO_PIXEL
+adafuit_neopixel:
+  use_adafuit_neopixel: false # true(使う) , false(使わない)
+  adafuit_neopixel_leds:   10 # LED_NEO_PIXEL_NUM_OF_LED
+  adafuit_neopixel_pin : "D4" # LED_NEO_PIXEL_PIN
+
+#
+# OSL12306-16
+# USE_OSL12306_16
+osl12306_16:
+  use_osl12306_16:       false # true(使う) , false(使わない)
+  osl12306_16_digits:        1 # OSL12306_16_NUM_OF_DIGITS
+  osl12306_16_type:          0 # OSL12306_16_PIN_TYPE 0(ANODE_COMMON), 1(CATHOD_COMMON)
+  osl12306_16_a1_pin:    "D32" # OSL12306_16_PIN_A1
+  osl12306_16_a2_pin:    "D26" # OSL12306_16_PIN_A2
+  osl12306_16_b_pin:     "D24" # OSL12306_16_PIN_B
+  osl12306_16_c_pin:     "D25" # OSL12306_16_PIN_C
+  osl12306_16_d1_pin:    "D35" # OSL12306_16_PIN_D1
+  osl12306_16_d2_pin:    "D29" # OSL12306_16_PIN_D2
+  osl12306_16_e_pin:     "D37" # OSL12306_16_PIN_E
+  osl12306_16_f_pin:     "D36" # OSL12306_16_PIN_F
+  osl12306_16_g1_pin:    "D39" # OSL12306_16_PIN_G1
+  osl12306_16_g2_pin:    "D22" # OSL12306_16_PIN_G2
+  osl12306_16_j_pin:     "D34" # OSL12306_16_PIN_J
+  osl12306_16_k_pin:     "D30" # OSL12306_16_PIN_K
+  osl12306_16_l_pin:     "D28" # OSL12306_16_PIN_L
+  osl12306_16_m_pin:     "D27" # OSL12306_16_PIN_M
+  osl12306_16_n_pin:     "D31" # OSL12306_16_PIN_N
+  osl12306_16_p_pin:     "D33" # OSL12306_16_PIN_P
+  osl12306_16_dp_pin:    "D23" # OSL12306_16_PIN_DP
+  osl12306_16_digit_pin: "D41" # OSL12306_16_PIN_DIGIT
+
+#
+# OSL20541
+# USE_OSL20541
+osl20541:
+  use_osl20541:        false # true(使う) , false(使わない)
+  osl20541_digits:         2 # OSL20541_NUM_OF_DIGITS
+  osl20541_type:           0 # OSL20541_PIN_TYPE 0(ANODE_COMMON), 1(CATHOD_COMMON)
+  osl20541_a_pin:      "D29" # OSL20541_PIN_A
+  osl20541_b_pin:      "D25" # OSL20541_PIN_B
+  osl20541_c_pin:      "D38" # OSL20541_PIN_C
+  osl20541_d_pin:      "D34" # OSL20541_PIN_D
+  osl20541_e_pin:      "D22" # OSL20541_PIN_E
+  osl20541_f_pin:      "D41" # OSL20541_PIN_F
+  osl20541_g1_pin:     "D31" # OSL20541_PIN_G1
+  osl20541_g2_pin:     "D32" # OSL20541_PIN_G2
+  osl20541_h_pin:      "D39" # OSL20541_PIN_H
+  osl20541_j_pin:      "D35" # OSL20541_PIN_J
+  osl20541_k_pin:      "D33" # OSL20541_PIN_K
+  osl20541_l_pin:      "D30" # OSL20541_PIN_L
+  osl20541_m_pin:      "D28" # OSL20541_PIN_M
+  osl20541_n_pin:      "D24" # OSL20541_PIN_N
+  osl20541_dp_pin:     "D36" # OSL20541_PIN_DP
+  osl20541_digit1_pin: "D37" # OSL20541_PIN_DIGIT_1
+  osl20541_digit2_pin: "D27" # OSL20541_PIN_DIGIT_2
+
+#
+# OSL30561
+# USE_OSL30561
+osl30561:
+  use_osl30561:        false # true(使う) , false(使わない)
+  osl30561_digits:         3 # OSL30561_NUM_OF_DIGITS
+  osl30561_type:           0 # OSL30561_PIN_TYPE 0(ANODE_COMMON), 1(CATHOD_COMMON)
+  osl30561_a_pin:      "D31" # OSL30561_PIN_A
+  osl30561_b_pin:      "D23" # OSL30561_PIN_B
+  osl30561_c_pin:      "D28" # OSL30561_PIN_C
+  osl30561_d_pin:      "D24" # OSL30561_PIN_D
+  osl30561_e_pin:      "D22" # OSL30561_PIN_E
+  osl30561_f_pin:      "D29" # OSL30561_PIN_F
+  osl30561_g_pin:      "D30" # OSL30561_PIN_G
+  osl30561_dp_pin:     "D26" # OSL30561_PIN_DP
+  osl30561_digit1_pin: "D33" # OSL30561_PIN_DIGIT_1
+  osl30561_digit2_pin: "D27" # OSL30561_PIN_DIGIT_2
+  osl30561_digit3_pin: "D25" # OSL30561_PIN_DIGIT_3
+
+#
+# Grove - 4-Digit Display (clock type)
+# USE_GROVE_TM1637
+grove_tm1637:
+  use_grove_tm1637:     false # true(使う) , false(使わない)
+  grove_tm1637_clk_pin:  "D2" # GROVE_NSEG_LED_PIN_CLK
+  grove_tm1637_data_pin: "D3" # GROVE_NSEG_LED_PIN_DATA
+
+#
+# DFRobot DFR0090
+# USE_DFR0090
+dfr0090:
+  use_dfr0090:      false # true(使う) , false(使わない)
+  dfr0090_digits:       8 # DFR0090_NUM_OF_DIGITS
+  dfr0090_latch_pin: "D4" # DFR0090_LATCH_PIN
+  dfr0090_clk_pin:   "D5" # DFR0090_CLOCK_PIN
+  dfr0090_data_pin:  "D6" # DFR0090_DATA_PIN
+
+#
+# サーボ
+# USE_SERVO
+servo:
+  use_servo: false # true(使う) , false(使わない)
+  servo_pin:  "D4" # SERVO_PIN
+
+#
+# スピーカー
+# SPEAKER
+speaker:
+  use_speaker: false # true(使う) , false(使わない)
+  speaker_pin:  "D4" # SPEAKER_PIN
+
+#
+# ブザー
+# BUZZER
+buzzer:
+  use_buzzer: false # true(使う) , false(使わない)
+  buzzer_pin:  "D4" # BUZZER_PIN
+
+#
+# simple PWM device
+# USE_PWM
+pwm:
+ use_pwm: false # true(使う) , false(使わない)
+ pwm_pin:  "D4" # PWM_PIN
+
+#
+# simple digital(ON/OFF) device (like switch)
+# USE_SWITCH
+switch:
+  use_switch: false # true(使う) , false(使わない)
+  switch_pin: "D4" # SWITCH_PIN
+
+#
+# IR LED remote control device
+# USE_IRDA
+ir_remote:
+  use_ir_remote: false # true(使う) , false(使わない)
+  ir_remote_pin : "D3" # IR_PIN
+
+#
+# MP3 player
+#
+mp3_player:
+  use_mp3_player: false # true(使う) , false(使わない)
+  mp3_player_type: 0 # 0(Grove MP3 v2.0 / __USE_KT403A_PLAYER__ ), 1(Grove MP3 v3.0 / __USE_WT2003S_PLAYER__ ), 2(Grove MP3 v4.0 / __USE_WT2605C_PLAYER__ ), 3(DFPlayer mini MP3プレーヤー / __USE_DF_ROBOT_DF_PLAYER_MINI__)
+
+#
+# Graphic display
+#
+graphic_display:
+  use_graphic_display:      false # true(使う) , false(使わない)
+  graphic_display_type:         0 # 0(USE_GIGA_DISPLAY_GFX) , 1(USE_BODMER_TFT_ESPI) , 2(USE_ADAFRUIT_GFX & TFT_ILI9341_TYPE_1), 3(USE_ADAFRUIT_GFX & TFT_ILI9341_TYPE_2)
+  graphic_display_cs_pin:    "D2" # TFT_ILI9341_PIN_CS
+  graphic_display_rst_pin:   "D3" # TFT_ILI9341_PIN_RST
+  graphic_display_dc_pin:    "D4" # TFT_ILI9341_PIN_DC
+  graphic_display_mosi_pin: "D11" # TFT_ILI9341_PIN_MOSI
+  graphic_display_miso_pin: "D12" # TFT_ILI9341_PIN_MISO
+  graphic_display_clk_pin:  "D13" # TFT_ILI9341_PIN_CLK

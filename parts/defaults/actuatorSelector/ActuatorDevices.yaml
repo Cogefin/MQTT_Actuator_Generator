@@ -1,0 +1,709 @@
+
+#
+# アクチュエータカテゴリリスト
+#
+category:
+  key:
+    - characterDisplay
+    - led
+    - nseg_led
+    - servo
+    - soundDevice
+    - pwm
+    - switch
+    - ir_remote_controller
+    - graphic_display
+  characterDisplay:
+    name: "キャラクタディスプレイ"
+    helpFile: "/ActuatorCharacterDisplay.html"
+    title: "キャラクタディスプレイリスト"
+  led:
+    name: "LED"
+    helpFile: "/ActuatorLED.html"
+    title: "LEDリスト"
+  nseg_led:
+    name: "NセグメントLED"
+    helpFile: "/ActuatorNSegLED.html"
+    title: "NセグメントLEDリスト"
+  servo:
+    name: "サーボ"
+    helpFile: "/ActuatorServo.html"
+    title: "サーボリスト"
+  soundDevice:
+    name: "音声出力デバイス"
+    helpFile: "/ActuatorSound.html"
+    title: "音声出力デバイスリスト"
+  pwm:
+    name: "単純PWMデバイス"
+    helpFile: "/ActuatorSimplePWM.html"
+    title: "単純PWMデバイスリスト"
+  switch:
+    name: "単純デジタル(ON/OFF)デバイス"
+    helpFile: "/ActuatorSimpleDigital.html"
+    title: "単純デジタル(ON/OFF)デバイスリスト"
+  ir_remote_controller:
+    name: "赤外線リモコン"
+    helpFile: "/ActuatorIrRemote.html"
+    title: "赤外線リモコンリスト"
+  graphic_display:
+    name: "グラフィックディスプレイ"
+    helpFile: "/ActuatorGraphicDisplay.html"
+    title: "グラフィックディスプレイリスト"
+
+#
+# Character LCD
+#
+characterDisplay:
+  # グループのリスト
+  groupList:
+    - grove_lcd
+    - acm1602ni
+    - liquid_crystal
+  # デバイスのリスト
+  deviceList:
+    - grove_lcd
+    - acm1602ni
+    - acm2004
+    - sc1602bslb3V3
+    - sc1602bslb
+    - sc2004cslb
+  # Grove LCD RGBバックライト
+  grove_lcd:
+    name: "Grove LCD RGBバックライト"
+    group: grove_lcd
+    voltage:
+      3V3: false
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 1
+      digital: 0
+    description: "16x2文字表示 フルカラーバックライト付き"
+    architecture:
+      UnoR4: false
+      GigaR1: false
+      M0Pro: false
+      MKRZero: false
+      Nano33IoT: false
+      NanoESP32: false
+  # ACM1602NI (秋月電子)
+  acm1602ni:
+    name: "ACM1602NI (秋月電子)"
+    group: acm1602ni
+    voltage:
+      3V3: true
+      5V : false
+    connecter:
+      spi: 0
+      i2c: 1
+      digital: 0
+    description: "16x2文字表示"
+    architecture:
+      UnoR4: false
+      GigaR1: false
+      M0Pro: false
+      MKRZero: false
+      Nano33IoT: false
+      NanoESP32: true
+  # ACM2004 (秋月電子)
+  acm2004:
+    name: "ACM2004 (秋月電子)"
+    group: acm1602ni
+    voltage:
+      3V3: false
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 1
+      digital: 0
+    description: "20x4文字表示"
+    architecture:
+      UnoR4: false
+      GigaR1: false
+      M0Pro: false
+      MKRZero: false
+      Nano33IoT: false
+      NanoESP32: false
+  # SC1602BSLB3V3 (秋月電子)
+  sc1602bslb3V3:
+    name: "SC1602BSLB3V3 (秋月電子)"
+    group: liquid_crystal
+    voltage:
+      3V3: true
+      5V : false
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 6
+    description: "16x2文字表示"
+    architecture:
+      UnoR4: false
+      GigaR1: true
+      M0Pro: true
+      MKRZero: true
+      Nano33IoT: false
+      NanoESP32: true
+  # SC1602BSLB (秋月電子)
+  sc1602bslb:
+    name: "SC1602BSLB (秋月電子)"
+    group: liquid_crystal
+    voltage:
+      3V3: false
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 6
+    description: "16x2文字表示"
+    architecture:
+      UnoR4: false
+      GigaR1: false
+      M0Pro: false
+      MKRZero: false
+      Nano33IoT: false
+      NanoESP32: false
+  # SC2004CSLB (秋月電子)
+  sc2004cslb:
+    name: "SC2004CSLB (秋月電子)"
+    group: liquid_crystal
+    voltage:
+      3V3: false
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 6
+    description: "20x4文字表示"
+    architecture:
+      UnoR4: false
+      GigaR1: false
+      M0Pro: false
+      MKRZero: false
+      Nano33IoT: false
+      NanoESP32: false
+
+#
+# さまざまなLED
+#
+led:
+  # グループのリスト
+  groupList:
+    - simple_mono_led
+    - simple_color_led
+    - grove_led_bar
+    - grove_led_circular
+    - grove_chainable_led
+    - adafuit_neopixel
+  # デバイスリスト
+  deviceList:
+    - grove_mono_led
+    - cathod_common_color_led
+    - grove_led_bar
+    - grove_led_circular
+    - grove_chainable_led
+    - grove_rgb_led_stick
+  # モノクロLED
+  grove_mono_led:
+    name: "Grove モノクロ LED"
+    group: simple_mono_led
+    voltage:
+      3V3: true
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 1
+    description: "明るさを制御する場合はPWM制御可能な端子への接続が必須"
+    architecture:
+      UnoR4: true
+      GigaR1: true
+      M0Pro: true
+      MKRZero: true
+      Nano33IoT: true
+      NanoESP32: true
+  # アノード/カソードコモン カラーLED
+  cathod_common_color_led:
+    name: "アノード/カソードコモン カラーLED"
+    group: simple_color_led
+    voltage:
+      3V3: true
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 3
+    description: "全てPWM制御可能な端子への接続が必須"
+    architecture:
+      UnoR4: true
+      GigaR1: true
+      M0Pro: true
+      MKRZero: true
+      Nano33IoT: true
+      NanoESP32: true
+  # Grove LED bar
+  grove_led_bar:
+    name: "Grove LED bar"
+    group: grove_led_bar
+    voltage:
+      3V3: true
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 2
+    description: "独自プロトコルで制御する棒状モノクロLED(10個)"
+    architecture:
+      UnoR4: true
+      GigaR1: true
+      M0Pro: true
+      MKRZero: true
+      Nano33IoT: true
+      NanoESP32: true
+  # Grove LED circular
+  grove_led_circular:
+    name: "Grove LED circular"
+    group: grove_led_circular
+    voltage:
+      3V3: false
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 2
+    description: "独自プロトコルで制御する環状モノクロLED(24個)"
+    architecture:
+      UnoR4: true
+      GigaR1: true
+      M0Pro: true
+      MKRZero: false
+      Nano33IoT: true
+      NanoESP32: true
+  # Grove chainable LED
+  grove_chainable_led:
+    name: "Grove chainable LED"
+    group: grove_chainable_led
+    voltage:
+      3V3: false
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 2
+    description: "独自プロトコルで制御するフルカラーLED(連結可能)"
+    architecture:
+      UnoR4: true
+      GigaR1: true
+      M0Pro: true
+      MKRZero: true
+      Nano33IoT: true
+      NanoESP32: true
+  # Grove - RGB LED スティック
+  grove_rgb_led_stick:
+    name: "Grove - RGB LED スティック"
+    group: adafuit_neopixel
+    voltage:
+      3V3: true
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 1
+    description: "マイコン(WS2813)内蔵LEDで構成され，独自プロトコルで制御するフルカラーLED"
+    architecture:
+      UnoR4: true
+      GigaR1: true
+      M0Pro: true
+      MKRZero: true
+      Nano33IoT: true
+      NanoESP32: true
+
+#
+# NセグメントLED
+#
+nseg_led:
+  # グループのリスト
+  groupList:
+    - osl12306_16
+    - osl20541
+    - osl30561
+    - grove_tm1637
+    - dfr0090
+  # デバイスリスト
+  deviceList:
+    - osl12306_16_ira
+    - osl20541
+    - osl30561
+    - grove_4_digit_7seg_led
+    - dfr0090
+  # OSL12306-16-IRA (秋月電子)
+  osl12306_16_ira:
+    name: "OSL12306-16-IRA"
+    group: osl12306_16
+    voltage:
+      3V3: false
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 18
+    description: "16セグメントLED (秋月電子)．Gigaでは暗すぎるため，実用性はほぼない．"
+    architecture:
+      UnoR4: false
+      GigaR1: true
+      M0Pro: false
+      MKRZero: false
+      Nano33IoT: false
+      NanoESP32: false
+  # OSL20541-IR (秋月電子)
+  osl20541:
+    name: "OSL20541-IR"
+    group: osl20541
+    voltage:
+      3V3: true
+      5V : false
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 17
+    description: "2桁14セグメントLED (秋月電子)"
+    architecture:
+      UnoR4: false
+      GigaR1: true
+      M0Pro: false
+      MKRZero: false
+      Nano33IoT: false
+      NanoESP32: false
+  # OSL30561 (秋月電子)  
+  osl30561:
+    name: "OSL30561"
+    group: osl30561
+    voltage:
+      3V3: true
+      5V : false
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 11
+    description: "3桁7セグメントLED(秋月電子)"
+    architecture:
+      UnoR4: false
+      GigaR1: true
+      M0Pro: false
+      MKRZero: false
+      Nano33IoT: false
+      NanoESP32: false
+  # Grove - 4-Digit Display (7セグメント clock type)
+  grove_4_digit_7seg_led:
+    name: "Grove - 4-Digit Display"
+    group: grove_tm1637
+    voltage:
+      3V3: true
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 2
+    description: "時計型の7セグメントLED"
+    architecture:
+      UnoR4: true
+      GigaR1: true
+      M0Pro: true
+      MKRZero: true
+      Nano33IoT: true
+      NanoESP32: true
+  #  DFROBOT 7セグメント 8digit 3-Wire LED Module DFR0090
+  dfr0090:
+    name: "DFROBOT DFR0090"
+    group: dfr0090
+    voltage:
+      3V3: true
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 3
+    description: "8桁 7セグメント 3-Wire LED Module．MKRファミリおよびNano33IoTでは，外部電源による給電が必須"
+    architecture:
+      UnoR4: true
+      GigaR1: true
+      M0Pro: true
+      MKRZero: true
+      Nano33IoT: true
+      NanoESP32: false
+
+#
+# サーボ
+#
+servo:
+  # グループのリスト
+  groupList:
+    - arduino_servo
+  # デバイスのリスト
+  deviceList:
+    - grove_servo
+  # サーボ
+  grove_servo:
+    name: "Grove サーボ"
+    group: arduino_servo
+    voltage:
+      3V3: false
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 1
+    description: "サーボモーター"
+    architecture:
+      UnoR4: true
+      GigaR1: false
+      M0Pro: true
+      MKRZero: true
+      Nano33IoT: true
+      NanoESP32: true
+
+#
+# さまざまな音声デバイス
+#
+soundDevice:
+  # グループのリスト
+  groupList:
+    - simple_sound
+    - mp3_player
+  # デバイスリスト
+  deviceList:
+    - grove_speaker
+    - grove_buzzer
+    - grove_mp3_v4
+    - df_player_mini
+  # スピーカー
+  grove_speaker:
+    name: "Groveスピーカー"
+    group: simple_sound
+    voltage:
+      3V3: false
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 1
+    description: ""
+    architecture:
+      UnoR4: true
+      GigaR1: true
+      M0Pro: true
+      MKRZero: true
+      Nano33IoT: true
+      NanoESP32: true
+  # ブザー
+  grove_buzzer:
+    name: "Groveブサー"
+    group: simple_sound
+    voltage:
+      3V3: true
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 1
+    description: ""
+    architecture:
+      UnoR4: true
+      GigaR1: true
+      M0Pro: true
+      MKRZero: true
+      Nano33IoT: true
+      NanoESP32: true
+  # Grove MP3 player ver.4
+  grove_mp3_v4:
+    name: "Grove MP3 player v4.0"
+    group: mp3_player
+    voltage:
+      3V3: false
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 1
+    description: ""
+    architecture:
+      UnoR4: true
+      GigaR1: false
+      M0Pro: false
+      MKRZero: false
+      Nano33IoT: false
+      NanoESP32: false
+  # DF ROBOT DFPlayer Mini
+  df_player_mini:
+    name: "DF ROBOT DFPlayer Mini"
+    group: mp3_player
+    voltage:
+      3V3: true
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 1
+    description: ""
+    architecture:
+      UnoR4: true
+      GigaR1: true
+      M0Pro: true
+      MKRZero: true
+      Nano33IoT: true
+      NanoESP32: false
+
+#
+# 単純なPWMデバイス
+#
+pwm:
+  # グループのリスト
+  groupList:
+    - simple_pwm
+  # デバイスリスト
+  deviceList:
+    - grove_mono_led
+  # モノクロLED
+  grove_mono_led:
+    name: "Grove モノクロ LED"
+    group: simple_pwm
+    voltage:
+      3V3: true
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 1
+    description: ""
+    architecture:
+      UnoR4: true
+      GigaR1: true
+      M0Pro: true
+      MKRZero: true
+      Nano33IoT: true
+      NanoESP32: true
+
+#
+# 単純なデジタル(ON/OFF)デバイス
+#
+switch:
+  # グループのリスト
+  groupList:
+    - simple_digital
+  # デバイスリスト
+  deviceList:
+    - grove_mono_led
+  # モノクロLED
+  grove_mono_led:
+    name: "Grove モノクロ LED"
+    group: simple_digital
+    voltage:
+      3V3: true
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 1
+    description: ""
+    architecture:
+      UnoR4: true
+      GigaR1: true
+      M0Pro: true
+      MKRZero: true
+      Nano33IoT: true
+      NanoESP32: true
+
+#
+# 赤外線リモコン
+#
+ir_remote_controller:
+  # グループのリスト
+  groupList:
+    - ir_remote
+  # デバイスリスト
+  deviceList:
+    - grove_ir_emitter
+  grove_ir_emitter:
+    name: "Grove - 赤外線エミッター"
+    group: ir_remote
+    voltage:
+      3V3: true
+      5V : true
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 1
+    description: "赤外線リモコンの送信機として使えるデバイス"
+    architecture:
+      UnoR4: true
+      GigaR1: false
+      M0Pro: false
+      MKRZero: true
+      Nano33IoT: true
+      NanoESP32: true
+
+#
+# グラフィックディスプレイ
+#
+graphic_display:
+  # グループのリスト
+  groupList:
+    - giga_display_gfx
+    - bodmer_tft_espi
+    - adafuit_gfx
+  # デバイスリスト
+  deviceList:
+    - giga_display_shield
+    - ili9341_type_1
+    - ili9341_type_2
+  giga_display_shield:
+    name: "Arduino Gigaディスプレイシールド"
+    voltage:
+      3V3: true
+      5V : false
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 0
+    description: "GigaWifi専用デバイスで，専用端子に接続して使用"
+    architecture:
+      UnoR4: false
+      GigaR1: true
+      M0Pro: false
+      MKRZero: false
+      Nano33IoT: false
+      NanoESP32: false
+  ili9341_type_1:
+    name: "ILI9341コントローラ搭載ディスプレイ(ハードウェアSPI接続)"
+    voltage:
+      3V3: true
+      5V : false
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 3
+    description: ""
+    architecture:
+      UnoR4: false
+      GigaR1: false
+      M0Pro: false
+      MKRZero: false
+      Nano33IoT: false
+      NanoESP32: false
+  ili9341_type_2:
+    name: "ILI9341コントローラ搭載ディスプレイ(ソフトウェアSPI接続)"
+    voltage:
+      3V3: true
+      5V : false
+    connecter:
+      spi: 0
+      i2c: 0
+      digital: 6
+    description: ""
+    architecture:
+      UnoR4: false
+      GigaR1: false
+      M0Pro: true
+      MKRZero: false
+      Nano33IoT: true
+      NanoESP32: true
+

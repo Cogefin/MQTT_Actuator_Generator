@@ -1,0 +1,1428 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import flet as ft
+
+import asyncio
+import yaml
+import sys
+import shutil
+import os
+
+
+source_file_name=""
+output_directory_path=""
+help_file="parts/Help/genActuatorSketch/help.yaml"
+#help_file="C:/Users/phil_/OneDrive/ドキュメント/開発/arduino/Cogefin/MQTT_Actuator_Generator/parts/Help/genActuatorSketch/help.yaml"
+
+error = ""
+
+top_dir='parts'
+sketch_dir=top_dir+'/sketch/'
+util_dir = top_dir + '/util/'
+sketch_name='MqttTerminal'
+sketch_source = sketch_dir + sketch_name + '.ino'
+RTC_source= util_dir + 'RTC.cpp'
+actuator_hdr = util_dir + 'ActuatorHAL.h'
+actuator_source =  util_dir + 'ActuatorHAL.cpp'
+additional_hdr = util_dir + 'AdditionalDef.h'
+watchdog_hdr = util_dir + 'watchdog.h'
+watchdog_source = util_dir + 'watchdog.cpp'
+driver_dir = util_dir + 'src'
+
+num_of_actuators=0
+
+def copySketch():
+    global output_directory_path, output_dir, sketch_name, sketch_source
+    if not os.path.isdir(output_dir) :
+        os.mkdir(output_dir)
+    if os.path.isfile(output_dir+'config.h') :
+        os.remove(output_dir+'config.h')
+    shutil.copyfile(sketch_source, output_dir+sketch_name+'.ino')
+    shutil.copyfile(RTC_source, output_dir+ 'RTC.cpp')
+    shutil.copyfile(actuator_hdr, output_dir+ 'ActuatorHAL.h')
+    shutil.copyfile(actuator_source, output_dir+ 'ActuatorHAL.cpp')
+    shutil.copyfile(additional_hdr, output_dir+ 'AdditionalDef.h')
+    shutil.copyfile(watchdog_hdr, output_dir+ 'watchdog.h')
+    shutil.copyfile(watchdog_source, output_dir+ 'watchdog.cpp')
+    shutil.copytree(driver_dir, output_dir+'src')
+
+def checkConfiguration():
+    global configuration
+    checkResult = ''
+    if not ('platform' in configuration):
+        checkResult += '仕様ファイルに「platform」の定義がありません．\n'
+    else:
+        if not ('network_hardware' in configuration['platform']):
+            checkResult += '仕様ファイルの「platform」セクション中に「network_hardware」の定義がありません．\n'
+        else:
+            if not ('network_type' in configuration['platform']['network_hardware']):
+                checkResult += '仕様ファイルの「platform」セクションの「network_hardware」中に「network_type」の定義がありません．\n'
+            if not ('ethernet_chip_select' in configuration['platform']['network_hardware']):
+                checkResult += '仕様ファイルの「platform」セクションの「network_hardware」中に「ethernet_chip_select」の定義がありません．\n'
+        if not ('rtc' in configuration['platform']):
+            checkResult += '仕様ファイルの「platform」セクション中に「rtc」の定義がありません．\n'
+        else:
+            if not ('rtc_type' in configuration['platform']['rtc']):
+                checkResult += '仕様ファイルの「platform」セクションの「rtc」中に「rtc_type」の定義がありません．\n'
+        if not ('color_led' in configuration['platform']):
+            checkResult += '仕様ファイルの「platform」セクション中に「color_led」の定義がありません．\n'
+        else:
+            if not ('use_led' in configuration['platform']['color_led']):
+                checkResult += '仕様ファイルの「platform」セクションの「color_led」中に「use_led」の定義がありません．\n'
+            if not ('led_pin' in configuration['platform']['color_led']):
+                checkResult += '仕様ファイルの「platform」セクションの「color_led」中に「led_pin」の定義がありません．\n'
+            if not ('led_duration' in configuration['platform']['color_led']):
+                checkResult += '仕様ファイルの「platform」セクションの「color_led」中に「led_duration」の定義がありません．\n'
+            if not ('led_short_duration' in configuration['platform']['color_led']):
+                checkResult += '仕様ファイルの「platform」セクションの「color_led」中に「led_short_duration」の定義がありません．\n'
+        if not ('sd' in configuration['platform']):
+            checkResult += '仕様ファイルの「platform」セクション中に「sd」の定義がありません．\n'
+        else:
+            if not ('use_sd' in configuration['platform']['sd']):
+                checkResult += '仕様ファイルの「platform」セクションの「sd」中に「use_sd」の定義がありません．\n'
+            if not ('sd_chip_select' in configuration['platform']['sd']):
+                checkResult += '仕様ファイルの「platform」セクションの「sd」中に「sd_chip_select」の定義がありません．\n'
+        if not ('wdt' in configuration['platform']):
+            checkResult += '仕様ファイルの「platform」セクション中に「wdt」の定義がありません．\n'
+        else:
+            if not ('wdt_duration' in configuration['platform']['wdt']):
+                checkResult += '仕様ファイルの「platform」セクションの「wdt」中に「wdt_duration」の定義がありません．\n'
+            if not ('wdt_short_duration' in configuration['platform']['wdt']):
+                checkResult += '仕様ファイルの「platform」セクションの「wdt」中に「wdt_short_duration」の定義がありません．\n'
+        if not ('advanced' in configuration['platform']):
+            checkResult += '仕様ファイルの「platform」セクション中に「advanced」の定義がありません．\n'
+        else:
+            if not ('hardware_serial' in configuration['platform']['advanced']):
+                checkResult += '仕様ファイルの「platform」セクションの「advanced」中に「hardware_serial」の定義がありません．\n'
+            if not ('buffer_size' in configuration['platform']['advanced']):
+                checkResult += '仕様ファイルの「platform」セクションの「advanced」中に「buffer_size」の定義がありません．\n'
+            if not ('max_digit_of_nseg_led' in configuration['platform']['advanced']):
+                checkResult += '仕様ファイルの「platform」セクションの「advanced」中に「max_digit_of_nseg_led」の定義がありません．\n'
+    if not ('common' in configuration):
+        checkResult += '仕様ファイルに「common」の定義がありません．\n'
+    else:
+        if not ('serial' in configuration['common']):
+            checkResult += '仕様ファイルの「common」セクション中に「serial」の定義がありません．\n'
+        else:
+            if not ('speed' in configuration['common']['serial']):
+                checkResult += '仕様ファイルの「common」セクションの「serial」中に「speed」の定義がありません．\n'
+        if not ('log' in configuration['common']):
+            checkResult += '仕様ファイルの「common」セクション中に「log」の定義がありません．\n'
+        else:
+            if not ('host_name' in configuration['common']['log']):
+                checkResult += '仕様ファイルの「common」セクションの「log」中に「host_name」の定義がありません．\n'
+            if not ('app_name' in configuration['common']['log']):
+                checkResult += '仕様ファイルの「common」セクションの「log」中に「app_name」の定義がありません．\n'
+            if not ('use_logfile' in configuration['common']['log']):
+                checkResult += '仕様ファイルの「common」セクションの「log」中に「use_logfile」の定義がありません．\n'
+            if not ('use_serial_log' in configuration['common']['log']):
+                checkResult += '仕様ファイルの「common」セクションの「log」中に「use_serial_log」の定義がありません．\n'
+            if not ('logfile_name_hdr' in configuration['common']['log']):
+                checkResult += '仕様ファイルの「common」セクションの「log」中に「logfile_name_hdr」の定義がありません．\n'
+            if not ('logfile_size_max' in configuration['common']['log']):
+                checkResult += '仕様ファイルの「common」セクションの「log」中に「logfile_size_max」の定義がありません．\n'
+            if not ('log_rotate' in configuration['common']['log']):
+                checkResult += '仕様ファイルの「common」セクションの「log」中に「log_rotate」の定義がありません．\n'
+        if not ('clock' in configuration['common']):
+            checkResult += '仕様ファイルの「common」セクション中に「clock」の定義がありません．\n'
+        else:
+            if not ('use_ntp' in configuration['common']['clock']):
+                checkResult += '仕様ファイルの「common」セクションの「clock」中に「use_ntp」の定義がありません．\n'
+            if not ('update_rtc_by_ntp' in configuration['common']['clock']):
+                checkResult += '仕様ファイルの「common」セクションの「clock」中に「update_rtc_by_ntp」の定義がありません．\n'
+    if not ('network' in configuration):
+        checkResult += '仕様ファイルに「network」の定義がありません．\n'
+    else:
+        if not ('wifi' in configuration['network']):
+            checkResult += '仕様ファイルの「network」セクション中に「wifi」の定義がありません．\n'
+        else:
+            if not ('ssid' in configuration['network']['wifi']):
+                checkResult += '仕様ファイルの「network」セクションの「wifi」中に「ssid」の定義がありません．\n'
+            if not ('wifi_pass' in configuration['network']['wifi']):
+                checkResult += '仕様ファイルの「network」セクションの「wifi」中に「wifi_pass」の定義がありません．\n'
+        if not ('ethernet' in configuration['network']):
+            checkResult += '仕様ファイルの「network」セクション中に「ethernet」の定義がありません．\n'
+        else:
+            if not ('mac_addr' in configuration['network']['ethernet']):
+                checkResult += '仕様ファイルの「network」セクションの「ethernet」中に「mac_addr」の定義がありません．\n'
+        if not ('ip' in configuration['network']):
+            checkResult += '仕様ファイルの「」セクション中に「ip」の定義がありません．\n'
+        else:
+            if not ('use_dhcp' in configuration['network']['ip']):
+                checkResult += '仕様ファイルの「network」セクションの「ip」中に「use_dhcp」の定義がありません．\n'
+            if not ('ip_addr' in configuration['network']['ip']):
+                checkResult += '仕様ファイルの「network」セクションの「ip」中に「ip_addr」の定義がありません．\n'
+            if not ('dns_server' in configuration['network']['ip']):
+                checkResult += '仕様ファイルの「network」セクションの「ip」中に「dns_server」の定義がありません．\n'
+            if not ('gateway' in configuration['network']['ip']):
+                checkResult += '仕様ファイルの「network」セクションの「ip」中に「gateway」の定義がありません．\n'
+            if not ('netmask' in configuration['network']['ip']):
+                checkResult += '仕様ファイルの「network」セクションの「ip」中に「netmask」の定義がありません．\n'
+        if not ('mqtt' in configuration['network']):
+            checkResult += '仕様ファイルの「network」セクション中に「mqtt」の定義がありません．\n'
+        else:
+            if not ('mqtt_auth' in configuration['network']['mqtt']):
+                checkResult += '仕様ファイルの「network」セクションの「mqtt」中に「mqtt_auth」の定義がありません．\n'
+            if not ('mqtt_user' in configuration['network']['mqtt']):
+                checkResult += '仕様ファイルの「network」セクションの「mqtt」中に「mqtt_user」の定義がありません．\n'
+            if not ('mqtt_pass' in configuration['network']['mqtt']):
+                checkResult += '仕様ファイルの「network」セクションの「mqtt」中に「mqtt_pass」の定義がありません．\n'
+            if not ('mqtt_topic' in configuration['network']['mqtt']):
+                checkResult += '仕様ファイルの「network」セクションの「mqtt」中に「mqtt_topic」の定義がありません．\n'
+            if not ('mqtt_server' in configuration['network']['mqtt']):
+                checkResult += '仕様ファイルの「network」セクションの「mqtt」中に「mqtt_server」の定義がありません．\n'
+            if not ('mqtt_port' in configuration['network']['mqtt']):
+                checkResult += '仕様ファイルの「network」セクションの「mqtt」中に「mqtt_port」の定義がありません．\n'
+    if not ('safety' in configuration):
+        checkResult += '仕様ファイルに「safety」の定義がありません．\n'
+    else:
+        if not ('use_wdt' in configuration['safety']):
+            checkResult += '仕様ファイルの「safety」セクション中に「use_wdt」の定義がありません．\n'
+    if not ('grove_lcd' in configuration):
+        checkResult += '仕様ファイルに「grove_lcd」の定義がありません．\n'
+    else:
+        if not ('use_grove_lcd' in configuration['grove_lcd']):
+            checkResult += '仕様ファイルの「grove_lcd」セクション中に「use_grove_lcd」の定義がありません．\n'
+    if not ('acm1602ni' in configuration):
+        checkResult += '仕様ファイルに「acm1602ni」の定義がありません．\n'
+    else:
+        if not ('use_acm1602ni' in configuration['acm1602ni']):
+            checkResult += '仕様ファイルの「acm1602ni」セクション中に「use_acm1602ni」の定義がありません．\n'
+        if not ('acm1602ni_type' in configuration['acm1602ni']):
+            checkResult += '仕様ファイルの「acm1602ni」セクション中に「acm1602ni_type」の定義がありません．\n'
+    if not ('liquid_crystal' in configuration):
+        checkResult += '仕様ファイルに「liquid_crystal」の定義がありません．\n'
+    else:
+        if not ('use_liquid_crystal' in configuration['liquid_crystal']):
+            checkResult += '仕様ファイルの「liquid_crystal」セクション中に「use_liquid_crystal」の定義がありません．\n'
+        if not ('liquid_crystal_type' in configuration['liquid_crystal']):
+            checkResult += '仕様ファイルの「liquid_crystal」セクション中に「liquid_crystal_type」の定義がありません．\n'
+        if not ('liquid_crystal_rs_pin' in configuration['liquid_crystal']):
+            checkResult += '仕様ファイルの「liquid_crystal」セクション中に「liquid_crystal_rs_pin」の定義がありません．\n'
+        if not ('liquid_crystal_es_pin' in configuration['liquid_crystal']):
+            checkResult += '仕様ファイルの「liquid_crystal」セクション中に「liquid_crystal_es_pin」の定義がありません．\n'
+        if not ('liquid_crystal_d4_pin' in configuration['liquid_crystal']):
+            checkResult += '仕様ファイルの「liquid_crystal」セクション中に「liquid_crystal_d4_pin」の定義がありません．\n'
+        if not ('liquid_crystal_d5_pin' in configuration['liquid_crystal']):
+            checkResult += '仕様ファイルの「liquid_crystal」セクション中に「liquid_crystal_d5_pin」の定義がありません．\n'
+        if not ('liquid_crystal_d6_pin' in configuration['liquid_crystal']):
+            checkResult += '仕様ファイルの「liquid_crystal」セクション中に「liquid_crystal_d6_pin」の定義がありません．\n'
+        if not ('liquid_crystal_d7_pin' in configuration['liquid_crystal']):
+            checkResult += '仕様ファイルの「liquid_crystal」セクション中に「liquid_crystal_d7_pin」の定義がありません．\n'
+    if not ('simple_mono_led' in configuration):
+        checkResult += '仕様ファイルに「simple_mono_led」の定義がありません．\n'
+    else:
+        if not ('use_simple_mono_led' in configuration['simple_mono_led']):
+            checkResult += '仕様ファイルの「simple_mono_led」セクション中に「use_simple_mono_led」の定義がありません．\n'
+        if not ('simple_mono_led_type' in configuration['simple_mono_led']):
+            checkResult += '仕様ファイルの「simple_mono_led」セクション中に「simple_mono_led_type」の定義がありません．\n'
+        if not ('simple_mono_led_pin' in configuration['simple_mono_led']):
+            checkResult += '仕様ファイルの「simple_mono_led」セクション中に「simple_mono_led_pin」の定義がありません．\n'
+    if not ('simple_color_led' in configuration):
+        checkResult += '仕様ファイルに「simple_color_led」の定義がありません．\n'
+    else:
+        if not ('use_simple_color_led' in configuration['simple_color_led']):
+            checkResult += '仕様ファイルの「simple_color_led」セクション中に「use_simple_color_led」の定義がありません．\n'
+        if not ('simple_color_led_type' in configuration['simple_color_led']):
+            checkResult += '仕様ファイルの「simple_color_led」セクション中に「simple_color_led_type」の定義がありません．\n'
+        if not ('simple_color_led_red_pin' in configuration['simple_color_led']):
+            checkResult += '仕様ファイルの「simple_color_led」セクション中に「simple_color_led_red_pin」の定義がありません．\n'
+        if not ('simple_color_led_green_pin' in configuration['simple_color_led']):
+            checkResult += '仕様ファイルの「simple_color_led」セクション中に「simple_color_led_green_pin」の定義がありません．\n'
+        if not ('simple_color_led_blue_pin' in configuration['simple_color_led']):
+            checkResult += '仕様ファイルの「simple_color_led」セクション中に「simple_color_led_blue_pin」の定義がありません．\n'
+    if not ('grove_led_bar' in configuration):
+        checkResult += '仕様ファイルに「grove_led_bar」の定義がありません．\n'
+    else:
+        if not ('use_grove_led_bar' in configuration['grove_led_bar']):
+            checkResult += '仕様ファイルの「grove_led_bar」セクション中に「use_grove_led_bar」の定義がありません．\n'
+        if not ('grove_led_bar_leds' in configuration['grove_led_bar']):
+            checkResult += '仕様ファイルの「grove_led_bar」セクション中に「grove_led_bar_leds」の定義がありません．\n'
+        if not ('grove_led_bar_direction' in configuration['grove_led_bar']):
+            checkResult += '仕様ファイルの「grove_led_bar」セクション中に「grove_led_bar_direction」の定義がありません．\n'
+        if not ('grove_led_bar_clk_pin' in configuration['grove_led_bar']):
+            checkResult += '仕様ファイルの「grove_led_bar」セクション中に「grove_led_bar_clk_pin」の定義がありません．\n'
+        if not ('grove_led_bar_data_pin' in configuration['grove_led_bar']):
+            checkResult += '仕様ファイルの「grove_led_bar」セクション中に「grove_led_bar_data_pin」の定義がありません．\n'
+    if not ('grove_led_circular' in configuration):
+        checkResult += '仕様ファイルに「grove_led_circular」の定義がありません．\n'
+    else:
+        if not ('use_grove_led_circular' in configuration['grove_led_circular']):
+            checkResult += '仕様ファイルの「grove_led_circular」セクション中に「use_grove_led_circular」の定義がありません．\n'
+        if not ('grove_led_circular_leds' in configuration['grove_led_circular']):
+            checkResult += '仕様ファイルの「grove_led_circular」セクション中に「grove_led_circular_leds」の定義がありません．\n'
+        if not ('grove_led_circular_direction' in configuration['grove_led_circular']):
+            checkResult += '仕様ファイルの「grove_led_circular」セクション中に「grove_led_circular_direction」の定義がありません．\n'
+        if not ('grove_led_circular_clk_pin' in configuration['grove_led_circular']):
+            checkResult += '仕様ファイルの「grove_led_circular」セクション中に「grove_led_circular_clk_pin」の定義がありません．\n'
+        if not ('grove_led_circular_data_pin' in configuration['grove_led_circular']):
+            checkResult += '仕様ファイルの「grove_led_circular」セクション中に「grove_led_circular_data_pin」の定義がありません．\n'
+    if not ('grove_chainable_led' in configuration):
+        checkResult += '仕様ファイルに「grove_chainable_led」の定義がありません．\n'
+    else:
+        if not ('use_grove_chainable_led' in configuration['grove_chainable_led']):
+            checkResult += '仕様ファイルの「grove_chainable_led」セクション中に「use_grove_chainable_led」の定義がありません．\n'
+        if not ('grove_chainable_led_leds' in configuration['grove_chainable_led']):
+            checkResult += '仕様ファイルの「grove_chainable_led」セクション中に「grove_chainable_led_leds」の定義がありません．\n'
+        if not ('grove_chainable_led_clk_pin' in configuration['grove_chainable_led']):
+            checkResult += '仕様ファイルの「grove_chainable_led」セクション中に「grove_chainable_led_clk_pin」の定義がありません．\n'
+        if not ('grove_chainable_led_data_pin' in configuration['grove_chainable_led']):
+            checkResult += '仕様ファイルの「grove_chainable_led」セクション中に「grove_chainable_led_data_pin」の定義がありません．\n'
+    if not ('adafuit_neopixel' in configuration):
+        checkResult += '仕様ファイルに「adafuit_neopixel」の定義がありません．\n'
+    else:
+        if not ('use_adafuit_neopixel' in configuration['adafuit_neopixel']):
+            checkResult += '仕様ファイルの「adafuit_neopixel」セクション中に「use_adafuit_neopixel」の定義がありません．\n'
+        if not ('adafuit_neopixel_leds' in configuration['adafuit_neopixel']):
+            checkResult += '仕様ファイルの「adafuit_neopixel」セクション中に「adafuit_neopixel_leds」の定義がありません．\n'
+        if not ('adafuit_neopixel_pin' in configuration['adafuit_neopixel']):
+            checkResult += '仕様ファイルの「adafuit_neopixel」セクション中に「adafuit_neopixel_pin」の定義がありません．\n'
+    if not ('osl12306_16' in configuration):
+        checkResult += '仕様ファイルに「osl12306_16」の定義がありません．\n'
+    else:
+        if not ('use_osl12306_16' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「use_osl12306_16」の定義がありません．\n'
+        if not ('osl12306_16_digits' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_digits」の定義がありません．\n'
+        if not ('osl12306_16_type' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_type」の定義がありません．\n'
+        if not ('osl12306_16_a1_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_a1_pin」の定義がありません．\n'
+        if not ('osl12306_16_a2_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_a2_pin」の定義がありません．\n'
+        if not ('osl12306_16_b_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_b_pin」の定義がありません．\n'
+        if not ('osl12306_16_c_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_c_pin」の定義がありません．\n'
+        if not ('osl12306_16_d1_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_d1_pin」の定義がありません．\n'
+        if not ('osl12306_16_d2_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_d2_pin」の定義がありません．\n'
+        if not ('osl12306_16_e_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_e_pin」の定義がありません．\n'
+        if not ('osl12306_16_f_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_f_pin」の定義がありません．\n'
+        if not ('osl12306_16_g1_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_g1_pin」の定義がありません．\n'
+        if not ('osl12306_16_g2_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_g2_pin」の定義がありません．\n'
+        if not ('osl12306_16_j_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_j_pin」の定義がありません．\n'
+        if not ('osl12306_16_k_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_k_pin」の定義がありません．\n'
+        if not ('osl12306_16_l_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_l_pin」の定義がありません．\n'
+        if not ('osl12306_16_m_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_m_pin」の定義がありません．\n'
+        if not ('osl12306_16_n_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_n_pin」の定義がありません．\n'
+        if not ('osl12306_16_p_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_p_pin」の定義がありません．\n'
+        if not ('osl12306_16_dp_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_dp_pin」の定義がありません．\n'
+        if not ('osl12306_16_digit_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_digit_pin」の定義がありません．\n'
+    if not ('osl20541' in configuration):
+        checkResult += '仕様ファイルに「osl20541」の定義がありません．\n'
+    else:
+        if not ('use_osl20541' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「use_osl20541」の定義がありません．\n'
+        if not ('osl20541_digits' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_digits」の定義がありません．\n'
+        if not ('osl20541_type' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_type」の定義がありません．\n'
+        if not ('osl20541_a_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_a_pin」の定義がありません．\n'
+        if not ('osl20541_b_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_b_pin」の定義がありません．\n'
+        if not ('osl20541_c_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_c_pin」の定義がありません．\n'
+        if not ('osl20541_d_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_d_pin」の定義がありません．\n'
+        if not ('osl20541_e_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_e_pin」の定義がありません．\n'
+        if not ('osl20541_f_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_f_pin」の定義がありません．\n'
+        if not ('osl20541_g1_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_g1_pin」の定義がありません．\n'
+        if not ('osl20541_g2_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_g2_pin」の定義がありません．\n'
+        if not ('osl20541_h_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_h_pin」の定義がありません．\n'
+        if not ('osl20541_j_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_j_pin」の定義がありません．\n'
+        if not ('osl20541_k_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_k_pin」の定義がありません．\n'
+        if not ('osl20541_l_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_l_pin」の定義がありません．\n'
+        if not ('osl20541_m_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_m_pin」の定義がありません．\n'
+        if not ('osl20541_n_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_n_pin」の定義がありません．\n'
+        if not ('osl20541_dp_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_dp_pin」の定義がありません．\n'
+        if not ('osl20541_digit1_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_digit1_pin」の定義がありません．\n'
+        if not ('osl20541_digit2_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_digit2_pin」の定義がありません．\n'
+    if not ('osl30561' in configuration):
+        checkResult += '仕様ファイルに「osl30561」の定義がありません．\n'
+    else:
+        if not ('use_osl30561' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「use_osl30561」の定義がありません．\n'
+        if not ('osl30561_digits' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_digits」の定義がありません．\n'
+        if not ('osl30561_type' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_type」の定義がありません．\n'
+        if not ('osl30561_a_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_a_pin」の定義がありません．\n'
+        if not ('osl30561_b_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_b_pin」の定義がありません．\n'
+        if not ('osl30561_c_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_c_pin」の定義がありません．\n'
+        if not ('osl30561_d_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_d_pin」の定義がありません．\n'
+        if not ('osl30561_e_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_e_pin」の定義がありません．\n'
+        if not ('osl30561_f_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_f_pin」の定義がありません．\n'
+        if not ('osl30561_g_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_g_pin」の定義がありません．\n'
+        if not ('osl30561_dp_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_dp_pin」の定義がありません．\n'
+        if not ('osl30561_digit1_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_digit1_pin」の定義がありません．\n'
+        if not ('osl30561_digit2_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_digit2_pin」の定義がありません．\n'
+        if not ('osl30561_digit3_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_digit3_pin」の定義がありません．\n'
+    if not ('grove_tm1637' in configuration):
+        checkResult += '仕様ファイルに「grove_tm1637」の定義がありません．\n'
+    else:
+        if not ('use_grove_tm1637' in configuration['grove_tm1637']):
+            checkResult += '仕様ファイルの「grove_tm1637」セクション中に「use_grove_tm1637」の定義がありません．\n'
+        if not ('grove_tm1637_clk_pin' in configuration['grove_tm1637']):
+            checkResult += '仕様ファイルの「grove_tm1637」セクション中に「grove_tm1637_clk_pin」の定義がありません．\n'
+        if not ('grove_tm1637_data_pin' in configuration['grove_tm1637']):
+            checkResult += '仕様ファイルの「grove_tm1637」セクション中に「grove_tm1637_data_pin」の定義がありません．\n'
+    if not ('dfr0090' in configuration):
+        checkResult += '仕様ファイルに「dfr0090」の定義がありません．\n'
+    else:
+        if not ('use_dfr0090' in configuration['dfr0090']):
+            checkResult += '仕様ファイルの「dfr0090」セクション中に「use_dfr0090」の定義がありません．\n'
+        if not ('dfr0090_digits' in configuration['dfr0090']):
+            checkResult += '仕様ファイルの「dfr0090」セクション中に「dfr0090_digits」の定義がありません．\n'
+        if not ('dfr0090_latch_pin' in configuration['dfr0090']):
+            checkResult += '仕様ファイルの「dfr0090」セクション中に「dfr0090_latch_pin」の定義がありません．\n'
+        if not ('dfr0090_clk_pin' in configuration['dfr0090']):
+            checkResult += '仕様ファイルの「dfr0090」セクション中に「dfr0090_clk_pin」の定義がありません．\n'
+        if not ('dfr0090_data_pin' in configuration['dfr0090']):
+            checkResult += '仕様ファイルの「dfr0090」セクション中に「dfr0090_data_pin」の定義がありません．\n'
+    if not ('servo' in configuration):
+        checkResult += '仕様ファイルに「servo」の定義がありません．\n'
+    else:
+        if not ('use_servo' in configuration['servo']):
+            checkResult += '仕様ファイルの「servo」セクション中に「use_servo」の定義がありません．\n'
+        if not ('servo_pin' in configuration['servo']):
+            checkResult += '仕様ファイルの「servo」セクション中に「servo_pin」の定義がありません．\n'
+    if not ('speaker' in configuration):
+        checkResult += '仕様ファイルに「speaker」の定義がありません．\n'
+    else:
+        if not ('use_speaker' in configuration['speaker']):
+            checkResult += '仕様ファイルの「speaker」セクション中に「use_speaker」の定義がありません．\n'
+        if not ('speaker_pin' in configuration['speaker']):
+            checkResult += '仕様ファイルの「speaker」セクション中に「speaker_pin」の定義がありません．\n'
+    if not ('buzzer' in configuration):
+        checkResult += '仕様ファイルに「buzzer」の定義がありません．\n'
+    else:
+        if not ('use_buzzer' in configuration['buzzer']):
+            checkResult += '仕様ファイルの「buzzer」セクション中に「use_buzzer」の定義がありません．\n'
+        if not ('buzzer_pin' in configuration['buzzer']):
+            checkResult += '仕様ファイルの「buzzer」セクション中に「buzzer_pin」の定義がありません．\n'
+    if not ('pmw' in configuration):
+        checkResult += '仕様ファイルに「pmw」の定義がありません．\n'
+    else:
+        if not ('use_pmw' in configuration['pmw']):
+            checkResult += '仕様ファイルの「pmw」セクション中に「use_pmw」の定義がありません．\n'
+        if not ('pmw_pin' in configuration['pmw']):
+            checkResult += '仕様ファイルの「pmw」セクション中に「pmw_pin」の定義がありません．\n'
+    if not ('switch' in configuration):
+        checkResult += '仕様ファイルに「switch」の定義がありません．\n'
+    else:
+        if not ('use_switch' in configuration['switch']):
+            checkResult += '仕様ファイルの「switch」セクション中に「use_switch」の定義がありません．\n'
+        if not ('switch_pin' in configuration['switch']):
+            checkResult += '仕様ファイルの「switch」セクション中に「switch_pin」の定義がありません．\n'
+    if not ('ir_remote' in configuration):
+        checkResult += '仕様ファイルに「ir_remote」の定義がありません．\n'
+    else:
+        if not ('use_ir_remote' in configuration['ir_remote']):
+            checkResult += '仕様ファイルの「ir_remote」セクション中に「use_ir_remote」の定義がありません．\n'
+        if not ('ir_remote_pin' in configuration['ir_remote']):
+            checkResult += '仕様ファイルの「ir_remote」セクション中に「ir_remote_pin」の定義がありません．\n'
+    if not ('mp3_player' in configuration):
+        checkResult += '仕様ファイルに「mp3_player」の定義がありません．\n'
+    else:
+        if not ('use_mp3_player' in configuration['mp3_player']):
+            checkResult += '仕様ファイルの「mp3_player」セクション中に「use_mp3_player」の定義がありません．\n'
+        if not ('mp3_player_type' in configuration['mp3_player']):
+            checkResult += '仕様ファイルの「mp3_player」セクション中に「mp3_player_type」の定義がありません．\n'
+    if not ('graphic_display' in configuration):
+        checkResult += '仕様ファイルに「graphic_display」の定義がありません．\n'
+    else:
+        if not ('use_graphic_display' in configuration['graphic_display']):
+            checkResult += '仕様ファイルの「graphic_display」セクション中に「use_graphic_display」の定義がありません．\n'
+        if not ('graphic_display_type' in configuration['graphic_display']):
+            checkResult += '仕様ファイルの「graphic_display」セクション中に「graphic_display_type」の定義がありません．\n'
+        if not ('graphic_display_cs_pin' in configuration['graphic_display']):
+            checkResult += '仕様ファイルの「graphic_display」セクション中に「graphic_display_cs_pin」の定義がありません．\n'
+        if not ('graphic_display_rst_pin' in configuration['graphic_display']):
+            checkResult += '仕様ファイルの「graphic_display」セクション中に「graphic_display_rst_pin」の定義がありません．\n'
+        if not ('graphic_display_dc_pin' in configuration['graphic_display']):
+            checkResult += '仕様ファイルの「graphic_display」セクション中に「graphic_display_dc_pin」の定義がありません．\n'
+        if not ('graphic_display_mosi_pin' in configuration['graphic_display']):
+            checkResult += '仕様ファイルの「graphic_display」セクション中に「graphic_display_mosi_pin」の定義がありません．\n'
+        if not ('graphic_display_miso_pin' in configuration['graphic_display']):
+            checkResult += '仕様ファイルの「graphic_display」セクション中に「graphic_display_miso_pin」の定義がありません．\n'
+        if not ('graphic_display_clk_pin' in configuration['graphic_display']):
+            checkResult += '仕様ファイルの「graphic_display」セクション中に「graphic_display_clk_pin」の定義がありません．\n'
+    return checkResult
+
+def exec_command():
+    global source_file_name, output_directory_path, sketch_name, output_file , output_dir, error, configuration
+    output_dir = output_directory_path + "/" + sketch_name + "/"
+    try:
+        with open(source_file_name, mode='r', encoding='utf-8') as f:
+            configuration = yaml.safe_load(f)
+    except Exception as e:
+        error = 'yamlファイルのロードに失敗しました．'
+        return error
+    checkResult = checkConfiguration()
+    if '' != checkResult:
+        error = checkResult
+        return error
+    copySketch()
+    try:
+        output_file = open(output_dir+"config.h", mode='w', encoding='utf-8')
+    except Exception as e1:
+        error = 'ファイル(config.h)の出力に失敗しました．'
+        return error
+    #
+    # Character LCD
+    #
+    # Grove LCD RGB backlight
+    if 'grove_lcd' in configuration:
+        grove_lcd(configuration['grove_lcd'])
+    # ACM1602NI
+    if 'acm1602ni' in configuration:
+        acm1602ni(configuration['acm1602ni'])
+    # Liquid crystal library
+    if 'liquid_crystal' in configuration:
+        liquid_crystal(configuration['liquid_crystal'])
+    #
+    # several kinds of LED
+    #
+    # Simple mono-chrome LED
+    if 'simple_mono_led' in configuration:
+        simple_mono_led(configuration['simple_mono_led'])
+    # Anode/Cathod common LED
+    if 'simple_color_led' in configuration:
+        simple_color_led(configuration['simple_color_led'])
+    # Grove LED Bar
+    if 'grove_led_bar' in configuration:
+        grove_led_bar(configuration['grove_led_bar'])
+    # Grove LED Circular
+    if 'grove_led_circular' in configuration:
+        grove_led_circular(configuration['grove_led_circular'])
+    # Grove chainable (RGB) LED
+    if 'grove_chainable_led' in configuration:
+        grove_chainable_led(configuration['grove_chainable_led'])
+    # Adafruit NeoPixel
+    if 'adafuit_neopixel' in configuration:
+        adafuit_neopixel(configuration['adafuit_neopixel'])
+    #
+    # N-segment LED
+    #
+    # OSL12306-16
+    if 'osl12306_16' in configuration:
+        osl12306_16(configuration['osl12306_16'])
+    # OSL20541
+    if 'osl20541' in configuration:
+        osl20541(configuration['osl20541'])
+    # OSL30561
+    if 'osl30561' in configuration:
+        osl30561(configuration['osl30561'])
+    # Grove - 4-Digit Display (clock type)
+    if 'grove_tm1637' in configuration:
+        grove_tm1637(configuration['grove_tm1637'])
+    # DFRobot DFR0090
+    if 'dfr0090' in configuration:
+        dfr0090(configuration['dfr0090'])
+    #
+    # サーボ
+    #
+    if 'servo' in configuration:
+        servo(configuration['servo'])
+    #
+    # simple sound
+    # スピーカー
+    if 'speaker' in configuration:
+        speaker(configuration['speaker'])
+    # ブザー
+    if 'buzzer' in configuration:
+        buzzer(configuration['buzzer'])
+    #
+    # simple PMW device
+    #
+    if 'pmw' in configuration:
+        pmw(configuration['pmw'])
+    #
+    # simple digital(ON/OFF) device (like switch)
+    #
+    if 'switch' in configuration:
+        switch(configuration['switch'])
+    #
+    # IR LED remote control device
+    #
+    if 'ir_remote' in configuration:
+        ir_remote(configuration['ir_remote'])
+    #
+    # MP3 player
+    #
+    if 'mp3_player' in configuration:
+        mp3_player(configuration['mp3_player'])
+    #
+    # Graphic display
+    #
+    if 'graphic_display' in configuration:
+        graphic_display(configuration['graphic_display'])
+    #
+    # base configurations
+    #
+    platform(configuration['platform'])
+    common(configuration['common'])
+    network(configuration['network'])
+    safety(configuration['safety'])
+    #
+    # tail of header
+    #
+    config_header_tail()
+    #
+    # 後始末
+    #
+    output_file.close()
+    return ''
+
+def errorWindow(page: ft.Page):
+    async def finish_button_clicked(e):
+        await page.window.destroy()
+    global error
+    page.title = "エラー"
+    page.window_width = 400
+    page.window_height = 500
+    page.autoscroll = True
+    finish_button = ft.Button(content="閉じる", on_click=finish_button_clicked)
+    page.add(
+        ft.SafeArea(
+            content=ft.Column(
+                controls=[
+                    ft.AppBar(title=ft.Text("重大なエラー"), bgcolor=ft.Colors.RED),
+                    ft.Text(error),
+                    ft.Divider(height=2, color="black"),
+                    finish_button,
+                ],
+            )
+        )
+    )
+
+def fileWindow(page: ft.Page):
+    def icon_clicked(e):
+        asyncio.create_task(page.push_route("/viewHelp"))
+    def createViewError():
+        global error
+        def close_button_clicked(e):
+            asyncio.create_task(page.push_route("/viewMain"))
+        global lastView
+        lastView = "/viewError"
+        page.title = "スケッチ生成失敗"
+        page.window_width = 800
+        page.window_height = 500
+        page.autoscroll = True
+        pageTitleBar = ft.AppBar(
+            title=ft.Text("スケッチ生成失敗"),
+            bgcolor=ft.Colors.YELLOW,
+            actions=[
+                ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
+            ]
+        )
+        close_button = ft.Button(content="閉じる", on_click=close_button_clicked)
+        return ft.View(route="/viewError", controls=[
+            ft.SafeArea(
+                content=ft.Column(
+                    controls=[
+                        pageTitleBar,
+                        close_button,
+                        ft.Text(error),
+                    ],
+                ),
+            )   
+        ])
+    def createViewHelp():
+        def close_button_clicked(e):
+            global lastView
+            #asyncio.create_task(page.push_route("/viewMain"))
+            asyncio.create_task(page.push_route(lastView))
+        page.title = "IoTアクチュエータスケッチ生成ヘルプ"
+        page.window_width = 800
+        page.window_height = 500
+        page.autoscroll = True
+        help_contents = ft.Markdown(help['top'], selectable=True, extension_set=ft.MarkdownExtensionSet.GITHUB_WEB)
+        pageTitleBar = ft.AppBar(
+            title=ft.Text("スケッチ生成ヘルプ"),
+            bgcolor=ft.Colors.BLUE,
+            #actions=[
+            #    ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
+            #]
+        )
+        close_button = ft.Button(content="閉じる", on_click=close_button_clicked)
+        return ft.View(route="/viewHelp", controls=[
+            ft.SafeArea(
+                content=ft.Column(
+                    controls=[
+                        pageTitleBar,
+                        close_button,
+                        help_contents,
+                    ],
+                ),
+            )   
+        ])
+    def createViewMain():
+        async def exec_button_clicked(e):
+            if source_file_name=="":
+                warning_message.value = "入力の仕様ファイルを選択してください．"
+                warning_message.update()
+                return
+            if output_directory_path=="":
+                warning_message.value = "Arduinoのスケッチを出力するフォルダを選択してください．"
+                warning_message.update()
+                return
+            if '' != exec_command():
+                asyncio.create_task(page.push_route("/viewError"))
+            else:
+                await page.window.destroy()
+            
+        async def pick_input_file_dialog(e: ft.Event[ft.Button]):
+            global source_file_name
+            files = await ft.FilePicker().pick_files(allow_multiple=False)
+            if files:
+                selected_input_file.value = files[0].path
+                source_file_name = selected_input_file.value
+            else:
+                selected_input_file.value = "キャンセルされました."
+                source_file_name = ""
+            selected_input_file.update()
+
+        async def pick_output_file_dialog(e: ft.Event[ft.Button]):
+            global output_directory_path
+            output_directory_path = await ft.FilePicker().get_directory_path()
+            if output_directory_path == "":
+                selected_output_file.value = "キャンセルされました．"
+            else:
+                selected_output_file.value = output_directory_path
+            selected_output_file.update()
+
+        async def applicationFinish(e: ft.Event[ft.Button]):
+            await page.window.destroy()
+
+        global lastView
+        lastView="/viewMain"
+        page.title = "IoTアクチュエータスケッチ生成"
+        page.window_width = 400
+        page.window_height = 500
+        selected_input_file = ft.Text()
+        selected_output_file = ft.Text()
+        exec_button = ft.Button(content="スケッチ生成", on_click=exec_button_clicked)
+        warning_message = ft.Text()
+        finish_button = ft.Button(content="終了", on_click=applicationFinish)
+        pageTitleBar = ft.AppBar(
+            title=ft.Text("スケッチ生成"),
+            bgcolor=ft.Colors.BLUE,
+            actions=[
+                ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
+            ]
+        )
+        specFileSelectionButton = ft.Button(
+            content="ファイル選択",
+            icon=ft.Icons.UPLOAD_FILE,
+            on_click=pick_input_file_dialog,
+        )
+        outputFolderSelectionButton = ft.Button(
+            content="フォルダ選択",
+            icon=ft.Icons.DOWNLOAD,
+            on_click=pick_output_file_dialog,
+        )
+        return ft.View(route="/viewMain", controls=[
+            ft.SafeArea(
+                content=ft.Column(
+                    controls=[
+                        pageTitleBar,
+                        ft.Text("仕様ファイル指定", theme_style=ft.TextThemeStyle.TITLE_MEDIUM),
+                        specFileSelectionButton,
+                        selected_input_file,
+                        ft.Divider(height=2, color="black"),
+                        ft.Text("スケッチ出力先指定", theme_style=ft.TextThemeStyle.TITLE_MEDIUM),
+                        outputFolderSelectionButton,
+                        selected_output_file,
+                        ft.Divider(height=2, color="black"),
+                        ft.Row(
+                            [exec_button,warning_message,]
+                        ),
+                        finish_button,
+                    ],
+                ),
+            )   
+        ])
+    def route_change(handler):
+        global configuration, lastView
+        page.views.clear()
+        if page.route == "/viewMain":
+            page.views.append(createViewMain())
+        if page.route == "/viewHelp":
+            page.views.append(createViewHelp())
+        if page.route == "/viewError":
+            page.views.append(createViewError())
+        page.update()
+    page.on_route_change = route_change
+    asyncio.create_task(page.push_route("/viewMain"))
+
+def platform(platform):
+    global output_file, num_of_actuators
+    print('#ifndef __UNIFIED_MQTT_ACTUATOR_CONFIG_H__', file=output_file)
+    print('#define __UNIFIED_MQTT_ACTUATOR_CONFIG_H__', file=output_file)
+    print('', file=output_file)
+    print('#include \"src/arduinoHardwareHelper.h\"', file=output_file)
+    print('#include \"src/detectArduinoHardware.h\"', file=output_file)
+    print('#include \"src/ArduinoShieldConverter.h\"', file=output_file)
+    print('', file=output_file)
+    if 'wifi'==platform['network_hardware']['network_type']:
+        print('#define USE_WIFI', file=output_file)
+    elif 'ethernet'==platform['network_hardware']['network_type']:
+        print('#define USE_ETHERNET', file=output_file)
+        print("#define ETHERNET_CHIP_SELECT %d" % platform['network_hardware']['ethernet_chip_select'], file=output_file)
+    if 'RTC8564NB'==platform['rtc']['rtc_type']:
+        print('#define USE_RTC', file=output_file)
+        print('#define USE_RTC8564NB', file=output_file)
+        print('#undef USE_DS1307', file=output_file)
+        print('#undef USE_DS3231', file=output_file)
+        print('#undef USE_PCF8523', file=output_file)
+        print('#undef USE_RV8803', file=output_file)
+        print('#undef USE_RX8025', file=output_file)
+        print('#undef USE_RX8900', file=output_file)
+    elif 'DS1307'==platform['rtc']['rtc_type']:
+        print('#define USE_RTC', file=output_file)
+        print('#undef USE_RTC8564NB', file=output_file)
+        print('#define USE_DS1307', file=output_file)
+        print('#undef USE_DS3231', file=output_file)
+        print('#undef USE_PCF8523', file=output_file)
+        print('#undef USE_RV8803', file=output_file)
+        print('#undef USE_RX8025', file=output_file)
+        print('#undef USE_RX8900', file=output_file)
+    elif 'DS3231'==platform['rtc']['rtc_type']:
+        print('#define USE_RTC', file=output_file)
+        print('#undef USE_RTC8564NB', file=output_file)
+        print('#undef USE_DS1307', file=output_file)
+        print('#define USE_DS3231', file=output_file)
+        print('#undef USE_PCF8523', file=output_file)
+        print('#undef USE_RV8803', file=output_file)
+        print('#undef USE_RX8025', file=output_file)
+        print('#undef USE_RX8900', file=output_file)
+    elif 'PCF8523'==platform['rtc']['rtc_type']:
+        print('#define USE_RTC', file=output_file)
+        print('#undef USE_RTC8564NB', file=output_file)
+        print('#undef USE_DS1307', file=output_file)
+        print('#undef USE_DS3231', file=output_file)
+        print('#define USE_PCF8523', file=output_file)
+        print('#undef USE_RV8803', file=output_file)
+        print('#undef USE_RX8025', file=output_file)
+        print('#undef USE_RX8900', file=output_file)
+    elif 'RV8803'==platform['rtc']['rtc_type']:
+        print('#define USE_RTC', file=output_file)
+        print('#undef USE_RTC8564NB', file=output_file)
+        print('#undef USE_DS1307', file=output_file)
+        print('#undef USE_DS3231', file=output_file)
+        print('#undef USE_PCF8523', file=output_file)
+        print('#define USE_RV8803', file=output_file)
+        print('#undef USE_RX8025', file=output_file)
+        print('#undef USE_RX8900', file=output_file)
+    elif 'RX8025'==platform['rtc']['rtc_type']:
+        print('#define USE_RTC', file=output_file)
+        print('#undef USE_RTC8564NB', file=output_file)
+        print('#undef USE_DS1307', file=output_file)
+        print('#undef USE_DS3231', file=output_file)
+        print('#undef USE_PCF8523', file=output_file)
+        print('#undef USE_RV8803', file=output_file)
+        print('#define USE_RX8025', file=output_file)
+        print('#undef USE_RX8900', file=output_file)
+    elif 'RX8900'==platform['rtc']['rtc_type']:
+        print('#define USE_RTC', file=output_file)
+        print('#undef USE_RTC8564NB', file=output_file)
+        print('#undef USE_DS1307', file=output_file)
+        print('#undef USE_DS3231', file=output_file)
+        print('#undef USE_PCF8523', file=output_file)
+        print('#undef USE_RV8803', file=output_file)
+        print('#undef USE_RX8025', file=output_file)
+        print('#define USE_RX8900', file=output_file)
+    elif 'none'==platform['rtc']['rtc_type']:
+        print('#undef USE_RTC', file=output_file)
+        print('#undef USE_RTC8564NB', file=output_file)
+        print('#undef USE_DS1307', file=output_file)
+        print('#undef USE_DS3231', file=output_file)
+        print('#undef USE_PCF8523', file=output_file)
+        print('#undef USE_RV8803', file=output_file)
+        print('#undef USE_RX8025', file=output_file)
+        print('#undef USE_RX8900', file=output_file)
+    if platform['color_led']['use_led']:
+        print('#define USE_LED_INDICATOR', file=output_file)
+        print("#define LED_INDICATOR_PIN %s" % platform['color_led']['led_pin'], file=output_file)
+        #print("#define INDICATOR_DURATION %d" % platform['color_led']['led_duration'], file=output_file)
+        print("#define INDICATOR_SHORT_DURATION %d" % platform['color_led']['led_short_duration'], file=output_file)
+    if platform['sd']['use_sd']:
+        print("#define SD_CS_PIN %s" % platform['sd']['sd_chip_select'], file=output_file)
+    print("#define WDT_DURATION %d" % platform['wdt']['wdt_duration'], file=output_file)
+    print("#define WDT_SHORT_DURATION %d" % platform['wdt']['wdt_short_duration'], file=output_file)
+    print("#define BUFFER_SIZE %d" % platform['advanced']['buffer_size'], file=output_file)
+    print("#define NUM_OF_DEVICES %d" % num_of_actuators, file=output_file)
+    print("#define HARD_SERIAL %s" % platform['advanced']['hardware_serial'], file=output_file)
+    print("#define MAX_DIGITS_OF_NSEG_LED %d" % platform['advanced']['max_digit_of_nseg_led'], file=output_file)
+
+def common(common):
+    global output_file
+    print("#define SERIAL_SPEED %d" % common['serial']['speed'], file=output_file)
+    print("#define HOSTNAME \"%s\"" % common['log']['host_name'], file=output_file)
+    print("#define APP_NAME \"%s\"" % common['log']['app_name'], file=output_file)
+    if common['log']['use_logfile']:
+        print('#define USE_LOG_FILE', file=output_file)
+        print("#define LOGFILE_NAME_HEAD \"%s\"" % common['log']['logfile_name_hdr'], file=output_file)
+        print("#define LOG_FILE_SIZE_MAX %d" % common['log']['logfile_size_max'], file=output_file)
+    if common['log']['log_rotate']:
+        print('#define LOG_ROTATE', file=output_file)
+    if common['log']['use_serial_log']:
+        print('#define USE_LOG_SERIAL', file=output_file)
+    if common['clock']['use_ntp']:
+        print('#define USE_NTP', file=output_file)
+    if common['clock']['update_rtc_by_ntp']:
+        print('#define UPDATE_RTC_BY_NTP', file=output_file)
+
+def network(network):
+    global output_file
+    print("#define SSID_STR \"%s\"" % network['wifi']['ssid'], file=output_file)
+    print("#define WIFI_PASS \"%s\"" % network['wifi']['wifi_pass'], file=output_file)
+    print("#define FIX_MAC_ADDRESS %s, %s, %s, %s, %s, %s" % (network['ethernet']['mac_addr'][0], network['ethernet']['mac_addr'][1], network['ethernet']['mac_addr'][2], network['ethernet']['mac_addr'][3], network['ethernet']['mac_addr'][4], network['ethernet']['mac_addr'][5]), file=output_file)
+    if network['ip']['use_dhcp']:
+        print('#define USE_DHCP', file=output_file)
+    print("#define SELF_IP_ADDRESS %s, %s, %s, %s" % (network['ip']['ip_addr'][0], network['ip']['ip_addr'][1], network['ip']['ip_addr'][2], network['ip']['ip_addr'][3]), file=output_file)
+    print("#define DNS_SERVER_ADDRESS %s, %s, %s, %s" % (network['ip']['dns_server'][0], network['ip']['dns_server'][1], network['ip']['dns_server'][2], network['ip']['dns_server'][3]), file=output_file)
+    print("#define GATEWAY_ADDRESS %s, %s, %s, %s" % (network['ip']['gateway'][0], network['ip']['gateway'][1], network['ip']['gateway'][2], network['ip']['gateway'][3]), file=output_file)
+    print("#define NETMASK %s, %s, %s, %s" % (network['ip']['netmask'][0], network['ip']['netmask'][1], network['ip']['netmask'][2], network['ip']['netmask'][3]), file=output_file)
+    if network['mqtt']['mqtt_auth']:
+        print('#define USE_MQTT_AUTH', file=output_file)
+    print("#define MQTT_AUTH_USERNAME \"%s\"" % network['mqtt']['mqtt_user'], file=output_file)
+    print("#define MQTT_AUTH_PASSWORD \"%s\"" % network['mqtt']['mqtt_pass'], file=output_file)
+    print("#define MQTT_TOPIC \"%s\"" % network['mqtt']['mqtt_topic'], file=output_file)
+    print("#define MQTT_SERVER_ADDR \"%s\"" % network['mqtt']['mqtt_server'], file=output_file)
+    print("#define MQTT_PORT %d" % network['mqtt']['mqtt_port'], file=output_file)
+
+def safety(safety):
+    global output_file
+    if safety['use_wdt']:
+        print('#define USE_WDT', file=output_file)
+
+
+#
+# Character LCD
+#
+# Grove character lcd RGB Backlight
+#   USE_GROVE_LCD
+def grove_lcd(grove_lcd):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if grove_lcd['use_grove_lcd']:
+        print('#define USE_GROVE_LCD', file=output_file)
+    else:
+        print('#undef USE_GROVE_LCD', file=output_file)
+
+# ACM1602NI
+#   USE_ACM1602NI
+def acm1602ni(acm1602ni):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if acm1602ni['use_acm1602ni']:
+        if acm1602ni['acm1602ni_type']==0:
+            print('#define USE_ACM1602NI', file=output_file)
+            print('#undef USE_ACM2004', file=output_file)
+        else:
+            print('#undef USE_ACM1602NI', file=output_file)
+            print('#define USE_ACM2004', file=output_file)
+    else:
+        print('#undef USE_ACM1602NI', file=output_file)
+        print('#undef USE_ACM2004', file=output_file)
+
+# Liquid crystal library
+#   USE_SC1602BSLB / USE_SC2004CSLB
+def liquid_crystal(liquid_crystal):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if liquid_crystal['use_liquid_crystal']:
+        if liquid_crystal['liquid_crystal_type']==0:
+            print('#define USE_SC1602BSLB', file=output_file)
+            print('#undef USE_SC2004CSLB', file=output_file)
+        elif liquid_crystal['liquid_crystal_type']==1:
+            print('#undef USE_SC1602BSLB', file=output_file)
+            print('#define USE_SC2004CSLB', file=output_file)
+        else:
+            print('#undef USE_SC1602BSLB', file=output_file)
+            print('#undef USE_SC2004CSLB', file=output_file)
+    else:
+        print('#undef USE_SC1602BSLB', file=output_file)
+        print('#undef USE_SC2004CSLB', file=output_file)
+    print("#define LIQUID_CRYSTAL_PIN_RS %s" % liquid_crystal['liquid_crystal_rs_pin'], file=output_file)
+    print("#define LIQUID_CRYSTAL_PIN_ES %s" % liquid_crystal['liquid_crystal_es_pin'], file=output_file)
+    print("#define LIQUID_CRYSTAL_PIN_D4 %s" % liquid_crystal['liquid_crystal_d4_pin'], file=output_file)
+    print("#define LIQUID_CRYSTAL_PIN_D5 %s" % liquid_crystal['liquid_crystal_d5_pin'], file=output_file)
+    print("#define LIQUID_CRYSTAL_PIN_D6 %s" % liquid_crystal['liquid_crystal_d6_pin'], file=output_file)
+    print("#define LIQUID_CRYSTAL_PIN_D7 %s" % liquid_crystal['liquid_crystal_d7_pin'], file=output_file)
+#
+# Several kinds of LEDs
+#
+# Simple mono-chrome LED
+#   GROVE_MONO_LED
+def simple_mono_led(simple_mono_led):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if simple_mono_led['use_simple_mono_led']:
+        print('#define GROVE_MONO_LED', file=output_file)
+    else:
+        print('#undef GROVE_MONO_LED', file=output_file)
+    print("#define GROVE_MONO_LED_PIN %s" % simple_mono_led['simple_mono_led_pin'], file=output_file)
+    if simple_mono_led['simple_mono_led_type']:
+        print('#define GROVE_MONO_LED_PIN_TYPE PULL_UP', file=output_file)
+    else:
+        print('#define GROVE_MONO_LED_PIN_TYPE PULL_DOWN', file=output_file)
+
+# Anode/Cathod common LED
+#   USE_SIMPLE_COLOR_LED
+def simple_color_led(simple_color_led):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if simple_color_led['use_simple_color_led']:
+        print('#define USE_SIMPLE_COLOR_LED', file=output_file)
+    else:
+        print('#undef USE_SIMPLE_COLOR_LED', file=output_file)
+    print("#define SIMPLE_COLOR_LED_RED_PIN %s" % simple_color_led['simple_color_led_red_pin'], file=output_file)
+    print("#define SIMPLE_COLOR_LED_GREEN_PIN %s" % simple_color_led['simple_color_led_green_pin'], file=output_file)
+    print("#define SIMPLE_COLOR_LED_BLUE_PIN %s" % simple_color_led['simple_color_led_blue_pin'], file=output_file)
+    if simple_color_led['simple_color_led_type']:
+        print('#define USE_SIMPLE_COLOR_LED_PIN_TYPE PULL_UP', file=output_file)
+    else:
+        print('#define USE_SIMPLE_COLOR_LED_PIN_TYPE PULL_DOWN', file=output_file)
+
+# Grove LED Bar
+#   GROVE_LED_BAR
+def grove_led_bar(grove_led_bar):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if grove_led_bar['use_grove_led_bar']:
+        print('#define GROVE_LED_BAR', file=output_file)
+    else:
+        print('#undef GROVE_LED_BAR', file=output_file)
+    print("#define GROVE_LED_BAR_PIN_CLK %s" % grove_led_bar['grove_led_bar_clk_pin'], file=output_file)
+    print("#define GROVE_LED_BAR_PIN_DATA %s" % grove_led_bar['grove_led_bar_data_pin'], file=output_file)
+    print("#define GROVE_LED_BAR_NUM_OF_LED %d" % grove_led_bar['grove_led_bar_leds'], file=output_file)
+    print("#define GROVE_LED_BAR_DIRECTION %d" % grove_led_bar['grove_led_bar_direction'], file=output_file)
+
+# Grove LED Circular
+#   GROVE_LED_CIRCULAR
+def grove_led_circular(grove_led_circular):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if grove_led_circular['use_grove_led_circular']:
+        print('#define GROVE_LED_CIRCULAR', file=output_file)
+    else:
+        print('#undef GROVE_LED_CIRCULAR', file=output_file)
+    print("#define GROVE_LED_CIRCLE_PIN_CLK %s" % grove_led_circular['grove_led_circular_clk_pin'], file=output_file)
+    print("#define GROVE_LED_CIRCLE_PIN_DATA %s" % grove_led_circular['grove_led_circular_data_pin'], file=output_file)
+    print("#define GROVE_LED_CIRCLE_NUM_OF_LED %d" % grove_led_circular['grove_led_circular_leds'], file=output_file)
+    print("#define GROVE_LED_CIRCLE_DIRECTION %d" % grove_led_circular['grove_led_circular_direction'], file=output_file)
+
+# Grove chainable (RGB) LED
+#   GROVE_CHAINABLE_LED
+def grove_chainable_led(grove_chainable_led):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if grove_chainable_led['use_grove_chainable_led']:
+        print('#define GROVE_CHAINABLE_LED', file=output_file)
+    else:
+        print('#undef GROVE_CHAINABLE_LED', file=output_file)
+    print("#define GROVE_CHAINABLE_LED_PIN_CLK %s" % grove_chainable_led['grove_chainable_led_clk_pin'], file=output_file)
+    print("#define GROVE_CHAINABLE_LED_PIN_DATA %s" % grove_chainable_led['grove_chainable_led_data_pin'], file=output_file)
+    print("#define GROVE_CHAINABLE_LED_NUM_OF_LED %d" % grove_chainable_led['grove_chainable_led_leds'], file=output_file)
+
+# Adafruit NeoPixel
+#   GROVE_NEO_PIXEL
+def adafuit_neopixel(adafuit_neopixel):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if adafuit_neopixel['use_adafuit_neopixel']:
+        print('#define GROVE_NEO_PIXEL', file=output_file)
+    else:
+        print('#undef GROVE_NEO_PIXEL', file=output_file)
+    print("#define LED_NEO_PIXEL_PIN %s" % adafuit_neopixel['adafuit_neopixel_pin'], file=output_file)
+    print("#define LED_NEO_PIXEL_NUM_OF_LED %d" % adafuit_neopixel['adafuit_neopixel_leds'], file=output_file)
+
+#
+# N-segment LED
+#
+# OSL12306-16
+#   USE_OSL12306_16
+def osl12306_16(osl12306_16):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if osl12306_16['use_osl12306_16']:
+        print('#define USE_OSL12306_16', file=output_file)
+    else:
+        print('#undef USE_OSL12306_16', file=output_file)
+    print("#define OSL12306_16_NUM_OF_DIGITS %d" % osl12306_16['osl12306_16_digits'], file=output_file)
+    if (osl12306_16['osl12306_16_type']==0) :
+        print('#define OSL12306_16_PIN_TYPE  ANODE_COMMON', file=output_file)
+    else:
+        print('#define OSL12306_16_PIN_TYPE  CATHOD_COMMON', file=output_file)
+    print("#define OSL12306_16_PIN_A1 %s" % osl12306_16['osl12306_16_a1_pin'], file=output_file)
+    print("#define OSL12306_16_PIN_A2 %s" % osl12306_16['osl12306_16_a2_pin'], file=output_file)
+    print("#define OSL12306_16_PIN_B %s" % osl12306_16['osl12306_16_b_pin'], file=output_file)
+    print("#define OSL12306_16_PIN_C %s" % osl12306_16['osl12306_16_c_pin'], file=output_file)
+    print("#define OSL12306_16_PIN_D1 %s" % osl12306_16['osl12306_16_d1_pin'], file=output_file)
+    print("#define OSL12306_16_PIN_D2 %s" % osl12306_16['osl12306_16_d2_pin'], file=output_file)
+    print("#define OSL12306_16_PIN_E %s" % osl12306_16['osl12306_16_e_pin'], file=output_file)
+    print("#define OSL12306_16_PIN_F %s" % osl12306_16['osl12306_16_f_pin'], file=output_file)
+    print("#define OSL12306_16_PIN_G1 %s" % osl12306_16['osl12306_16_g1_pin'], file=output_file)
+    print("#define OSL12306_16_PIN_G2 %s" % osl12306_16['osl12306_16_g2_pin'], file=output_file)
+    print("#define OSL12306_16_PIN_J %s" % osl12306_16['osl12306_16_j_pin'], file=output_file)
+    print("#define OSL12306_16_PIN_K %s" % osl12306_16['osl12306_16_k_pin'], file=output_file)
+    print("#define OSL12306_16_PIN_L %s" % osl12306_16['osl12306_16_l_pin'], file=output_file)
+    print("#define OSL12306_16_PIN_M %s" % osl12306_16['osl12306_16_m_pin'], file=output_file)
+    print("#define OSL12306_16_PIN_N %s" % osl12306_16['osl12306_16_n_pin'], file=output_file)
+    print("#define OSL12306_16_PIN_P %s" % osl12306_16['osl12306_16_p_pin'], file=output_file)
+    print("#define OSL12306_16_PIN_DP %s" % osl12306_16['osl12306_16_dp_pin'], file=output_file)
+    print("#define OSL12306_16_PIN_DIGIT %s" % osl12306_16['osl12306_16_digit_pin'], file=output_file)
+
+# OSL20541
+#   USE_OSL20541
+def osl20541(osl20541):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if osl20541['use_osl20541']:
+        print('#define USE_OSL20541', file=output_file)
+    else:
+        print('#undef USE_OSL20541', file=output_file)
+    print("#define OSL20541_NUM_OF_DIGITS %d" % osl20541['osl20541_digits'], file=output_file)
+    if (osl20541['osl20541_type']==0) :
+        print('#define OSL20541_PIN_TYPE  ANODE_COMMON', file=output_file)
+    else:
+        print('#define OSL20541_PIN_TYPE  CATHOD_COMMON', file=output_file)
+    print("#define OSL20541_PIN_A %s" % osl20541['osl20541_a_pin'], file=output_file)
+    print("#define OSL20541_PIN_B %s" % osl20541['osl20541_b_pin'], file=output_file)
+    print("#define OSL20541_PIN_C %s" % osl20541['osl20541_c_pin'], file=output_file)
+    print("#define OSL20541_PIN_D %s" % osl20541['osl20541_d_pin'], file=output_file)
+    print("#define OSL20541_PIN_E %s" % osl20541['osl20541_e_pin'], file=output_file)
+    print("#define OSL20541_PIN_F %s" % osl20541['osl20541_f_pin'], file=output_file)
+    print("#define OSL20541_PIN_G1 %s" % osl20541['osl20541_g1_pin'], file=output_file)
+    print("#define OSL20541_PIN_G2 %s" % osl20541['osl20541_g2_pin'], file=output_file)
+    print("#define OSL20541_PIN_H %s" % osl20541['osl20541_h_pin'], file=output_file)
+    print("#define OSL20541_PIN_J %s" % osl20541['osl20541_j_pin'], file=output_file)
+    print("#define OSL20541_PIN_K %s" % osl20541['osl20541_k_pin'], file=output_file)
+    print("#define OSL20541_PIN_L %s" % osl20541['osl20541_l_pin'], file=output_file)
+    print("#define OSL20541_PIN_M %s" % osl20541['osl20541_m_pin'], file=output_file)
+    print("#define OSL20541_PIN_N %s" % osl20541['osl20541_n_pin'], file=output_file)
+    print("#define OSL20541_PIN_DP %s" % osl20541['osl20541_dp_pin'], file=output_file)
+    print("#define OSL20541_PIN_DIGIT_1 %s" % osl20541['osl20541_digit1_pin'], file=output_file)
+    print("#define OSL20541_PIN_DIGIT_2 %s" % osl20541['osl20541_digit2_pin'], file=output_file)
+
+# OSL30561
+#   USE_OSL30561
+def osl30561(osl30561):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if osl30561['use_osl30561']:
+        print('#define USE_OSL30561', file=output_file)
+    else:
+        print('#undef USE_OSL30561', file=output_file)
+    print("#define OSL30561_NUM_OF_DIGITS %d" % osl30561['osl30561_digits'], file=output_file)
+    if (osl30561['osl30561_type']==0) :
+        print('#define OSL30561_PIN_TYPE  ANODE_COMMON', file=output_file)
+    else:
+        print('#define OSL30561_PIN_TYPE  CATHOD_COMMON', file=output_file)
+    print("#define OSL30561_PIN_A %s" % osl30561['osl30561_a_pin'], file=output_file)
+    print("#define OSL30561_PIN_B %s" % osl30561['osl30561_b_pin'], file=output_file)
+    print("#define OSL30561_PIN_C %s" % osl30561['osl30561_c_pin'], file=output_file)
+    print("#define OSL30561_PIN_D %s" % osl30561['osl30561_d_pin'], file=output_file)
+    print("#define OSL30561_PIN_E %s" % osl30561['osl30561_e_pin'], file=output_file)
+    print("#define OSL30561_PIN_F %s" % osl30561['osl30561_f_pin'], file=output_file)
+    print("#define OSL30561_PIN_G %s" % osl30561['osl30561_g_pin'], file=output_file)
+    print("#define OSL30561_PIN_DP %s" % osl30561['osl30561_dp_pin'], file=output_file)
+    print("#define OSL30561_PIN_DIGIT_1 %s" % osl30561['osl30561_digit1_pin'], file=output_file)
+    print("#define OSL30561_PIN_DIGIT_2 %s" % osl30561['osl30561_digit2_pin'], file=output_file)
+    print("#define OSL30561_PIN_DIGIT_3 %s" % osl30561['osl30561_digit3_pin'], file=output_file)
+
+# Grove - 4-Digit Display (clock type)
+#   USE_GROVE_TM1637
+def grove_tm1637(grove_tm1637):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if grove_tm1637['use_grove_tm1637']:
+        print('#define USE_GROVE_TM1637', file=output_file)
+    else:
+        print('#undef USE_GROVE_TM1637', file=output_file)
+    print("#define GROVE_NSEG_LED_PIN_CLK %s" % grove_tm1637['grove_tm1637_clk_pin'], file=output_file)
+    print("#define GROVE_NSEG_LED_PIN_DATA %s" % grove_tm1637['grove_tm1637_data_pin'], file=output_file)
+
+# DFRobot DFR0090
+#   USE_DFR0090
+def dfr0090(dfr0090):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if dfr0090['use_dfr0090']:
+        print('#define USE_DFR0090', file=output_file)
+    else:
+        print('#undef USE_DFR0090', file=output_file)
+    print("#define DFR0090_NUM_OF_DIGITS %d" % dfr0090['dfr0090_digits'], file=output_file)
+    print("#define DFR0090_LATCH_PIN %s" % dfr0090['dfr0090_latch_pin'], file=output_file)
+    print("#define DFR0090_CLOCK_PIN %s" % dfr0090['dfr0090_clk_pin'], file=output_file)
+    print("#define DFR0090_DATA_PIN %s" % dfr0090['dfr0090_data_pin'], file=output_file)
+
+#
+# サーボ
+#   USE_SERVO
+def servo(servo):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if servo['use_servo']:
+        print('#define USE_SERVO', file=output_file)
+    else:
+        print('#undef USE_SERVO', file=output_file)
+    print("#define SERVO_PIN %s" % servo['servo_pin'], file=output_file)
+
+#
+# スピーカー
+#   SPEAKER
+def speaker(speaker):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if speaker['use_speaker']:
+        print('#define SPEAKER', file=output_file)
+    else:
+        print('#undef SPEAKER', file=output_file)
+    print("#define SPEAKER_PIN %s" % speaker['speaker_pin'], file=output_file)
+
+#
+# ブザー
+#   BUZZER
+def buzzer(buzzer):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if buzzer['use_buzzer']:
+        print('#define BUZZER', file=output_file)
+    else:
+        print('#undef BUZZER', file=output_file)
+    print("#define BUZZER_PIN %s" % buzzer['buzzer_pin'], file=output_file)
+
+#
+# simple PMW device
+#   USE_PMW
+def pmw(pmw):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if pmw['use_pmw']:
+        print('#define USE_PMW', file=output_file)
+    else:
+        print('#undef USE_PMW', file=output_file)
+    print("#define PMW_PIN %s" % pmw['pmw_pin'], file=output_file)
+
+#
+# simple digital(ON/OFF) device (like switch)
+#   USE_SWITCH
+def switch(switch):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if switch['use_switch']:
+        print('#define USE_SWITCH', file=output_file)
+    else:
+        print('#undef USE_SWITCH', file=output_file)
+    print("#define SWITCH_PIN %s" % switch['switch_pin'], file=output_file)
+
+#
+# IR LED remote control device
+#   USE_IRDA
+def ir_remote(ir_remote):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if ir_remote['use_ir_remote']:
+        print('#define USE_IRDA', file=output_file)
+    else:
+        print('#undef USE_IRDA', file=output_file)
+    print("#define IR_PIN %s" % ir_remote['ir_remote_pin'], file=output_file)
+
+#
+# MP3 player
+#
+def mp3_player(mp3_player):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if mp3_player['use_mp3_player']:
+        if (mp3_player['mp3_player_type']==0):
+            print('#define __USE_KT403A_PLAYER__', file=output_file)
+            print('#undef __USE_WT2003S_PLAYER__', file=output_file)
+            print('#undef __USE_WT2605C_PLAYER__', file=output_file)
+            print('#undef __USE_DF_ROBOT_DF_PLAYER_MINI__', file=output_file)
+        elif (mp3_player['mp3_player_type']==1):
+            print('#undef __USE_KT403A_PLAYER__', file=output_file)
+            print('#define __USE_WT2003S_PLAYER__', file=output_file)
+            print('#undef __USE_WT2605C_PLAYER__', file=output_file)
+            print('#undef __USE_DF_ROBOT_DF_PLAYER_MINI__', file=output_file)
+        elif (mp3_player['mp3_player_type']==2):
+            print('#undef __USE_KT403A_PLAYER__', file=output_file)
+            print('#undef __USE_WT2003S_PLAYER__', file=output_file)
+            print('#define __USE_WT2605C_PLAYER__', file=output_file)
+            print('#undef __USE_DF_ROBOT_DF_PLAYER_MINI__', file=output_file)
+        else:
+            print('#undef __USE_KT403A_PLAYER__', file=output_file)
+            print('#undef __USE_WT2003S_PLAYER__', file=output_file)
+            print('#undef __USE_WT2605C_PLAYER__', file=output_file)
+            print('#define __USE_DF_ROBOT_DF_PLAYER_MINI__', file=output_file)
+    else:
+        print('#undef __USE_KT403A_PLAYER__', file=output_file)
+        print('#undef __USE_WT2003S_PLAYER__', file=output_file)
+        print('#undef __USE_WT2605C_PLAYER__', file=output_file)
+        print('#undef __USE_DF_ROBOT_DF_PLAYER_MINI__', file=output_file)
+
+#
+# Graphic display
+#
+def graphic_display(graphic_display):
+    global output_file, num_of_actuators
+    num_of_actuators=num_of_actuators+1
+    if graphic_display['use_graphic_display']:
+        if (graphic_display['graphic_display_type']==0):
+            print('#define USE_GIGA_DISPLAY_GFX', file=output_file)
+            print('#undef USE_BODMER_TFT_ESPI', file=output_file)
+            print('#undef USE_ADAFRUIT_GFX', file=output_file)
+            print('#undef TFT_ILI9341_TYPE_1', file=output_file)
+            print('#undef TFT_ILI9341_TYPE_2', file=output_file)
+        elif (graphic_display['graphic_display_type']==1):
+            print('#undef USE_GIGA_DISPLAY_GFX', file=output_file)
+            print('#define USE_BODMER_TFT_ESPI', file=output_file)
+            print('#undef USE_ADAFRUIT_GFX', file=output_file)
+            print('#undef TFT_ILI9341_TYPE_1', file=output_file)
+            print('#undef TFT_ILI9341_TYPE_2', file=output_file)
+        elif (graphic_display['graphic_display_type']==2):
+            print('#undef USE_GIGA_DISPLAY_GFX', file=output_file)
+            print('#undef USE_BODMER_TFT_ESPI', file=output_file)
+            print('#define USE_ADAFRUIT_GFX', file=output_file)
+            print('#define TFT_ILI9341_TYPE_1', file=output_file)
+            print('#undef TFT_ILI9341_TYPE_2', file=output_file)
+        else:
+            print('#undef USE_GIGA_DISPLAY_GFX', file=output_file)
+            print('#undef USE_BODMER_TFT_ESPI', file=output_file)
+            print('#define USE_ADAFRUIT_GFX', file=output_file)
+            print('#undef TFT_ILI9341_TYPE_1', file=output_file)
+            print('#define TFT_ILI9341_TYPE_2', file=output_file)
+    else:
+        print('#undef USE_GIGA_DISPLAY_GFX', file=output_file)
+        print('#undef USE_BODMER_TFT_ESPI', file=output_file)
+        print('#undef USE_ADAFRUIT_GFX', file=output_file)
+        print('#undef TFT_ILI9341_TYPE_1', file=output_file)
+        print('#undef TFT_ILI9341_TYPE_2', file=output_file)
+    print("#define TFT_ILI9341_PIN_CS %s" % graphic_display['graphic_display_cs_pin'], file=output_file)
+    print("#define TFT_ILI9341_PIN_RST %s" % graphic_display['graphic_display_rst_pin'], file=output_file)
+    print("#define TFT_ILI9341_PIN_DC %s" % graphic_display['graphic_display_dc_pin'], file=output_file)
+    print("#define TFT_ILI9341_PIN_MOSI %s" % graphic_display['graphic_display_mosi_pin'], file=output_file)
+    print("#define TFT_ILI9341_PIN_CLK %s" % graphic_display['graphic_display_miso_pin'], file=output_file)
+    print("#define TFT_ILI9341_PIN_MISO %s" % graphic_display['graphic_display_clk_pin'], file=output_file)
+
+#
+# Config header tail
+#
+def config_header_tail():
+    global output_file
+    print('', file=output_file)
+    print('#include \"AdditionalDef.h\"', file=output_file)
+    print('', file=output_file)
+    print('#endif /* __UNIFIED_MQTT_ACTUATOR_CONFIG_H__ */', file=output_file)
+#
+# load help file
+#
+def loadHelpFile():
+    global help_file, help, error
+    try:
+        with open(help_file, mode='r', encoding='utf-8') as f:
+            help = yaml.safe_load(f)
+    except Exception as e:
+        error += '本アプリケーションのヘルプファイルが読み込みできません．\n'
+        return error
+    return ''
+
+#
+# check Arduino program files
+#
+# top_dir='parts'
+# sketch_dir=top_dir+'/sketch/'
+# util_dir = top_dir + '/util/'
+# sketch_name='MqttTerminal'
+# sketch_source = sketch_dir + sketch_name + '.ino'
+# RTC_source= util_dir + 'RTC.cpp'
+# actuator_hdr = util_dir + 'ActuatorHAL.h'
+# actuator_source =  util_dir + 'ActuatorHAL.cpp'
+# additional_hdr = util_dir + 'AdditionalDef.h'
+# watchdog_hdr = util_dir + 'watchdog.h'
+# watchdog_source = util_dir + 'watchdog.cpp'
+# driver_dir = util_dir + 'src'
+
+def checkProgramFiles():
+    global error
+    pwd=os.getcwd()
+    pwd = pwd.replace('\\', '/')
+    pwd = pwd.replace(' ', '\\ ')
+    pwd = pwd + "/"
+    # check Arduino sketch
+    if not (os.path.isfile(pwd+sketch_source)):
+        error = 'Arduinoスケッチのテンプレートファイル('
+        error += sketch_source
+        error += ')が規定の場所にありません．\n'
+    # check utility source files.
+    utility_source_files = [RTC_source, actuator_hdr, actuator_source, additional_hdr, watchdog_hdr, watchdog_source]
+    for file in (utility_source_files):
+        if not (os.path.isfile(pwd+file)):
+            error += 'ソースファイル\''
+            error += file
+            error += '\'がありません．\n'
+    # check device driver source files.
+    if not (os.path.isdir(pwd+driver_dir)):
+        error += 'デバイスドライバ集のフォルダ('
+        error += driver_dir
+        error += ')が規定の場所にありません．\n'
+    return error
+
+def checkApplicationEnvironment():
+    global error
+    checkResult = checkProgramFiles()
+    checkResult += loadHelpFile()
+    return checkResult
+
+if __name__ == "__main__":
+    if "" == checkApplicationEnvironment():
+        ft.run(fileWindow)
+    else:
+        ft.run(errorWindow)
+
+
+
