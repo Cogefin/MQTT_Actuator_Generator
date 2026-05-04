@@ -1,0 +1,4334 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import flet as ft
+
+import yaml
+
+config_file_name=""
+output_file_name=""
+lastView=""
+
+# HELP
+help_file="parts/Help/editActuatorConfig/help.yaml"
+helpPageName = ''
+
+# Default Values
+defaults_file="parts/defaults/editActuatorConfig.yaml"
+
+error = ''
+
+#
+# 共通部分(主にハードウェア)
+#
+# ネットワークメディア
+def network_type_changed(e):
+    configuration['platform']['network_hardware']['network_type'] = network_type.value
+
+network_type = ft.Dropdown(
+    label="ネットワーク",
+    width=200,
+    on_change=network_type_changed,
+    options=[
+        ft.dropdown.Option(key="wifi", text="WiFi"),
+        ft.dropdown.Option(key="ethernet", text="イーサネット"),
+    ],
+)
+
+# イーサネット
+ethernet_chip_select =  ft.TextField(label="チップセレクトピン番号") # configuration['platform']['network_hardware']['ethernet_chip_select']
+
+ethernet_mac_0 = ft.TextField(label="第1オクテット") # configuration['network']['ethernet']['mac_addr'][0]
+ethernet_mac_1 = ft.TextField(label="第2オクテット]") # configuration['network']['ethernet']['mac_addr'][1]
+ethernet_mac_2 = ft.TextField(label="第3オクテット") # configuration['network']['ethernet']['mac_addr'][2]
+ethernet_mac_3 = ft.TextField(label="第4オクテット") # configuration['network']['ethernet']['mac_addr'][3]
+ethernet_mac_4 = ft.TextField(label="第5オクテット") # configuration['network']['ethernet']['mac_addr'][4]
+ethernet_mac_5 = ft.TextField(label="第6オクテット") # configuration['network']['ethernet']['mac_addr'][5]
+
+# WiFi
+wifi_ssid = ft.TextField(label="SSID") # configuration['network']['wifi']['ssid']
+wifi_pass = ft.TextField(label="パスフレーズ") # configuration['network']['wifi']['wifi_pass']
+
+# RTC種別選択
+def rtc_type_changed(e):
+    configuration['platform']['rtc']['rtc_type'] = rtc_type.value
+
+rtc_type = ft.Dropdown(
+    label="RTC型番",
+    width=200,
+    on_change=rtc_type_changed,
+    options=[
+        ft.dropdown.Option("DS3231"),
+        ft.dropdown.Option("PCF8523"),
+        ft.dropdown.Option("DS1307"),
+        ft.dropdown.Option("RTC8564NB"),
+        ft.dropdown.Option("RV8803"),
+        ft.dropdown.Option("RX8025"),
+        ft.dropdown.Option("RX8900"),
+        ft.dropdown.Option("none"),
+    ],
+)
+
+# LED関係
+def led_flag_changed(e):
+    configuration['platform']['color_led']['use_led'] = led_flag.value
+
+led_flag = ft.Dropdown(
+    label="稼働状態表示LED",
+    width=200,
+    on_change=led_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使う"),
+        ft.dropdown.Option(key=False, text="使わない"),
+    ],
+)
+
+led_pin = ft.TextField(label="接続ピン") # configuration['platform']['color_led']['led_pin']
+led_long_duration = ft.TextField(label="点灯時間") # configuration['platform']['color_led']['led_duration']
+led_short_duration = ft.TextField(label="点滅間隔") # configuration['platform']['color_led']['led_short_duration']
+
+# SD/マイクロSD関係
+def sd_flag_changed(e):
+    configuration['platform']['sd']['use_sd'] = sd_flag.value
+
+sd_flag = ft.Dropdown(
+    label="SD/マイクロSD",
+    width=200,
+    on_change=sd_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使う"),
+        ft.dropdown.Option(key=False, text="使わない"),
+    ],
+)
+
+sd_chip_select_pin = ft.TextField(label="チップセレクトピン番号") # configuration['platform']['sd']['sd_chip_select']
+
+# シリアル通信
+def serial_speed_changed(e):
+    configuration['common']['serial']['speed'] = serial_speed.value
+
+serial_speed = ft.Dropdown(
+    label="通信速度",
+    width=300,
+    on_change=serial_speed_changed,
+    options=[
+        ft.dropdown.Option("110"),
+        ft.dropdown.Option("300"),
+        ft.dropdown.Option("600"),
+        ft.dropdown.Option("1200"),
+        ft.dropdown.Option("2400"),
+        ft.dropdown.Option("4800"),
+        ft.dropdown.Option("9600"),
+        ft.dropdown.Option("14400"),
+        ft.dropdown.Option("19200"),
+        ft.dropdown.Option("38400"),
+        ft.dropdown.Option("57600"),
+        ft.dropdown.Option("115200"),
+        ft.dropdown.Option("230400"),
+        ft.dropdown.Option("460800"),
+        ft.dropdown.Option("921600"),
+    ],
+)
+
+# ログ出力
+def logfile_flag_changed(e):
+    configuration['common']['log']['use_logfile'] = logfile_flag.value
+
+logfile_flag = ft.Dropdown(
+    label="ファイルへのログ出力",
+    width=200,
+    on_change=logfile_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="行う"),
+        ft.dropdown.Option(key=False, text="行わない"),
+    ],
+)
+
+def serial_log_flag_changed(e):
+    configuration['common']['log']['use_serial_log'] = serial_log_flag.value
+
+serial_log_flag = ft.Dropdown(
+    label="シリアルへのログ出力",
+    width=200,
+    on_change=serial_log_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="行う"),
+        ft.dropdown.Option(key=False, text="行わない"),
+    ],
+)
+
+# ログフォーマット
+host_name = ft.TextField(label="ホスト名") # configuration['common']['log']['host_name']
+app_name = ft.TextField(label="アプリ名") # configuration['common']['log']['app_name']
+
+# ログファイル
+logfile_name = ft.TextField(label="ログファイル名") # configuration['common']['log']['logfile_name_hdr']
+logfile_size = ft.TextField(label="最大サイズ") # configuration['common']['log']['logfile_size_max']
+
+#
+# ネットワーク関係
+#
+# DHCP
+def dhcp_flag_changed(e):
+    configuration['network']['ip']['use_dhcp'] = dhcp_flag.value
+
+dhcp_flag = ft.Dropdown(
+    label="DHCP",
+    width=200,
+    on_change=dhcp_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使う"),
+        ft.dropdown.Option(key=False, text="使わない"),
+    ],
+)
+
+# IPアドレス
+ip_addr_0 = ft.TextField(label="1st]") # configuration['network']['ip']['ip_addr'][0]
+ip_addr_1 = ft.TextField(label="2nd]") # configuration['network']['ip']['ip_addr'][1]
+ip_addr_2 = ft.TextField(label="3rd]") # configuration['network']['ip']['ip_addr'][2]
+ip_addr_3 = ft.TextField(label="4th]") # configuration['network']['ip']['ip_addr'][3]
+
+# ネットマスク
+netmask_0 = ft.TextField(label="1st]") # configuration['network']['ip']['netmask'][0]
+netmask_1 = ft.TextField(label="2nd]") # configuration['network']['ip']['netmask'][1]
+netmask_2 = ft.TextField(label="3rd]") # configuration['network']['ip']['netmask'][2]
+netmask_3 = ft.TextField(label="4th]") # configuration['network']['ip']['netmask'][3]
+
+# ゲートウェイ(ルータ)
+gateway_0 = ft.TextField(label="1st]") # configuration['network']['ip']['gateway'][0]
+gateway_1 = ft.TextField(label="2nd]") # configuration['network']['ip']['gateway'][1]
+gateway_2 = ft.TextField(label="3rd]") # configuration['network']['ip']['gateway'][2]
+gateway_3 = ft.TextField(label="4th]") # configuration['network']['ip']['gateway'][3]
+
+# DNSサーバ
+dns_server_0 = ft.TextField(label="1st]") # configuration['network']['ip']['dns_server'][0]
+dns_server_1 = ft.TextField(label="2nd]") # configuration['network']['ip']['dns_server'][1]
+dns_server_2 = ft.TextField(label="3rd]") # configuration['network']['ip']['dns_server'][2]
+dns_server_3 = ft.TextField(label="4th]") # configuration['network']['ip']['dns_server'][3]
+
+# MQTT
+#def mqtt_format_changed(e):
+#    configuration['network']['mqtt']['mqtt_format'] = mqtt_format.value
+#
+#mqtt_format = ft.Dropdown(
+#    label="データフォーマット",
+#    width=300,
+#    on_change=mqtt_format_changed,
+#    options=[
+#        ft.dropdown.Option("plain"),
+#        ft.dropdown.Option("syslog"),
+#        ft.dropdown.Option("json"),
+#    ],
+#)
+
+mqtt_topic = ft.TextField(label="トピック") # configuration['network']['mqtt']['mqtt_topic']
+mqtt_server = ft.TextField(label="サーバIPアドレス") # configuration['network']['mqtt']['mqtt_server']
+mqtt_port = ft.TextField(label="ポート番号") # configuration['network']['mqtt']['mqtt_port']
+
+def mqtt_auth_flag_changed(e):
+    configuration['network']['ip']['use_dhcp'] = mqtt_auth_flag.value
+
+mqtt_auth_flag = ft.Dropdown(
+    label="認証",
+    width=200,
+    on_change=mqtt_auth_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="行う"),
+        ft.dropdown.Option(key=False, text="行わない"),
+    ],
+)
+
+mqtt_user = ft.TextField(label="ユーザ名") # configuration['network']['mqtt']['mqtt_user']
+mqtt_pass = ft.TextField(label="パスワード") # configuration['network']['mqtt']['mqtt_pass']
+
+# NTP関係
+def ntp_flag_changed(e):
+    configuration['common']['clock']['use_ntp'] = ntp_flag.value
+
+ntp_flag = ft.Dropdown(
+    label="時刻にNTPを利用",
+    width=200,
+    on_change=ntp_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="利用する"),
+        ft.dropdown.Option(key=False, text="利用しない"),
+    ],
+)
+
+def rtc_ntp_flag_changed(e):
+    configuration['common']['clock']['update_rtc_by_ntp'] = rtc_ntp_flag.value
+
+rtc_ntp_flag = ft.Dropdown(
+    label="RTCの時刻をNTPで更新",
+    width=200,
+    on_change=rtc_ntp_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="する"),
+        ft.dropdown.Option(key=False, text="しない"),
+    ],
+)
+
+# WDT関連
+def wdt_flag_changed(e):
+    configuration['safety']['use_wdt'] = wdt_flag.value
+
+wdt_flag = ft.Dropdown(
+    label="Watch dog timer(WDT)",
+    width=200,
+    on_change=wdt_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使う"),
+        ft.dropdown.Option(key=False, text="使わない"),
+    ],
+)
+
+wdt_duration = ft.TextField(label="WDTタイマ") # configuration['platform']['wdt']['wdt_duration']
+wdt_short_duration = ft.TextField(label="WDT短期タイマ") # configuration['platform']['wdt']['wdt_short_duration']
+
+#
+# キャラクタディスプレイ
+#
+# Grove LCD RGB Backlight
+def grove_lcd_flag_changed(e):
+    configuration['grove_lcd']['use_grove_lcd'] = grove_lcd_flag.value
+
+grove_lcd_flag = ft.Dropdown(
+    label="Grove LCD RGB Backlight",
+    width=200,
+    on_change=grove_lcd_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+# ACM1602
+def acm1602ni_flag_changed(e):
+    configuration['acm1602ni']['use_acm1602ni'] = acm1602ni_flag.value
+
+acm1602ni_flag = ft.Dropdown(
+    label="ACM1602",
+    width=200,
+    on_change=acm1602ni_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+# Liquid Crystal Library device (SC1602/SC2004)
+def liquid_crystal_flag_changed(e):
+    configuration['liquid_crystal']['use_liquid_crystal'] = liquid_crystal_flag.value
+
+liquid_crystal_flag = ft.Dropdown(
+    label="Liquid Crystal Library (SC1602/SC2004)",
+    width=200,
+    on_change=liquid_crystal_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+
+def liquid_crystal_type_changed(e):
+    configuration['liquid_crystal']['liquid_crystal_type'] = liquid_crystal_type.value
+
+liquid_crystal_type = ft.Dropdown(
+    label="LCD型番",
+    width=200,
+    on_change=liquid_crystal_type_changed,
+    options=[
+        ft.dropdown.Option(key=0, text="SC1602"),
+        ft.dropdown.Option(key=1, text="SC2004"),
+    ],
+)
+
+liquid_crystal_rs_pin = ft.TextField(label="RS") # configuration['liquid_crystal']['liquid_crystal_rs_pin']
+liquid_crystal_es_pin = ft.TextField(label="ES") # configuration['liquid_crystal']['liquid_crystal_es_pin']
+liquid_crystal_d4_pin = ft.TextField(label="D4") # configuration['liquid_crystal']['liquid_crystal_d4_pin']
+liquid_crystal_d5_pin = ft.TextField(label="D5") # configuration['liquid_crystal']['liquid_crystal_d5_pin']
+liquid_crystal_d6_pin = ft.TextField(label="D6") # configuration['liquid_crystal']['liquid_crystal_d6_pin']
+liquid_crystal_d7_pin = ft.TextField(label="D7") # configuration['liquid_crystal']['liquid_crystal_d7_pin']
+
+#
+# LED
+#
+# モノクロLED設定画面
+def simple_mono_led_flag_changed(e):
+    configuration['simple_mono_led']['use_simple_mono_led'] = simple_mono_led_flag.value
+
+simple_mono_led_flag = ft.Dropdown(
+    label="モノクロLED",
+    width=200,
+    on_change=simple_mono_led_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+
+def simple_mono_led_type_changed(e):
+    configuration['simple_mono_led']['simple_mono_led_type'] = simple_mono_led_type.value
+
+simple_mono_led_type = ft.Dropdown(
+    label="種類",
+    width=200,
+    on_change=simple_mono_led_type_changed,
+    options=[
+        ft.dropdown.Option(key=0, text="プルアップ型(電圧高でON)"),
+        ft.dropdown.Option(key=1, text="プルダウン型(電圧低でON)"),
+    ],
+)
+
+simple_mono_led_pin = ft.TextField(label="ピン番号") # configuration['simple_mono_led']['simple_mono_led_pin']
+
+## アノード/カソードコモンカラーLED設定画面
+def simple_color_led_flag_changed(e):
+    configuration['simple_color_led']['use_simple_color_led'] = simple_color_led_flag.value
+
+simple_color_led_flag = ft.Dropdown(
+    label="アノード/カソードコモンカラーLED",
+    width=200,
+    on_change=simple_color_led_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+
+def simple_color_led_type_changed(e):
+    configuration['simple_color_led']['simple_color_led_type'] = simple_color_led_type.value
+
+simple_color_led_type = ft.Dropdown(
+    label="種類",
+    width=200,
+    on_change=simple_color_led_type_changed,
+    options=[
+        ft.dropdown.Option(key=0, text="プルアップ型(電圧高でON)"),
+        ft.dropdown.Option(key=1, text="プルダウン型(電圧低でON)"),
+    ],
+)
+
+simple_color_led_red_pin = ft.TextField(label="R") # configuration['simple_color_led']['simple_color_led_red_pin']
+simple_color_led_green_pin = ft.TextField(label="G") # configuration['simple_color_led']['simple_color_led_green_pin']
+simple_color_led_blue_pin = ft.TextField(label="B") # configuration['simple_color_led']['simple_color_led_blue_pin']
+
+# Grove LED bar
+def grove_led_bar_flag_changed(e):
+    configuration['grove_led_bar']['use_grove_led_bar'] = grove_led_bar_flag.value
+
+grove_led_bar_flag = ft.Dropdown(
+    label="Grove LED bar",
+    width=200,
+    on_change=grove_led_bar_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+
+grove_led_bar_leds = ft.TextField(label="1～10") # configuration['grove_led_bar']['grove_led_bar_leds']
+
+def grove_led_bar_direction_changed(e):
+    configuration['grove_led_bar']['grove_led_bar_direction'] = grove_led_bar_direction.value
+
+grove_led_bar_direction = ft.Dropdown(
+    label="点灯の方向",
+    width=200,
+    on_change=grove_led_bar_direction_changed,
+    options=[
+        ft.dropdown.Option(key=1, text="順方向"),
+        ft.dropdown.Option(key=2, text="逆方向"),
+    ],
+)
+
+grove_led_bar_clk_pin = ft.TextField(label="Clock") # configuration['grove_led_bar']['grove_led_bar_clk_pin']
+grove_led_bar_data_pin = ft.TextField(label="Data") # configuration['grove_led_bar']['grove_led_bar_data_pin']
+
+# Grove LED circular
+def grove_led_circular_flag_changed(e):
+    configuration['grove_led_circular']['use_grove_led_circular'] = grove_led_circular_flag.value
+
+grove_led_circular_flag = ft.Dropdown(
+    label="Grove LED circular",
+    width=200,
+    on_change=grove_led_circular_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+
+grove_led_circular_leds = ft.TextField(label="1～24") # configuration['grove_led_circular']['grove_led_circular_leds']
+
+def grove_led_circular_direction_changed(e):
+    configuration['grove_led_circular']['grove_led_circular_direction'] = grove_led_circular_direction.value
+
+grove_led_circular_direction = ft.Dropdown(
+    label="点灯の方向",
+    width=200,
+    on_change=grove_led_circular_direction_changed,
+    options=[
+        ft.dropdown.Option(key=1, text="順方向"),
+        ft.dropdown.Option(key=2, text="逆方向"),
+    ],
+)
+
+grove_led_circular_clk_pin = ft.TextField(label="Clock") # configuration['grove_led_circular']['grove_led_circular_clk_pin']
+grove_led_circular_data_pin = ft.TextField(label="Data") # configuration['grove_led_circular']['grove_led_circular_data_pin']
+
+# Grove chainable LED
+def grove_chainable_led_flag_changed(e):
+    configuration['grove_chainable_led']['use_grove_chainable_led'] = grove_chainable_led_flag.value
+
+grove_chainable_led_flag = ft.Dropdown(
+    label="Grove chainable LED",
+    width=200,
+    on_change=grove_chainable_led_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+
+grove_chainable_led_leds = ft.TextField(label="1以上") # configuration['grove_chainable_led']['grove_chainable_led_leds']
+
+grove_chainable_led_clk_pin = ft.TextField(label="Clock") # configuration['grove_chainable_led']['grove_chainable_led_clk_pin']
+grove_chainable_led_data_pin = ft.TextField(label="Data") # configuration['grove_chainable_led']['grove_chainable_led_data_pin']
+
+# Adafruit NeoPixel
+def adafuit_neopixel_flag_changed(e):
+    configuration['adafuit_neopixel']['use_adafuit_neopixel'] = adafuit_neopixel_flag.value
+
+adafuit_neopixel_flag = ft.Dropdown(
+    label="Adafruit NeoPixel",
+    width=200,
+    on_change=adafuit_neopixel_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+
+adafuit_neopixel_leds = ft.TextField(label="1以上") # configuration['adafuit_neopixel']['adafuit_neopixel_leds']
+
+adafuit_neopixel_pin = ft.TextField(label="ピン番号") # configuration['adafuit_neopixel']['adafuit_neopixel_pin']
+
+#
+# N segment LED
+#
+# OSL12306-16 (16セグメントLED)
+def osl12306_16_flag_changed(e):
+    configuration['osl12306_16']['use_osl12306_16'] = osl12306_16_flag.value
+
+osl12306_16_flag = ft.Dropdown(
+    label="OSL12306-16 (16セグメントLED)",
+    width=200,
+    on_change=osl12306_16_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+
+def osl12306_16_type_changed(e):
+    configuration['osl12306_16']['osl12306_16_type'] = osl12306_16_type.value
+
+osl12306_16_type = ft.Dropdown(
+    label="種類",
+    width=200,
+    on_change=osl12306_16_type_changed,
+    options=[
+        ft.dropdown.Option(key=0, text="プルアップ型(電圧高でON)"),
+        ft.dropdown.Option(key=1, text="プルダウン型(電圧低でON)"),
+    ],
+)
+
+osl12306_16_a1_pin = ft.TextField(label="A1ピン") # configuration['osl12306_16']['osl12306_16_a1_pin']
+osl12306_16_a2_pin = ft.TextField(label="A2ピン") # configuration['osl12306_16']['osl12306_16_a2_pin']
+osl12306_16_b_pin = ft.TextField(label="Bピン") # configuration['osl12306_16']['osl12306_16_b_pin']
+osl12306_16_c_pin = ft.TextField(label="Cピン") # configuration['osl12306_16']['osl12306_16_c_pin']
+osl12306_16_d1_pin = ft.TextField(label="D1ピン") # configuration['osl12306_16']['osl12306_16_d1_pin']
+osl12306_16_d2_pin = ft.TextField(label="D2ピン") # configuration['osl12306_16']['osl12306_16_d2_pin']
+osl12306_16_e_pin = ft.TextField(label="Eピン") # configuration['osl12306_16']['osl12306_16_e_pin']
+osl12306_16_f_pin = ft.TextField(label="Fピン") # configuration['osl12306_16']['osl12306_16_f_pin']
+osl12306_16_g1_pin = ft.TextField(label="G1ピン") # configuration['osl12306_16']['osl12306_16_g1_pin']
+osl12306_16_g2_pin = ft.TextField(label="G2ピン") # configuration['osl12306_16']['osl12306_16_g2_pin']
+osl12306_16_j_pin = ft.TextField(label="Jピン") # configuration['osl12306_16']['osl12306_16_j_pin']
+osl12306_16_k_pin = ft.TextField(label="Kピン") # configuration['osl12306_16']['osl12306_16_k_pin']
+osl12306_16_l_pin = ft.TextField(label="Lピン") # configuration['osl12306_16']['osl12306_16_l_pin']
+osl12306_16_m_pin = ft.TextField(label="Mピン") # configuration['osl12306_16']['osl12306_16_m_pin']
+osl12306_16_n_pin = ft.TextField(label="Nピン") # configuration['osl12306_16']['osl12306_16_n_pin']
+osl12306_16_p_pin = ft.TextField(label="Pピン") # configuration['osl12306_16']['osl12306_16_p_pin']
+osl12306_16_dp_pin = ft.TextField(label="DPピン") # configuration['osl12306_16']['osl12306_16_dp_pin']
+osl12306_16_digit_pin = ft.TextField(label="digitピン") # configuration['osl12306_16']['osl12306_16_digit_pin']
+
+# OSL20541 (2桁14セグメントLED)
+def osl20541_flag_changed(e):
+    configuration['osl20541']['use_osl20541'] = osl20541_flag.value
+
+osl20541_flag = ft.Dropdown(
+    label="OSL20541 (2桁14セグメントLED)",
+    width=200,
+    on_change=osl20541_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+
+def osl20541_type_changed(e):
+    configuration['osl20541']['osl20541_type'] = osl20541_type.value
+
+osl20541_type = ft.Dropdown(
+    label="種類",
+    width=200,
+    on_change=osl20541_type_changed,
+    options=[
+        ft.dropdown.Option(key=0, text="プルアップ型(電圧高でON)"),
+        ft.dropdown.Option(key=1, text="プルダウン型(電圧低でON)"),
+    ],
+)
+
+osl20541_a_pin = ft.TextField(label="Aピン") # configuration['osl20541']['osl20541_a_pin']
+osl20541_b_pin = ft.TextField(label="Bピン") # configuration['osl20541']['osl20541_b_pin']
+osl20541_c_pin = ft.TextField(label="Cピン") # configuration['osl20541']['osl20541_c_pin']
+osl20541_d_pin = ft.TextField(label="Dピン") # configuration['osl20541']['osl20541_d_pin']
+osl20541_e_pin = ft.TextField(label="Eピン") # configuration['osl20541']['osl20541_e_pin']
+osl20541_f_pin = ft.TextField(label="Fピン") # configuration['osl20541']['osl20541_f_pin']
+osl20541_g1_pin = ft.TextField(label="G1ピン") # configuration['osl20541']['osl20541_g1_pin']
+osl20541_g2_pin = ft.TextField(label="G2ピン") # configuration['osl20541']['osl20541_g2_pin']
+osl20541_h_pin = ft.TextField(label="Hピン") # configuration['osl20541']['osl20541_h_pin']
+osl20541_j_pin = ft.TextField(label="Jピン") # configuration['osl20541']['osl20541_j_pin']
+osl20541_k_pin = ft.TextField(label="Kピン") # configuration['osl20541']['osl20541_k_pin']
+osl20541_l_pin = ft.TextField(label="Lピン") # configuration['osl20541']['osl20541_l_pin']
+osl20541_m_pin = ft.TextField(label="Mピン") # configuration['osl20541']['osl20541_m_pin']
+osl20541_n_pin = ft.TextField(label="Nピン") # configuration['osl20541']['osl20541_n_pin']
+osl20541_p_pin = ft.TextField(label="Pピン") # configuration['osl20541']['osl20541_p_pin']
+osl20541_dp_pin = ft.TextField(label="DPピン") # configuration['osl20541']['osl20541_dp_pin']
+osl20541_digit1_pin = ft.TextField(label="digit1ピン") # configuration['osl20541']['osl20541_digit1_pin']
+osl20541_digit2_pin = ft.TextField(label="digit2ピン") # configuration['osl20541']['osl20541_digit2_pin']
+
+# OSL30561 (3桁7セグメントLED)
+def osl30561_flag_changed(e):
+    configuration['osl30561']['use_osl30561'] = osl30561_flag.value
+
+osl30561_flag = ft.Dropdown(
+    label="OSL30561 (3桁7セグメントLED)",
+    width=200,
+    on_change=osl30561_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+
+def osl30561_type_changed(e):
+    configuration['osl30561']['osl30561_type'] = osl30561_type.value
+
+osl30561_type = ft.Dropdown(
+    label="種類",
+    width=200,
+    on_change=osl30561_type_changed,
+    options=[
+        ft.dropdown.Option(key=0, text="プルアップ型(電圧高でON)"),
+        ft.dropdown.Option(key=1, text="プルダウン型(電圧低でON)"),
+    ],
+)
+
+osl30561_a_pin = ft.TextField(label="Aピン") # configuration['osl30561']['osl30561_a_pin']
+osl30561_b_pin = ft.TextField(label="Bピン") # configuration['osl30561']['osl30561_b_pin']
+osl30561_c_pin = ft.TextField(label="Cピン") # configuration['osl30561']['osl30561_c_pin']
+osl30561_d_pin = ft.TextField(label="Dピン") # configuration['osl30561']['osl30561_d_pin']
+osl30561_e_pin = ft.TextField(label="Eピン") # configuration['osl30561']['osl30561_e_pin']
+osl30561_f_pin = ft.TextField(label="Fピン") # configuration['osl30561']['osl30561_f_pin']
+osl30561_g_pin = ft.TextField(label="Gピン") # configuration['osl30561']['osl30561_g_pin']
+osl30561_dp_pin = ft.TextField(label="DPピン") # configuration['osl30561']['osl30561_dp_pin']
+osl30561_digit1_pin = ft.TextField(label="digit1ピン") # configuration['osl30561']['osl30561_digit1_pin']
+osl30561_digit2_pin = ft.TextField(label="digit2ピン") # configuration['osl30561']['osl30561_digit2_pin']
+osl30561_digit3_pin = ft.TextField(label="digit3ピン") # configuration['osl30561']['osl30561_digit3_pin']
+
+# Grove - 4-Digit Display (TM1637)
+def grove_tm1637_flag_changed(e):
+    configuration['grove_tm1637']['use_grove_tm1637'] = grove_tm1637_flag.value
+
+grove_tm1637_flag = ft.Dropdown(
+    label="Grove 4-Digit Display",
+    width=200,
+    on_change=grove_tm1637_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+
+grove_tm1637_clk_pin = ft.TextField(label="Clock") # configuration['grove_tm1637']['grove_tm1637_clk_pin']
+grove_tm1637_data_pin = ft.TextField(label="Data") # configuration['grove_tm1637']['grove_tm1637_data_pin']
+
+# DFRobot DFR0090 (8桁7セグメントLED)
+def dfr0090_flag_changed(e):
+    configuration['dfr0090']['use_dfr0090'] = dfr0090_flag.value
+
+dfr0090_flag = ft.Dropdown(
+    label="DFRobot DFR0090",
+    width=200,
+    on_change=dfr0090_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+
+dfr0090_digits = ft.TextField(label="1～8") # configuration['dfr0090']['dfr0090_digits']
+
+dfr0090_latch_pin = ft.TextField(label="latch") # configuration['dfr0090']['dfr0090_latch_pin']
+dfr0090_clk_pin = ft.TextField(label="Clock") # configuration['dfr0090']['dfr0090_clk_pin']
+dfr0090_data_pin = ft.TextField(label="Data") # configuration['dfr0090']['dfr0090_data_pin']
+
+#
+# サーボ
+#
+def servo_flag_changed(e):
+    configuration['servo']['use_servo'] = servo_flag.value
+
+servo_flag = ft.Dropdown(
+    label="サーボ",
+    width=200,
+    on_change=servo_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+
+servo_pin = ft.TextField(label="接続ピン") # configuration['servo']['servo_pin']
+
+#
+# 音声デバイス
+#
+# スピーカ
+def speaker_flag_changed(e):
+    configuration['speaker']['use_speaker'] = speaker_flag.value
+
+speaker_flag = ft.Dropdown(
+    label="スピーカ",
+    width=200,
+    on_change=speaker_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+
+speaker_pin = ft.TextField(label="接続ピン") # configuration['speaker']['speaker_pin']
+
+# ブザー
+def buzzer_flag_changed(e):
+    configuration['buzzer']['use_buzzer'] = buzzer_flag.value
+
+buzzer_flag = ft.Dropdown(
+    label="スピーカ",
+    width=200,
+    on_change=buzzer_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+
+buzzer_pin = ft.TextField(label="接続ピン") # configuration['buzzer']['buzzer_pin']
+
+# MP3プレイヤー
+def mp3_player_flag_changed(e):
+    configuration['mp3_player']['use_mp3_player'] = mp3_player_flag.value
+
+mp3_player_flag = ft.Dropdown(
+    label="MP3プレイヤー",
+    width=200,
+    on_change=mp3_player_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+
+def mp3_player_type_changed(e):
+    configuration['mp3_player']['mp3_player_type'] = mp3_player_type.value
+
+mp3_player_type = ft.Dropdown(
+    label="機種",
+    width=200,
+    on_change=mp3_player_type_changed,
+    options=[
+        ft.dropdown.Option(key=0, text="Grove MP3 v2.0"),
+        ft.dropdown.Option(key=1, text="Grove MP3 v3.0"),
+        ft.dropdown.Option(key=2, text="Grove MP3 v4.0"),
+        ft.dropdown.Option(key=3, text="DFPlayer mini MP3プレイヤー"),
+    ],
+)
+
+#
+# 単純PWMデバイス
+#
+def pwm_flag_changed(e):
+    configuration['pwm']['use_pwm'] = pwm_flag.value
+
+pwm_flag = ft.Dropdown(
+    label="単純PWMデバイス",
+    width=200,
+    on_change=pwm_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+
+pwm_pin = ft.TextField(label="接続ピン") # configuration['pwm']['pwm_pin']
+
+#
+# 単純デジタル(On/Off)デバイス (例:スイッチ)
+#
+def switch_flag_changed(e):
+    configuration['switch']['use_switch'] = switch_flag.value
+
+switch_flag = ft.Dropdown(
+    label="単純デジタル(On/Off)デバイス",
+    width=200,
+    on_change=switch_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+
+switch_pin = ft.TextField(label="接続ピン") # configuration['switch']['switch_pin']
+
+#
+# 赤外線リモコン(IR remote)
+#
+def ir_remote_flag_changed(e):
+    configuration['ir_remote']['use_ir_remote'] = ir_remote_flag.value
+
+ir_remote_flag = ft.Dropdown(
+    label="単純デジタル(On/Off)デバイス",
+    width=200,
+    on_change=ir_remote_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+
+ir_remote_pin = ft.TextField(label="接続ピン") # configuration['ir_remote']['ir_remote_pin']
+
+#
+# グラフィックディスプレイ
+#
+def graphic_display_flag_changed(e):
+    configuration['graphic_display']['use_graphic_display'] = graphic_display_flag.value
+
+graphic_display_flag = ft.Dropdown(
+    label="グラフィックディスプレイ",
+    width=200,
+    on_change=graphic_display_flag_changed,
+    options=[
+        ft.dropdown.Option(key=True, text="使用する"),
+        ft.dropdown.Option(key=False, text=" 使用しない"),
+    ],
+)
+
+#def graphic_display_type_changed(e):
+#    configuration['graphic_display']['graphic_display_type'] = graphic_display_type.value
+#    if graphic_display_type.value ==0:
+#        graphic_display_cs_pin.disabled=True
+#        graphic_display_rst_pin.disabled=True
+#        graphic_display_dc_pin.disabled=True
+#        graphic_display_mosi_pin.disabled=True
+#        graphic_display_miso_pin.disabled=True
+#        graphic_display_clk_pin.disabled=True
+#    if graphic_display_type.value ==1:
+#        graphic_display_cs_pin.disabled=False
+#        graphic_display_rst_pin.disabled=False
+#        graphic_display_dc_pin.disabled=False
+#        graphic_display_mosi_pin.disabled=True
+#        graphic_display_miso_pin.disabled=True
+#        graphic_display_clk_pin.disabled=True
+#    if graphic_display_type.value ==1:
+#        graphic_display_cs_pin.disabled=False
+#        graphic_display_rst_pin.disabled=False
+#        graphic_display_dc_pin.disabled=False
+#        graphic_display_mosi_pin.disabled=False
+#        graphic_display_miso_pin.disabled=False
+#        graphic_display_clk_pin.disabled=False
+
+graphic_display_type = ft.Dropdown(
+    label="機種",
+    width=200,
+    #on_change=graphic_display_type_changed,
+    options=[
+        ft.dropdown.Option(key=0, text="GIGA Display Shield"),
+        ft.dropdown.Option(key=1, text="ILI9341 ハードウェアSPI接続"),
+        ft.dropdown.Option(key=2, text="ILI9341 ソフトウェアSPI接続"),
+    ],
+)
+
+graphic_display_cs_pin = ft.TextField(label="CS",disabled=True) # configuration['graphic_display']['graphic_display_cs_pin']
+graphic_display_rst_pin = ft.TextField(label="RST",disabled=True) # configuration['graphic_display']['graphic_display_rst_pin']
+graphic_display_dc_pin = ft.TextField(label="DC",disabled=True) # configuration['graphic_display']['graphic_display_dc_pin']
+graphic_display_mosi_pin = ft.TextField(label="MOSI",disabled=True) # configuration['graphic_display']['graphic_display_mosi_pin']
+graphic_display_miso_pin = ft.TextField(label="MISO",disabled=True) # configuration['graphic_display']['graphic_display_miso_pin']
+graphic_display_clk_pin = ft.TextField(label="Clock",disabled=True) # configuration['graphic_display']['graphic_display_clk_pin']
+
+
+
+# 設定ファイルから，メニューへ値のコピー
+def saveMenuValue():
+    global configuration
+    #
+    # Arduino本体+センサ以外の周辺機器
+    #
+    # ネットワークメディア
+    configuration['platform']['network_hardware']['network_type'] = network_type.value
+    # イーサネット関係
+    configuration['platform']['network_hardware']['ethernet_chip_select'] = ethernet_chip_select.value
+    configuration['network']['ethernet']['mac_addr'][0] = ethernet_mac_0.value
+    configuration['network']['ethernet']['mac_addr'][1] = ethernet_mac_1.value
+    configuration['network']['ethernet']['mac_addr'][2] = ethernet_mac_2.value
+    configuration['network']['ethernet']['mac_addr'][3] = ethernet_mac_3.value
+    configuration['network']['ethernet']['mac_addr'][4] = ethernet_mac_4.value
+    configuration['network']['ethernet']['mac_addr'][5] = ethernet_mac_5.value
+    # WiFi
+    configuration['network']['wifi']['ssid'] = wifi_ssid.value
+    configuration['network']['wifi']['wifi_pass'] = wifi_pass.value
+    # RTC種別
+    configuration['platform']['rtc']['rtc_type'] = rtc_type.value
+    # LED
+    configuration['platform']['color_led']['use_led'] = led_flag.value
+    configuration['platform']['color_led']['led_pin'] = led_pin.value
+    configuration['platform']['color_led']['led_duration'] = led_long_duration.value
+    configuration['platform']['color_led']['led_short_duration'] = led_short_duration.value
+    # SD
+    configuration['platform']['sd']['use_sd'] = sd_flag.value
+    configuration['platform']['sd']['sd_chip_select'] = sd_chip_select_pin.value
+    # シリアル通信速度
+    configuration['common']['serial']['speed'] = serial_speed.value
+    # ログ出力
+    configuration['common']['log']['use_logfile'] = logfile_flag.value
+    configuration['common']['log']['use_serial_log'] = serial_log_flag.value
+    # ログフォーマット
+    configuration['common']['log']['host_name'] = host_name.value
+    configuration['common']['log']['app_name'] = app_name.value
+    # ログファイル
+    configuration['common']['log']['logfile_name_hdr'] = logfile_name.value
+    configuration['common']['log']['logfile_size_max'] = logfile_size.value
+    # DHCP
+    configuration['network']['ip']['use_dhcp'] = dhcp_flag.value
+    # IPアドレス
+    configuration['network']['ip']['ip_addr'][0] = ip_addr_0.value
+    configuration['network']['ip']['ip_addr'][1] = ip_addr_1.value
+    configuration['network']['ip']['ip_addr'][2] = ip_addr_2.value
+    configuration['network']['ip']['ip_addr'][3] = ip_addr_3.value
+    # ネットマスク
+    configuration['network']['ip']['netmask'][0] = netmask_0.value
+    configuration['network']['ip']['netmask'][1] = netmask_1.value
+    configuration['network']['ip']['netmask'][2] = netmask_2.value
+    configuration['network']['ip']['netmask'][3] = netmask_3.value
+    # ゲートウェイ(ルータ)
+    configuration['network']['ip']['gateway'][0] = gateway_0.value
+    configuration['network']['ip']['gateway'][1] = gateway_1.value
+    configuration['network']['ip']['gateway'][2] = gateway_2.value
+    configuration['network']['ip']['gateway'][3] = gateway_3.value
+    # DNSサーバ
+    configuration['network']['ip']['dns_server'][0] = dns_server_0.value
+    configuration['network']['ip']['dns_server'][1] = dns_server_1.value
+    configuration['network']['ip']['dns_server'][2] = dns_server_2.value
+    configuration['network']['ip']['dns_server'][3] = dns_server_3.value
+    # MQTT
+    #configuration['network']['mqtt']['mqtt_format'] = mqtt_format.value
+    configuration['network']['mqtt']['mqtt_topic'] = mqtt_topic.value
+    configuration['network']['mqtt']['mqtt_server'] = mqtt_server.value
+    configuration['network']['mqtt']['mqtt_port'] = mqtt_port.value
+    configuration['network']['mqtt']['mqtt_auth'] = mqtt_auth_flag.value
+    configuration['network']['mqtt']['mqtt_user'] = mqtt_user.value
+    configuration['network']['mqtt']['mqtt_pass'] = mqtt_pass.value
+    # NTP関係
+    configuration['common']['clock']['use_ntp'] = ntp_flag.value
+    configuration['common']['clock']['update_rtc_by_ntp'] = rtc_ntp_flag.value
+    # WDT
+    configuration['safety']['use_wdt'] = wdt_flag.value
+    configuration['platform']['wdt']['wdt_duration'] = wdt_duration.value
+    configuration['platform']['wdt']['wdt_short_duration'] = wdt_short_duration.value
+    #
+    # キャラクタディスプレイ
+    #
+    # Grove LCD RGB Backlight
+    configuration['grove_lcd']['use_grove_lcd'] = grove_lcd_flag.value
+    # ACM1602
+    configuration['acm1602ni']['use_acm1602ni'] = acm1602ni_flag.value
+    # Liquid Crystal
+    configuration['liquid_crystal']['use_liquid_crystal'] = liquid_crystal_flag.value
+    configuration['liquid_crystal']['liquid_crystal_type'] = liquid_crystal_type.value
+    configuration['liquid_crystal']['liquid_crystal_rs_pin'] = liquid_crystal_rs_pin.value
+    configuration['liquid_crystal']['liquid_crystal_es_pin'] = liquid_crystal_es_pin.value
+    configuration['liquid_crystal']['liquid_crystal_d4_pin'] = liquid_crystal_d4_pin.value
+    configuration['liquid_crystal']['liquid_crystal_d5_pin'] = liquid_crystal_d5_pin.value
+    configuration['liquid_crystal']['liquid_crystal_d6_pin'] = liquid_crystal_d6_pin.value
+    configuration['liquid_crystal']['liquid_crystal_d7_pin'] = liquid_crystal_d7_pin.value
+    #
+    # LED
+    #
+    # Mono LED
+    configuration['simple_mono_led']['use_simple_mono_led'] = simple_mono_led_flag.value
+    configuration['simple_mono_led']['simple_mono_led_type'] = simple_mono_led_type.value
+    configuration['simple_mono_led']['simple_mono_led_pin'] = simple_mono_led_pin.value
+    # Anode/Cathod Common Color LED
+    configuration['simple_color_led']['use_simple_color_led'] = simple_color_led_flag.value
+    configuration['simple_color_led']['simple_color_led_type'] = simple_color_led_type.value
+    configuration['simple_color_led']['simple_color_led_red_pin'] = simple_color_led_red_pin.value
+    configuration['simple_color_led']['simple_color_led_green_pin'] = simple_color_led_green_pin.value
+    configuration['simple_color_led']['simple_color_led_blue_pin'] = simple_color_led_blue_pin.value
+    # Grove LED Bar
+    configuration['grove_led_bar']['use_grove_led_bar'] = grove_led_bar_flag.value
+    configuration['grove_led_bar']['grove_led_bar_leds'] = grove_led_bar_leds.value
+    configuration['grove_led_bar']['grove_led_bar_direction'] = grove_led_bar_direction.value
+    configuration['grove_led_bar']['grove_led_bar_clk_pin'] = grove_led_bar_clk_pin.value
+    configuration['grove_led_bar']['grove_led_bar_data_pin'] = grove_led_bar_data_pin.value
+    # Grove LED circular
+    configuration['grove_led_circular']['use_grove_led_circular'] = grove_led_circular_flag.value
+    configuration['grove_led_circular']['grove_led_circular_leds'] = grove_led_circular_leds.value
+    configuration['grove_led_circular']['grove_led_circular_direction'] = grove_led_circular_direction.value
+    configuration['grove_led_circular']['grove_led_circular_clk_pin'] = grove_led_circular_clk_pin.value
+    configuration['grove_led_circular']['grove_led_circular_data_pin'] = grove_led_circular_data_pin.value
+    # Grove chainable LED
+    configuration['grove_chainable_led']['use_grove_chainable_led'] = grove_chainable_led_flag.value
+    configuration['grove_chainable_led']['grove_chainable_led_leds'] = grove_chainable_led_leds.value
+    configuration['grove_chainable_led']['grove_chainable_led_clk_pin'] = grove_chainable_led_clk_pin.value
+    configuration['grove_chainable_led']['grove_chainable_led_data_pin'] = grove_chainable_led_data_pin.value
+    # NeoPixel LED
+    configuration['adafuit_neopixel']['use_adafuit_neopixel'] = adafuit_neopixel_flag.value
+    configuration['adafuit_neopixel']['adafuit_neopixel_leds'] = adafuit_neopixel_leds.value
+    configuration['adafuit_neopixel']['adafuit_neopixel_pin'] = adafuit_neopixel_pin.value
+    #
+    # N segment LED
+    #
+    # OSL12306-16 (16セグメントLED)
+    configuration['osl12306_16']['use_osl12306_16'] = osl12306_16_flag.value
+    configuration['osl12306_16']['osl12306_16_type'] = osl12306_16_type.value
+    configuration['osl12306_16']['osl12306_16_a1_pin'] = osl12306_16_a1_pin.value
+    configuration['osl12306_16']['osl12306_16_a2_pin'] = osl12306_16_a2_pin.value
+    configuration['osl12306_16']['osl12306_16_b_pin'] = osl12306_16_b_pin.value
+    configuration['osl12306_16']['osl12306_16_c_pin'] = osl12306_16_c_pin.value
+    configuration['osl12306_16']['osl12306_16_d1_pin'] = osl12306_16_d1_pin.value
+    configuration['osl12306_16']['osl12306_16_d2_pin'] = osl12306_16_d2_pin.value
+    configuration['osl12306_16']['osl12306_16_e_pin'] = osl12306_16_e_pin.value
+    configuration['osl12306_16']['osl12306_16_f_pin'] = osl12306_16_f_pin.value
+    configuration['osl12306_16']['osl12306_16_g1_pin'] = osl12306_16_g1_pin.value
+    configuration['osl12306_16']['osl12306_16_g2_pin'] = osl12306_16_g2_pin.value
+    configuration['osl12306_16']['osl12306_16_j_pin'] = osl12306_16_j_pin.value
+    configuration['osl12306_16']['osl12306_16_k_pin'] = osl12306_16_k_pin.value
+    configuration['osl12306_16']['osl12306_16_l_pin'] = osl12306_16_l_pin.value
+    configuration['osl12306_16']['osl12306_16_m_pin'] = osl12306_16_m_pin.value
+    configuration['osl12306_16']['osl12306_16_n_pin'] = osl12306_16_n_pin.value
+    configuration['osl12306_16']['osl12306_16_p_pin'] = osl12306_16_p_pin.value
+    configuration['osl12306_16']['osl12306_16_dp_pin'] = osl12306_16_dp_pin.value
+    configuration['osl12306_16']['osl12306_16_digit_pin'] = osl12306_16_digit_pin.value
+    # OSL20541 (2桁14セグメントLED)
+    configuration['osl20541']['use_osl20541'] = osl20541_flag.value
+    configuration['osl20541']['osl20541_type'] = osl20541_type.value
+    configuration['osl20541']['osl20541_a_pin'] = osl20541_a_pin.value
+    configuration['osl20541']['osl20541_b_pin'] = osl20541_b_pin.value
+    configuration['osl20541']['osl20541_c_pin'] = osl20541_c_pin.value
+    configuration['osl20541']['osl20541_d_pin'] = osl20541_d_pin.value
+    configuration['osl20541']['osl20541_e_pin'] = osl20541_e_pin.value
+    configuration['osl20541']['osl20541_f_pin'] = osl20541_f_pin.value
+    configuration['osl20541']['osl20541_g1_pin'] = osl20541_g1_pin.value
+    configuration['osl20541']['osl20541_g2_pin'] = osl20541_g2_pin.value
+    configuration['osl20541']['osl20541_h_pin'] = osl20541_h_pin.value
+    configuration['osl20541']['osl20541_j_pin'] = osl20541_j_pin.value
+    configuration['osl20541']['osl20541_k_pin'] = osl20541_k_pin.value
+    configuration['osl20541']['osl20541_l_pin'] = osl20541_l_pin.value
+    configuration['osl20541']['osl20541_m_pin'] = osl20541_m_pin.value
+    configuration['osl20541']['osl20541_n_pin'] = osl20541_n_pin.value
+    configuration['osl20541']['osl20541_p_pin'] = osl20541_p_pin.value
+    configuration['osl20541']['osl20541_dp_pin'] = osl20541_dp_pin.value
+    configuration['osl20541']['osl20541_digit1_pin'] = osl20541_digit1_pin.value
+    configuration['osl20541']['osl20541_digit2_pin'] = osl20541_digit2_pin.value
+    # OSL30561 (3桁7セグメントLED)
+    configuration['osl30561']['use_osl30561'] = osl30561_flag.value
+    configuration['osl30561']['osl30561_type'] = osl30561_type.value
+    configuration['osl30561']['osl30561_a_pin'] = osl30561_a_pin.value
+    configuration['osl30561']['osl30561_b_pin'] = osl30561_b_pin.value
+    configuration['osl30561']['osl30561_c_pin'] = osl30561_c_pin.value
+    configuration['osl30561']['osl30561_d_pin'] = osl30561_d_pin.value
+    configuration['osl30561']['osl30561_e_pin'] = osl30561_e_pin.value
+    configuration['osl30561']['osl30561_f_pin'] = osl30561_f_pin.value
+    configuration['osl30561']['osl30561_g_pin'] = osl30561_g_pin.value
+    configuration['osl30561']['osl30561_dp_pin'] = osl30561_dp_pin.value
+    configuration['osl30561']['osl30561_digit1_pin'] = osl30561_digit1_pin.value
+    configuration['osl30561']['osl30561_digit2_pin'] = osl30561_digit2_pin.value
+    configuration['osl30561']['osl30561_digit3_pin'] = osl30561_digit3_pin.value
+    # Grove - 4-Digit Display (TM1637)
+    configuration['grove_tm1637']['use_grove_tm1637'] = grove_tm1637_flag.value
+    configuration['grove_tm1637']['grove_tm1637_clk_pin'] = grove_tm1637_clk_pin.value
+    configuration['grove_tm1637']['grove_tm1637_data_pin'] = grove_tm1637_data_pin.value
+    # DFRobot DFR0090 (8桁7セグメントLED)
+    configuration['dfr0090']['use_dfr0090'] = dfr0090_flag.value
+    configuration['dfr0090']['dfr0090_digits'] = dfr0090_digits.value
+    configuration['dfr0090']['dfr0090_latch_pin'] = dfr0090_latch_pin.value
+    configuration['dfr0090']['dfr0090_clk_pin'] = dfr0090_clk_pin.value
+    configuration['dfr0090']['dfr0090_data_pin'] = dfr0090_data_pin.value
+    #
+    # サーボ
+    #
+    configuration['servo']['use_servo'] = servo_flag.value
+    configuration['servo']['servo_pin'] = servo_pin.value
+    #
+    # 音声デバイス
+    #
+    # スピーカ
+    configuration['speaker']['use_speaker'] = speaker_flag.value
+    configuration['speaker']['speaker_pin'] = speaker_pin.value
+    # ブザー
+    configuration['buzzer']['use_buzzer'] = buzzer_flag.value
+    configuration['buzzer']['buzzer_pin'] = buzzer_pin.value
+    # MP3プレイヤー
+    configuration['mp3_player']['use_mp3_player'] = mp3_player_flag.value
+    configuration['mp3_player']['mp3_player_type'] = mp3_player_type.value
+    #
+    # 単純PWMデバイス
+    #
+    configuration['pwm']['use_pwm'] = pwm_flag.value
+    configuration['pwm']['pwm_pin'] = pwm_pin.value
+    #
+    # 単純デジタル(On/Off)デバイス (例:スイッチ)
+    #
+    configuration['switch']['use_switch'] = switch_flag.value
+    configuration['switch']['switch_pin'] = switch_pin.value
+    #
+    # 赤外線リモコン(IR remote)
+    #
+    configuration['ir_remote']['use_ir_remote'] = ir_remote_flag.value
+    configuration['ir_remote']['ir_remote_pin'] = ir_remote_pin.value
+    #
+    # グラフィックディスプレイ
+    #
+    configuration['graphic_display']['use_graphic_display'] = graphic_display_flag.value
+    configuration['graphic_display']['graphic_display_type'] = graphic_display_type.value
+    configuration['graphic_display']['graphic_display_cs_pin'] = graphic_display_cs_pin.value
+    configuration['graphic_display']['graphic_display_rst_pin'] = graphic_display_rst_pin.value
+    configuration['graphic_display']['graphic_display_dc_pin'] = graphic_display_dc_pin.value
+    configuration['graphic_display']['graphic_display_mosi_pin'] = graphic_display_mosi_pin.value
+    configuration['graphic_display']['graphic_display_miso_pin'] = graphic_display_miso_pin.value
+    configuration['graphic_display']['graphic_display_clk_pin'] = graphic_display_clk_pin.value
+
+def loadMenuValue():
+    global configuration
+    #
+    # Arduino本体+センサ以外の周辺機器
+    #
+    # ネットワークメディア
+    network_type.value = configuration['platform']['network_hardware']['network_type']
+    # イーサネット関係
+    ethernet_chip_select.value = configuration['platform']['network_hardware']['ethernet_chip_select']
+    ethernet_mac_0.value = configuration['network']['ethernet']['mac_addr'][0]
+    ethernet_mac_1.value = configuration['network']['ethernet']['mac_addr'][1]
+    ethernet_mac_2.value = configuration['network']['ethernet']['mac_addr'][2]
+    ethernet_mac_3.value = configuration['network']['ethernet']['mac_addr'][3]
+    ethernet_mac_4.value = configuration['network']['ethernet']['mac_addr'][4]
+    ethernet_mac_5.value = configuration['network']['ethernet']['mac_addr'][5]
+    # WiFi
+    wifi_ssid.value = configuration['network']['wifi']['ssid']
+    wifi_pass.value = configuration['network']['wifi']['wifi_pass']
+    # RTC種別
+    rtc_type.value = configuration['platform']['rtc']['rtc_type']
+    # LED
+    led_flag.value = configuration['platform']['color_led']['use_led']
+    led_pin.value = configuration['platform']['color_led']['led_pin']
+    led_long_duration.value = configuration['platform']['color_led']['led_duration']
+    led_short_duration.value = configuration['platform']['color_led']['led_short_duration']
+    # SD
+    sd_flag.value = configuration['platform']['sd']['use_sd']
+    sd_chip_select_pin.value = configuration['platform']['sd']['sd_chip_select']
+    # シリアル通信速度
+    serial_speed.value = configuration['common']['serial']['speed']
+    # ログ出力
+    logfile_flag.value = configuration['common']['log']['use_logfile']
+    serial_log_flag.value = configuration['common']['log']['use_serial_log']
+    # ログフォーマット
+    host_name.value = configuration['common']['log']['host_name']
+    app_name.value = configuration['common']['log']['app_name']
+    # ログファイル
+    logfile_name.value = configuration['common']['log']['logfile_name_hdr']
+    logfile_size.value = configuration['common']['log']['logfile_size_max']
+    # DHCP
+    dhcp_flag.value = configuration['network']['ip']['use_dhcp']
+    # IPアドレス
+    ip_addr_0.value = configuration['network']['ip']['ip_addr'][0]
+    ip_addr_1.value = configuration['network']['ip']['ip_addr'][1]
+    ip_addr_2.value = configuration['network']['ip']['ip_addr'][2]
+    ip_addr_3.value = configuration['network']['ip']['ip_addr'][3]
+    # ネットマスク
+    netmask_0.value = configuration['network']['ip']['netmask'][0]
+    netmask_1.value = configuration['network']['ip']['netmask'][1]
+    netmask_2.value = configuration['network']['ip']['netmask'][2]
+    netmask_3.value = configuration['network']['ip']['netmask'][3]
+    # ゲートウェイ(ルータ)
+    gateway_0.value = configuration['network']['ip']['gateway'][0]
+    gateway_1.value = configuration['network']['ip']['gateway'][1]
+    gateway_2.value = configuration['network']['ip']['gateway'][2]
+    gateway_3.value = configuration['network']['ip']['gateway'][3]
+    # DNSサーバ
+    dns_server_0.value = configuration['network']['ip']['dns_server'][0]
+    dns_server_1.value = configuration['network']['ip']['dns_server'][1]
+    dns_server_2.value = configuration['network']['ip']['dns_server'][2]
+    dns_server_3.value = configuration['network']['ip']['dns_server'][3]
+    # MQTT
+    #mqtt_format.value = configuration['network']['mqtt']['mqtt_format']
+    mqtt_topic.value = configuration['network']['mqtt']['mqtt_topic']
+    mqtt_server.value = configuration['network']['mqtt']['mqtt_server']
+    mqtt_port.value = configuration['network']['mqtt']['mqtt_port']
+    mqtt_auth_flag.value = configuration['network']['mqtt']['mqtt_auth']
+    mqtt_user.value = configuration['network']['mqtt']['mqtt_user']
+    mqtt_pass.value = configuration['network']['mqtt']['mqtt_pass']
+    # NTP関係
+    ntp_flag.value = configuration['common']['clock']['use_ntp']
+    rtc_ntp_flag.value = configuration['common']['clock']['update_rtc_by_ntp']
+    # WDT
+    wdt_flag.value = configuration['safety']['use_wdt']
+    wdt_duration.value = configuration['platform']['wdt']['wdt_duration']
+    wdt_short_duration.value = configuration['platform']['wdt']['wdt_short_duration']
+    #
+    # キャラクタディスプレイ
+    #
+    # Grove LCD RGB Backlight
+    grove_lcd_flag.value = configuration['grove_lcd']['use_grove_lcd']
+    # ACM1602
+    acm1602ni_flag.value = configuration['acm1602ni']['use_acm1602ni']
+    # Liquid Crystal
+    liquid_crystal_flag.value = configuration['liquid_crystal']['use_liquid_crystal']
+    liquid_crystal_type.value = configuration['liquid_crystal']['liquid_crystal_type']
+    liquid_crystal_rs_pin.value = configuration['liquid_crystal']['liquid_crystal_rs_pin']
+    liquid_crystal_es_pin.value = configuration['liquid_crystal']['liquid_crystal_es_pin']
+    liquid_crystal_d4_pin.value = configuration['liquid_crystal']['liquid_crystal_d4_pin']
+    liquid_crystal_d5_pin.value = configuration['liquid_crystal']['liquid_crystal_d5_pin']
+    liquid_crystal_d6_pin.value = configuration['liquid_crystal']['liquid_crystal_d6_pin']
+    liquid_crystal_d7_pin.value = configuration['liquid_crystal']['liquid_crystal_d7_pin']
+    #
+    # LED
+    #
+    # Mono LED
+    simple_mono_led_flag.value = configuration['simple_mono_led']['use_simple_mono_led']
+    simple_mono_led_type.value = configuration['simple_mono_led']['simple_mono_led_type']
+    simple_mono_led_pin.value = configuration['simple_mono_led']['simple_mono_led_pin']
+    # Anode/Cathod Common Color LED
+    simple_color_led_flag.value = configuration['simple_color_led']['use_simple_color_led']
+    simple_color_led_type.value = configuration['simple_color_led']['simple_color_led_type']
+    simple_color_led_red_pin.value = configuration['simple_color_led']['simple_color_led_red_pin']
+    simple_color_led_green_pin.value = configuration['simple_color_led']['simple_color_led_green_pin']
+    simple_color_led_blue_pin.value = configuration['simple_color_led']['simple_color_led_blue_pin']
+    # Grove LED Bar
+    grove_led_bar_flag.value = configuration['grove_led_bar']['use_grove_led_bar']
+    grove_led_bar_leds.value = configuration['grove_led_bar']['grove_led_bar_leds']
+    grove_led_bar_direction.value = configuration['grove_led_bar']['grove_led_bar_direction']
+    grove_led_bar_clk_pin.value = configuration['grove_led_bar']['grove_led_bar_clk_pin']
+    grove_led_bar_data_pin.value = configuration['grove_led_bar']['grove_led_bar_data_pin']
+    # Grove LED circular
+    grove_led_circular_flag.value = configuration['grove_led_circular']['use_grove_led_circular']
+    grove_led_circular_leds.value = configuration['grove_led_circular']['grove_led_circular_leds']
+    grove_led_circular_direction.value = configuration['grove_led_circular']['grove_led_circular_direction']
+    grove_led_circular_clk_pin.value = configuration['grove_led_circular']['grove_led_circular_clk_pin']
+    grove_led_circular_data_pin.value = configuration['grove_led_circular']['grove_led_circular_data_pin']
+    # Grove chainable LED
+    grove_chainable_led_flag.value = configuration['grove_chainable_led']['use_grove_chainable_led']
+    grove_chainable_led_leds.value = configuration['grove_chainable_led']['grove_chainable_led_leds']
+    grove_chainable_led_clk_pin.value = configuration['grove_chainable_led']['grove_chainable_led_clk_pin']
+    grove_chainable_led_data_pin.value = configuration['grove_chainable_led']['grove_chainable_led_data_pin']
+    # NeoPixel LED
+    adafuit_neopixel_flag.value = configuration['adafuit_neopixel']['use_adafuit_neopixel']
+    adafuit_neopixel_leds.value = configuration['adafuit_neopixel']['adafuit_neopixel_leds']
+    adafuit_neopixel_pin.value = configuration['adafuit_neopixel']['adafuit_neopixel_pin']
+    #
+    # N segment LED
+    #
+    # OSL12306-16 (16セグメントLED)
+    osl12306_16_flag.value = configuration['osl12306_16']['use_osl12306_16']
+    osl12306_16_type.value = configuration['osl12306_16']['osl12306_16_type']
+    osl12306_16_a1_pin.value = configuration['osl12306_16']['osl12306_16_a1_pin']
+    osl12306_16_a2_pin.value = configuration['osl12306_16']['osl12306_16_a2_pin']
+    osl12306_16_b_pin.value = configuration['osl12306_16']['osl12306_16_b_pin']
+    osl12306_16_c_pin.value = configuration['osl12306_16']['osl12306_16_c_pin']
+    osl12306_16_d1_pin.value = configuration['osl12306_16']['osl12306_16_d1_pin']
+    osl12306_16_d2_pin.value = configuration['osl12306_16']['osl12306_16_d2_pin']
+    osl12306_16_e_pin.value = configuration['osl12306_16']['osl12306_16_e_pin']
+    osl12306_16_f_pin.value = configuration['osl12306_16']['osl12306_16_f_pin']
+    osl12306_16_g1_pin.value = configuration['osl12306_16']['osl12306_16_g1_pin']
+    osl12306_16_g2_pin.value = configuration['osl12306_16']['osl12306_16_g2_pin']
+    osl12306_16_j_pin.value = configuration['osl12306_16']['osl12306_16_j_pin']
+    osl12306_16_k_pin.value = configuration['osl12306_16']['osl12306_16_k_pin']
+    osl12306_16_l_pin.value = configuration['osl12306_16']['osl12306_16_l_pin']
+    osl12306_16_m_pin.value = configuration['osl12306_16']['osl12306_16_m_pin']
+    osl12306_16_n_pin.value = configuration['osl12306_16']['osl12306_16_n_pin']
+    osl12306_16_p_pin.value = configuration['osl12306_16']['osl12306_16_p_pin']
+    osl12306_16_dp_pin.value = configuration['osl12306_16']['osl12306_16_dp_pin']
+    osl12306_16_digit_pin.value = configuration['osl12306_16']['osl12306_16_digit_pin']
+    # OSL20541 (2桁14セグメントLED)
+    osl20541_flag.value = configuration['osl20541']['use_osl20541']
+    osl20541_type.value = configuration['osl20541']['osl20541_type']
+    osl20541_a_pin.value = configuration['osl20541']['osl20541_a_pin']
+    osl20541_b_pin.value = configuration['osl20541']['osl20541_b_pin']
+    osl20541_c_pin.value = configuration['osl20541']['osl20541_c_pin']
+    osl20541_d_pin.value = configuration['osl20541']['osl20541_d_pin']
+    osl20541_e_pin.value = configuration['osl20541']['osl20541_e_pin']
+    osl20541_f_pin.value = configuration['osl20541']['osl20541_f_pin']
+    osl20541_g1_pin.value = configuration['osl20541']['osl20541_g1_pin']
+    osl20541_g2_pin.value = configuration['osl20541']['osl20541_g2_pin']
+    osl20541_h_pin.value = configuration['osl20541']['osl20541_h_pin']
+    osl20541_j_pin.value = configuration['osl20541']['osl20541_j_pin']
+    osl20541_k_pin.value = configuration['osl20541']['osl20541_k_pin']
+    osl20541_l_pin.value = configuration['osl20541']['osl20541_l_pin']
+    osl20541_m_pin.value = configuration['osl20541']['osl20541_m_pin']
+    osl20541_n_pin.value = configuration['osl20541']['osl20541_n_pin']
+    osl20541_p_pin.value = configuration['osl20541']['osl20541_p_pin']
+    osl20541_dp_pin.value = configuration['osl20541']['osl20541_dp_pin']
+    osl20541_digit1_pin.value = configuration['osl20541']['osl20541_digit1_pin']
+    osl20541_digit2_pin.value = configuration['osl20541']['osl20541_digit2_pin']
+    # OSL30561 (3桁7セグメントLED)
+    osl30561_flag.value = configuration['osl30561']['use_osl30561']
+    osl30561_type.value = configuration['osl30561']['osl30561_type']
+    osl30561_a_pin.value = configuration['osl30561']['osl30561_a_pin']
+    osl30561_b_pin.value = configuration['osl30561']['osl30561_b_pin']
+    osl30561_c_pin.value = configuration['osl30561']['osl30561_c_pin']
+    osl30561_d_pin.value = configuration['osl30561']['osl30561_d_pin']
+    osl30561_e_pin.value = configuration['osl30561']['osl30561_e_pin']
+    osl30561_f_pin.value = configuration['osl30561']['osl30561_f_pin']
+    osl30561_g_pin.value = configuration['osl30561']['osl30561_g_pin']
+    osl30561_dp_pin.value = configuration['osl30561']['osl30561_dp_pin']
+    osl30561_digit1_pin.value = configuration['osl30561']['osl30561_digit1_pin']
+    osl30561_digit2_pin.value = configuration['osl30561']['osl30561_digit2_pin']
+    osl30561_digit3_pin.value = configuration['osl30561']['osl30561_digit3_pin']
+    # Grove - 4-Digit Display (TM1637)
+    grove_tm1637_flag.value = configuration['grove_tm1637']['use_grove_tm1637']
+    grove_tm1637_clk_pin.value = configuration['grove_tm1637']['grove_tm1637_clk_pin']
+    grove_tm1637_data_pin.value = configuration['grove_tm1637']['grove_tm1637_data_pin']
+    # DFRobot DFR0090 (8桁7セグメントLED)
+    dfr0090_flag.value = configuration['dfr0090']['use_dfr0090']
+    dfr0090_digits.value = configuration['dfr0090']['dfr0090_digits']
+    dfr0090_latch_pin.value = configuration['dfr0090']['dfr0090_latch_pin']
+    dfr0090_clk_pin.value = configuration['dfr0090']['dfr0090_clk_pin']
+    dfr0090_data_pin.value = configuration['dfr0090']['dfr0090_data_pin']
+    #
+    # サーボ
+    #
+    servo_flag.value = configuration['servo']['use_servo']
+    servo_pin.value = configuration['servo']['servo_pin']
+    #
+    # 音声デバイス
+    #
+    # スピーカ
+    speaker_flag.value = configuration['speaker']['use_speaker']
+    speaker_pin.value = configuration['speaker']['speaker_pin']
+    # ブザー
+    buzzer_flag.value = configuration['buzzer']['use_buzzer']
+    buzzer_pin.value = configuration['buzzer']['buzzer_pin']
+    # MP3プレイヤー
+    mp3_player_flag.value = configuration['mp3_player']['use_mp3_player']
+    mp3_player_type.value = configuration['mp3_player']['mp3_player_type']
+    #
+    # 単純PWMデバイス
+    #
+    pwm_flag.value = configuration['pwm']['use_pwm']
+    pwm_pin.value = configuration['pwm']['pwm_pin']
+    #
+    # 単純デジタル(On/Off)デバイス (例:スイッチ)
+    #
+    switch_flag.value = configuration['switch']['use_switch']
+    switch_pin.value = configuration['switch']['switch_pin']
+    #
+    # 赤外線リモコン(IR remote)
+    #
+    ir_remote_flag.value = configuration['ir_remote']['use_ir_remote']
+    ir_remote_pin.value = configuration['ir_remote']['ir_remote_pin']
+    #
+    # グラフィックディスプレイ
+    #
+    graphic_display_flag.value = configuration['graphic_display']['use_graphic_display']
+    graphic_display_type.value = configuration['graphic_display']['graphic_display_type']
+    graphic_display_cs_pin.value = configuration['graphic_display']['graphic_display_cs_pin']
+    graphic_display_rst_pin.value = configuration['graphic_display']['graphic_display_rst_pin']
+    graphic_display_dc_pin.value = configuration['graphic_display']['graphic_display_dc_pin']
+    graphic_display_mosi_pin.value = configuration['graphic_display']['graphic_display_mosi_pin']
+    graphic_display_miso_pin.value = configuration['graphic_display']['graphic_display_miso_pin']
+    graphic_display_clk_pin.value = configuration['graphic_display']['graphic_display_clk_pin']
+
+#
+# 設定ファイルのロード
+#
+def loadConfigFile():
+    global config_file_name, configuration
+    try:
+        with open(config_file_name, mode='r', encoding='utf-8') as f:
+            configuration = yaml.safe_load(f)
+    except Exception as e:
+        return 'Exception occurred while loading configuration YAML...'
+    loadMenuValue()
+    return ''
+
+#
+# 設定のセーブ
+#
+def saveConfig(output_file_name):
+    global configuration
+    saveMenuValue()
+    # 出力ファイルのオープン
+    try:
+        output_file = open(output_file_name, mode='w', encoding='utf-8')
+    except Exception as e1:
+        return "Error : Exception occurred at opening output file..."
+    # プラットフォーム関係の定義出力
+    print('platform:', file=output_file)
+    print('  network_hardware:', file=output_file)
+    print('    network_type: %s # wifi , ethernet , none' % configuration['platform']['network_hardware']['network_type'], file=output_file)
+    print('    ethernet_chip_select: %s # イーサネットのチップセレクトピン番号' % configuration['platform']['network_hardware']['ethernet_chip_select'], file=output_file)
+    print('  rtc:', file=output_file)
+    print('    rtc_type: %s # RTC8564NB , DS1307 , DS3231 , PCF8523 , RV8803 , RX8025 , RX8900 , none' % configuration['platform']['rtc']['rtc_type'], file=output_file)
+    print('    rtc_int_pin: %s # ピン番号' % configuration['platform']['rtc']['rtc_int_pin'], file=output_file)
+    print('  color_led:', file=output_file)
+    if checkYamlVal(configuration['platform']['color_led']['use_led']):
+        print('    use_led: true # true(使う) , false(使わない)', file=output_file)
+    else:
+        print('    use_led: false # true(使う) , false(使わない)', file=output_file)
+    print('    led_pin: %s # ピン番号' % configuration['platform']['color_led']['led_pin'], file=output_file)
+    print('    led_duration: %s # 時間(単位:ミリ秒)' % configuration['platform']['color_led']['led_duration'], file=output_file)
+    print('    led_short_duration: %s # 時間(単位:ミリ秒)' % configuration['platform']['color_led']['led_short_duration'], file=output_file)
+    print('  sd:', file=output_file)
+    if checkYamlVal(configuration['platform']['sd']['use_sd']):
+        print('    use_sd: true # true(使う) , false(使わない)', file=output_file)
+    else:
+        print('    use_sd: false # true(使う) , false(使わない)', file=output_file)
+    print('    sd_chip_select: %s # ピン番号' % configuration['platform']['sd']['sd_chip_select'], file=output_file)
+    print('  wdt:', file=output_file)
+    print('    wdt_duration: %s # 時間(単位:ミリ秒)' % configuration['platform']['wdt']['wdt_duration'], file=output_file)
+    print('    wdt_short_duration: %s # 時間(単位:ミリ秒)' % configuration['platform']['wdt']['wdt_short_duration'], file=output_file)
+    print('', file=output_file)
+    print('common:', file=output_file)
+    print('  serial:', file=output_file)
+    print('    speed: %s # コンソールのシリアル速度(bps)' % configuration['common']['serial']['speed'], file=output_file)
+    print('  log:', file=output_file)
+    print('    host_name: \"%s\" # ホスト名(文字列)' % configuration['common']['log']['host_name'], file=output_file)
+    print('    app_name: \"%s\" # アプリ名(文字列)' % configuration['common']['log']['app_name'], file=output_file)
+    if checkYamlVal(configuration['common']['log']['use_logfile']):
+        print('    use_logfile: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('    use_logfile: false # true(使う) , false(使わない)' , file=output_file)
+    if checkYamlVal(configuration['common']['log']['use_serial_log']):
+        print('    use_serial_log: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('    use_serial_log: false # true(使う) , false(使わない)' , file=output_file)
+    print('    logfile_name_hdr: \"%s\" # ログファイル名' % configuration['common']['log']['logfile_name_hdr'], file=output_file)
+    print('    logfile_size_max: %s # ログファイルの最大値(バイト)' % configuration['common']['log']['logfile_size_max'], file=output_file)
+    if checkYamlVal(configuration['common']['log']['log_rotate']):
+        print('    log_rotate: true # true(使う) , false(使わない) 現在未対応' , file=output_file)
+    else:
+        print('    log_rotate: false # true(使う) , false(使わない) 現在未対応' , file=output_file)
+    print('  clock:', file=output_file)
+    if checkYamlVal(configuration['common']['clock']['use_ntp']):
+        print('    use_ntp : true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('    use_ntp : false # true(使う) , false(使わない)' , file=output_file)
+    if checkYamlVal(configuration['common']['clock']['update_rtc_by_ntp']):
+        print('    update_rtc_by_ntp : true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('    update_rtc_by_ntp : false # true(使う) , false(使わない)' , file=output_file)
+    print('', file=output_file)
+    print('network:', file=output_file)
+    print('  wifi:', file=output_file)
+    print('    ssid: \"%s\" # ssid名' % configuration['network']['wifi']['ssid'], file=output_file)
+    print('    wifi_pass: \"%s\" # wifiパスワード' % configuration['network']['wifi']['wifi_pass'], file=output_file)
+    print('  ethernet:', file=output_file)
+    print('    mac_addr: [ \'%s\', \'%s\', \'%s\', \'%s\', \'%s\', \'%s\']  # macアドレス' % (configuration['network']['ethernet']['mac_addr'][0],
+                configuration['network']['ethernet']['mac_addr'][1],configuration['network']['ethernet']['mac_addr'][2],configuration['network']['ethernet']['mac_addr'][3],
+                configuration['network']['ethernet']['mac_addr'][4],configuration['network']['ethernet']['mac_addr'][5]), file=output_file)
+    print('  ip:', file=output_file)
+    if checkYamlVal(configuration['network']['ip']['use_dhcp']):
+        print('    use_dhcp: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('    use_dhcp: false # true(使う) , false(使わない)' , file=output_file)
+    print('    ip_addr: [%s, %s, %s, %s] # ipアドレス' % (configuration['network']['ip']['ip_addr'][0],configuration['network']['ip']['ip_addr'][1],
+                configuration['network']['ip']['ip_addr'][2],configuration['network']['ip']['ip_addr'][3]), file=output_file)
+    print('    dns_server:  [%s, %s, %s, %s] # DNSサーバ' % (configuration['network']['ip']['dns_server'][0],configuration['network']['ip']['dns_server'][1],
+                configuration['network']['ip']['dns_server'][2],configuration['network']['ip']['dns_server'][3]), file=output_file)
+    print('    gateway: [%s, %s, %s, %s] # gateway' % (configuration['network']['ip']['gateway'][0],configuration['network']['ip']['gateway'][1],
+                configuration['network']['ip']['gateway'][2],configuration['network']['ip']['gateway'][3]), file=output_file)
+    print('    netmask: [%s, %s, %s, %s] # マスク' % (configuration['network']['ip']['netmask'][0],configuration['network']['ip']['netmask'][1],
+                configuration['network']['ip']['netmask'][2],configuration['network']['ip']['netmask'][3]), file=output_file)
+    print('  mqtt:', file=output_file)
+    #print('    mqtt_format: %s # plain, json, syslog' % configuration['network']['mqtt']['mqtt_format'], file=output_file)
+    if checkYamlVal(configuration['network']['mqtt']['mqtt_auth']):
+        print('    mqtt_auth: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('    mqtt_auth: false # true(使う) , false(使わない)' , file=output_file)
+    print('    mqtt_user: \"%s\" # ユーザ名(文字列)' % configuration['network']['mqtt']['mqtt_user'], file=output_file)
+    print('    mqtt_pass: \"%s\" # パスワード(文字列)' % configuration['network']['mqtt']['mqtt_pass'], file=output_file)
+    print('    mqtt_topic: \"%s\" # MQTTトピック (文字列)' % configuration['network']['mqtt']['mqtt_topic'], file=output_file)
+    print('    mqtt_server: \"%s\" # mqttサーバIPアドレス' % configuration['network']['mqtt']['mqtt_server'], file=output_file)
+    print('    mqtt_port: %s # mqttポート番号' % configuration['network']['mqtt']['mqtt_port'], file=output_file)
+    print('', file=output_file)
+    print('safety:', file=output_file)
+    if checkYamlVal(configuration['safety']['use_wdt']):
+        print('  use_wdt: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_wdt: false # true(使う) , false(使わない)' , file=output_file)
+    print('', file=output_file)
+    print('#', file=output_file)
+    print('# キャラクタディスプレイ', file=output_file)
+    print('#', file=output_file)
+    print('# Grove LCD RGB Backlight', file=output_file)
+    print('grove_lcd:', file=output_file)
+    if checkYamlVal(configuration['grove_lcd']['use_grove_lcd']):
+        print('  use_grove_lcd: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_grove_lcd: false # true(使う) , false(使わない)' , file=output_file)
+    print('', file=output_file)
+    print('# ACM1602NI', file=output_file)
+    print('acm1602ni:', file=output_file)
+    if checkYamlVal(configuration['acm1602ni']['use_acm1602ni']):
+        print('  use_acm1602ni: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_acm1602ni: false # true(使う) , false(使わない)' , file=output_file)
+    print('', file=output_file)
+    print('# Liquid crystal library', file=output_file)
+    print('liquid_crystal:', file=output_file)
+    if checkYamlVal(configuration['liquid_crystal']['use_liquid_crystal']):
+        print('  use_liquid_crystal: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_liquid_crystal: false # true(使う) , false(使わない)' , file=output_file)
+    print('  liquid_crystal_type: %s # 0(USE_SC1602BSLB), 1(USE_SC2004CSLB)' % configuration['liquid_crystal']['liquid_crystal_type'], file=output_file)
+    print('  liquid_crystal_rs_pin: \"D%s\" # LIQUID_CRYSTAL_PIN_RS' % configuration['liquid_crystal']['liquid_crystal_rs_pin'], file=output_file)
+    print('  liquid_crystal_es_pin: \"D%s\" # LIQUID_CRYSTAL_PIN_ES' % configuration['liquid_crystal']['liquid_crystal_es_pin'], file=output_file)
+    print('  liquid_crystal_d4_pin: \"D%s\" # LIQUID_CRYSTAL_PIN_D4' % configuration['liquid_crystal']['liquid_crystal_d4_pin'], file=output_file)
+    print('  liquid_crystal_d5_pin: \"D%s\" # LIQUID_CRYSTAL_PIN_D5' % configuration['liquid_crystal']['liquid_crystal_d5_pin'], file=output_file)
+    print('  liquid_crystal_d6_pin: \"D%s\" # LIQUID_CRYSTAL_PIN_D6' % configuration['liquid_crystal']['liquid_crystal_d6_pin'], file=output_file)
+    print('  liquid_crystal_d7_pin: \"D%s\" # LIQUID_CRYSTAL_PIN_D7' % configuration['liquid_crystal']['liquid_crystal_d7_pin'], file=output_file)
+    print('', file=output_file)
+    print('#', file=output_file)
+    print('# LEDs', file=output_file)
+    print('#', file=output_file)
+    print('# Simple mono LED', file=output_file)
+    print('simple_mono_led:', file=output_file)
+    if checkYamlVal(configuration['simple_mono_led']['use_simple_mono_led']):
+        print('  use_simple_mono_led: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_simple_mono_led: false # true(使う) , false(使わない)' , file=output_file)
+    if checkYamlVal(configuration['simple_mono_led']['simple_mono_led_type']):
+        print('  simple_mono_led_type: true # GROVE_MONO_LED_PIN_TYPE  true(PULL_UP), false(PULL_DOWN)' , file=output_file)
+    else:
+        print('  simple_mono_led_type: false # GROVE_MONO_LED_PIN_TYPE  true(PULL_UP), false(PULL_DOWN)' , file=output_file)
+    print('  simple_mono_led_pin: \"D%s\" # GROVE_MONO_LED_PIN' % configuration['simple_mono_led']['simple_mono_led_pin'], file=output_file)
+    print('# Anode/Cathod common RGB LED', file=output_file)
+    print('simple_color_led:', file=output_file)
+    if checkYamlVal(configuration['simple_color_led']['use_simple_color_led']):
+        print('  use_simple_color_led: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_simple_color_led: false # true(使う) , false(使わない)' , file=output_file)
+    if checkYamlVal(configuration['simple_color_led']['simple_color_led_type']):
+        print('  simple_color_led_type: true # USE_SIMPLE_COLOR_LED_PIN_TYPE  true(PULL_UP), false(PULL_DOWN)' , file=output_file)
+    else:
+        print('  simple_color_led_type: false # USE_SIMPLE_COLOR_LED_PIN_TYPE  true(PULL_UP), false(PULL_DOWN)' , file=output_file)
+    print('  simple_color_led_red_pin: \"D%s\" # SIMPLE_COLOR_LED_RED_PIN' % configuration['simple_color_led']['simple_color_led_red_pin'], file=output_file)
+    print('  simple_color_led_green_pin: \"D%s\" # SIMPLE_COLOR_LED_GREEN_PIN' % configuration['simple_color_led']['simple_color_led_green_pin'], file=output_file)
+    print('  simple_color_led_blue_pin: \"D%s\" # SIMPLE_COLOR_LED_BLUE_PIN' % configuration['simple_color_led']['simple_color_led_blue_pin'], file=output_file)
+    print('# Grove LED bar', file=output_file)
+    print('grove_led_bar:', file=output_file)
+    if checkYamlVal(configuration['grove_led_bar']['use_grove_led_bar']):
+        print('  use_grove_led_bar: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_grove_led_bar: false # true(使う) , false(使わない)' , file=output_file)
+    print('  grove_led_bar_leds: %s # GROVE_LED_BAR_NUM_OF_LED' % configuration['grove_led_bar']['grove_led_bar_leds'], file=output_file)
+    if checkYamlVal(configuration['grove_led_bar']['grove_led_bar_direction']):
+        print('  grove_led_bar_direction: true # GROVE_LED_BAR_DIRECTION 0(forward) , 1(backward)' , file=output_file)
+    else:
+        print('  grove_led_bar_direction: false # GROVE_LED_BAR_DIRECTION 0(forward) , 1(backward)' , file=output_file)
+    print('  grove_led_bar_clk_pin: \"D%s\" # GROVE_LED_BAR_PIN_CLK' % configuration['grove_led_bar']['grove_led_bar_clk_pin'], file=output_file)
+    print('  grove_led_bar_data_pin: \"D%s\" # GROVE_LED_BAR_PIN_DATA' % configuration['grove_led_bar']['grove_led_bar_data_pin'], file=output_file)
+    print('# Grove LED circular', file=output_file)
+    print('grove_led_circular:', file=output_file)
+    if checkYamlVal(configuration['grove_led_circular']['use_grove_led_circular']):
+        print('  use_grove_led_circular: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_grove_led_circular: false # true(使う) , false(使わない)' , file=output_file)
+    print('  grove_led_circular_leds: %s # GROVE_LED_CIRCLE_NUM_OF_LED' % configuration['grove_led_circular']['grove_led_circular_leds'], file=output_file)
+    if checkYamlVal(configuration['grove_led_circular']['grove_led_circular_direction']):
+        print('  grove_led_circular_direction: true # GROVE_LED_CIRCLE_DIRECTION 0(forward) , 1(backward)' , file=output_file)
+    else:
+        print('  grove_led_circular_direction: false # GROVE_LED_CIRCLE_DIRECTION 0(forward) , 1(backward)' , file=output_file)
+    print('  grove_led_circular_clk_pin: \"D%s\" # GROVE_LED_CIRCLE_PIN_CLK' % configuration['grove_led_circular']['grove_led_circular_clk_pin'], file=output_file)
+    print('  grove_led_circular_data_pin: \"D%s\" # GROVE_LED_CIRCLE_PIN_DATA' % configuration['grove_led_circular']['grove_led_circular_data_pin'], file=output_file)
+    print('# Grove chainable LED', file=output_file)
+    print('grove_chainable_led:', file=output_file)
+    if checkYamlVal(configuration['grove_chainable_led']['use_grove_chainable_led']):
+        print('  use_grove_chainable_led: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_grove_chainable_led: false # true(使う) , false(使わない)' , file=output_file)
+    print('  grove_chainable_led_leds: %s # GROVE_CHAINABLE_LED_NUM_OF_LED' % configuration['grove_chainable_led']['grove_chainable_led_leds'], file=output_file)
+    print('  grove_chainable_led_clk_pin: \"D%s\" # GROVE_CHAINABLE_LED_PIN_CLK' % configuration['grove_chainable_led']['grove_chainable_led_clk_pin'], file=output_file)
+    print('  grove_chainable_led_data_pin: \"D%s\" # GROVE_CHAINABLE_LED_PIN_DATA' % configuration['grove_chainable_led']['grove_chainable_led_data_pin'], file=output_file)
+    print('# Adafruit NeoPixel', file=output_file)
+    print('adafuit_neopixel:', file=output_file)
+    if checkYamlVal(configuration['adafuit_neopixel']['use_adafuit_neopixel']):
+        print('  use_adafuit_neopixel: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_adafuit_neopixel: false # true(使う) , false(使わない)' , file=output_file)
+    print('  adafuit_neopixel_leds: %s # LED_NEO_PIXEL_NUM_OF_LED' % configuration['adafuit_neopixel']['adafuit_neopixel_leds'], file=output_file)
+    print('  adafuit_neopixel_pin: \"D%s\" # LED_NEO_PIXEL_PIN' % configuration['adafuit_neopixel']['adafuit_neopixel_pin'], file=output_file)
+    print('', file=output_file)
+    print('#', file=output_file)
+    print('# N-segment LEDs', file=output_file)
+    print('#', file=output_file)
+    print('# OSL12306-16 (16セグメントLED)', file=output_file)
+    print('osl12306_16:', file=output_file)
+    if checkYamlVal(configuration['osl12306_16']['use_osl12306_16']):
+        print('  use_osl12306_16: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_osl12306_16: false # true(使う) , false(使わない)' , file=output_file)
+    print('  osl12306_16_digits:        1 # OSL12306_16_NUM_OF_DIGITS' , file=output_file)
+    print('  osl12306_16_type: %s # OSL12306_16_PIN_TYPE 0(ANODE_COMMON), 1(CATHOD_COMMON)' % configuration['osl12306_16']['osl12306_16_type'], file=output_file)
+    print('  osl12306_16_a1_pin: \"D%s\" # OSL12306_16_PIN_A1' % configuration['osl12306_16']['osl12306_16_a1_pin'], file=output_file)
+    print('  osl12306_16_a2_pin: \"D%s\" # OSL12306_16_PIN_A2' % configuration['osl12306_16']['osl12306_16_a2_pin'], file=output_file)
+    print('  osl12306_16_b_pin: \"D%s\" # OSL12306_16_PIN_B' % configuration['osl12306_16']['osl12306_16_b_pin'], file=output_file)
+    print('  osl12306_16_c_pin: \"D%s\" # OSL12306_16_PIN_C' % configuration['osl12306_16']['osl12306_16_c_pin'], file=output_file)
+    print('  osl12306_16_d1_pin: \"D%s\" # OSL12306_16_PIN_D1' % configuration['osl12306_16']['osl12306_16_d1_pin'], file=output_file)
+    print('  osl12306_16_d2_pin: \"D%s\" # OSL12306_16_PIN_D2' % configuration['osl12306_16']['osl12306_16_d2_pin'], file=output_file)
+    print('  osl12306_16_e_pin: \"D%s\" # OSL12306_16_PIN_E' % configuration['osl12306_16']['osl12306_16_e_pin'], file=output_file)
+    print('  osl12306_16_f_pin: \"D%s\" # OSL12306_16_PIN_F' % configuration['osl12306_16']['osl12306_16_f_pin'], file=output_file)
+    print('  osl12306_16_g1_pin: \"D%s\" # OSL12306_16_PIN_G1' % configuration['osl12306_16']['osl12306_16_g1_pin'], file=output_file)
+    print('  osl12306_16_g2_pin: \"D%s\" # OSL12306_16_PIN_G2' % configuration['osl12306_16']['osl12306_16_g2_pin'], file=output_file)
+    print('  osl12306_16_j_pin: \"D%s\" # OSL12306_16_PIN_J' % configuration['osl12306_16']['osl12306_16_j_pin'], file=output_file)
+    print('  osl12306_16_k_pin: \"D%s\" # OSL12306_16_PIN_K' % configuration['osl12306_16']['osl12306_16_k_pin'], file=output_file)
+    print('  osl12306_16_l_pin: \"D%s\" # OSL12306_16_PIN_L' % configuration['osl12306_16']['osl12306_16_l_pin'], file=output_file)
+    print('  osl12306_16_m_pin: \"D%s\" # OSL12306_16_PIN_M' % configuration['osl12306_16']['osl12306_16_m_pin'], file=output_file)
+    print('  osl12306_16_n_pin: \"D%s\" # OSL12306_16_PIN_N' % configuration['osl12306_16']['osl12306_16_n_pin'], file=output_file)
+    print('  osl12306_16_p_pin: \"D%s\" # OSL12306_16_PIN_P' % configuration['osl12306_16']['osl12306_16_p_pin'], file=output_file)
+    print('  osl12306_16_dp_pin: \"D%s\" # OSL12306_16_PIN_DP' % configuration['osl12306_16']['osl12306_16_dp_pin'], file=output_file)
+    print('  osl12306_16_digit_pin: \"D%s\" # OSL12306_16_PIN_DIGIT' % configuration['osl12306_16']['osl12306_16_digit_pin'], file=output_file)
+    print('# OSL20541 (2桁14セグメントLED)', file=output_file)
+    print('osl20541:', file=output_file)
+    if checkYamlVal(configuration['osl20541']['use_osl20541']):
+        print('  use_osl20541: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_osl20541: false # true(使う) , false(使わない)' , file=output_file)
+    print('  osl20541_digits:         2 # OSL20541_NUM_OF_DIGITS' , file=output_file)
+    print('  osl20541_type: %s # OSL20541_PIN_TYPE 0(ANODE_COMMON), 1(CATHOD_COMMON)' % configuration['osl20541']['osl20541_type'], file=output_file)
+    print('  osl20541_a_pin: \"D%s\" # OSL20541_PIN_A' % configuration['osl20541']['osl20541_a_pin'], file=output_file)
+    print('  osl20541_b_pin: \"D%s\" # OSL20541_PIN_B' % configuration['osl20541']['osl20541_b_pin'], file=output_file)
+    print('  osl20541_c_pin: \"D%s\" # OSL20541_PIN_C' % configuration['osl20541']['osl20541_c_pin'], file=output_file)
+    print('  osl20541_d_pin: \"D%s\" # OSL20541_PIN_D' % configuration['osl20541']['osl20541_d_pin'], file=output_file)
+    print('  osl20541_e_pin: \"D%s\" # OSL20541_PIN_E' % configuration['osl20541']['osl20541_e_pin'], file=output_file)
+    print('  osl20541_f_pin: \"D%s\" # OSL20541_PIN_F' % configuration['osl20541']['osl20541_f_pin'], file=output_file)
+    print('  osl20541_g1_pin: \"D%s\" # OSL20541_PIN_G1' % configuration['osl20541']['osl20541_g1_pin'], file=output_file)
+    print('  osl20541_g2_pin: \"D%s\" # OSL20541_PIN_G2' % configuration['osl20541']['osl20541_g2_pin'], file=output_file)
+    print('  osl20541_h_pin: \"D%s\" # OSL20541_PIN_H' % configuration['osl20541']['osl20541_h_pin'], file=output_file)
+    print('  osl20541_j_pin: \"D%s\" # OSL20541_PIN_J' % configuration['osl20541']['osl20541_j_pin'], file=output_file)
+    print('  osl20541_k_pin: \"D%s\" # OSL20541_PIN_K' % configuration['osl20541']['osl20541_k_pin'], file=output_file)
+    print('  osl20541_l_pin: \"D%s\" # OSL20541_PIN_L' % configuration['osl20541']['osl20541_l_pin'], file=output_file)
+    print('  osl20541_m_pin: \"D%s\" # OSL20541_PIN_M' % configuration['osl20541']['osl20541_m_pin'], file=output_file)
+    print('  osl20541_n_pin: \"D%s\" # OSL20541_PIN_N' % configuration['osl20541']['osl20541_n_pin'], file=output_file)
+    print('  osl20541_dp_pin: \"D%s\" # OSL20541_PIN_P' % configuration['osl20541']['osl20541_p_pin'], file=output_file)
+    print('  osl20541_dp_pin: \"D%s\" # OSL20541_PIN_DP' % configuration['osl20541']['osl20541_dp_pin'], file=output_file)
+    print('  osl20541_digit1_pin: \"D%s\" # OSL20541_PIN_DIGIT_1' % configuration['osl20541']['osl20541_digit1_pin'], file=output_file)
+    print('  osl20541_digit2_pin: \"D%s\" # OSL20541_PIN_DIGIT_2' % configuration['osl20541']['osl20541_digit2_pin'], file=output_file)
+    print('# OSL30561 (3桁7セグメントLED)', file=output_file)
+    print('osl30561:', file=output_file)
+    if checkYamlVal(configuration['osl30561']['use_osl30561']):
+        print('  use_osl30561: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_osl30561: false # true(使う) , false(使わない)' , file=output_file)
+    print('  osl30561_digits:         3 # OSL30561_NUM_OF_DIGITS' , file=output_file)
+    print('  osl30561_type: %s # OSL30561_PIN_TYPE 0(ANODE_COMMON), 1(CATHOD_COMMON)' % configuration['osl30561']['osl30561_type'], file=output_file)
+    print('  osl30561_a_pin: \"D%s\" # OSL30561_PIN_A' % configuration['osl30561']['osl30561_a_pin'], file=output_file)
+    print('  osl30561_b_pin: \"D%s\" # OSL30561_PIN_B' % configuration['osl30561']['osl30561_b_pin'], file=output_file)
+    print('  osl30561_c_pin: \"D%s\" # OSL30561_PIN_C' % configuration['osl30561']['osl30561_c_pin'], file=output_file)
+    print('  osl30561_d_pin: \"D%s\" # OSL30561_PIN_D' % configuration['osl30561']['osl30561_d_pin'], file=output_file)
+    print('  osl30561_e_pin: \"D%s\" # OSL30561_PIN_E' % configuration['osl30561']['osl30561_e_pin'], file=output_file)
+    print('  osl30561_f_pin: \"D%s\" # OSL30561_PIN_F' % configuration['osl30561']['osl30561_f_pin'], file=output_file)
+    print('  osl30561_g_pin: \"D%s\" # OSL30561_PIN_G' % configuration['osl30561']['osl30561_g_pin'], file=output_file)
+    print('  osl30561_dp_pin: \"D%s\" # OSL30561_PIN_DP' % configuration['osl30561']['osl30561_dp_pin'], file=output_file)
+    print('  osl30561_digit1_pin: \"D%s\" # OSL30561_PIN_DIGIT_1' % configuration['osl30561']['osl30561_digit1_pin'], file=output_file)
+    print('  osl30561_digit2_pin: \"D%s\" # OSL30561_PIN_DIGIT_2' % configuration['osl30561']['osl30561_digit2_pin'], file=output_file)
+    print('  osl30561_digit3_pin: \"D%s\" # OSL30561_PIN_DIGIT_3' % configuration['osl30561']['osl30561_digit3_pin'], file=output_file)
+    print('# Grove - 4-Digit Display (TM1637)', file=output_file)
+    print('grove_tm1637:', file=output_file)
+    if checkYamlVal(configuration['grove_tm1637']['use_grove_tm1637']):
+        print('  use_grove_tm1637: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_grove_tm1637: false # true(使う) , false(使わない)' , file=output_file)
+    print('  grove_tm1637_clk_pin: \"D%s\" # GROVE_NSEG_LED_PIN_CLK' % configuration['grove_tm1637']['grove_tm1637_clk_pin'], file=output_file)
+    print('  grove_tm1637_data_pin: \"D%s\" # GROVE_NSEG_LED_PIN_DATA' % configuration['grove_tm1637']['grove_tm1637_data_pin'], file=output_file)
+    print('# DFRobot DFR0090 (8桁7セグメントLED)', file=output_file)
+    print('dfr0090:', file=output_file)
+    if checkYamlVal(configuration['dfr0090']['use_dfr0090']):
+        print('  use_dfr0090: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_dfr0090: false # true(使う) , false(使わない)' , file=output_file)
+    print('  dfr0090_digits: %s # DFR0090_NUM_OF_DIGITS' % configuration['dfr0090']['dfr0090_digits'], file=output_file)
+    print('  dfr0090_latch_pin: \"D%s\" # DFR0090_LATCH_PIN' % configuration['dfr0090']['dfr0090_latch_pin'], file=output_file)
+    print('  dfr0090_clk_pin: \"D%s\" # DFR0090_CLOCK_PIN' % configuration['dfr0090']['dfr0090_clk_pin'], file=output_file)
+    print('  dfr0090_data_pin: \"D%s\" # DFR0090_DATA_PIN' % configuration['dfr0090']['dfr0090_data_pin'], file=output_file)
+    print('', file=output_file)
+    print('#', file=output_file)
+    print('# サーボ', file=output_file)
+    print('#', file=output_file)
+    print('servo:', file=output_file)
+    if checkYamlVal(configuration['servo']['use_servo']):
+        print('  use_servo: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_servo: false # true(使う) , false(使わない)' , file=output_file)
+    print('  servo_pin: \"D%s\" # SERVO_PIN' % configuration['servo']['servo_pin'], file=output_file)
+    print('', file=output_file)
+    print('#', file=output_file)
+    print('# 音声デバイス', file=output_file)
+    print('#', file=output_file)
+    print('# スピーカ', file=output_file)
+    print('speaker:', file=output_file)
+    if checkYamlVal(configuration['speaker']['use_speaker']):
+        print('  use_speaker: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_speaker: false # true(使う) , false(使わない)' , file=output_file)
+    print('  speaker_pin: \"D%s\" # SPEAKER_PIN' % configuration['speaker']['servo_pin'], file=output_file)
+    print('# ブザー', file=output_file)
+    print('buzzer:', file=output_file)
+    if checkYamlVal(configuration['buzzer']['use_buzzer']):
+        print('  use_buzzer: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_buzzer: false # true(使う) , false(使わない)' , file=output_file)
+    print('  buzzer_pin: \"D%s\" # BUZZER_PIN' % configuration['buzzer']['buzzer_pin'], file=output_file)
+    print('# MP3 player', file=output_file)
+    print('mp3_player:', file=output_file)
+    if checkYamlVal(configuration['mp3_player']['use_mp3_player']):
+        print('  use_mp3_player: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_mp3_player: false # true(使う) , false(使わない)' , file=output_file)
+    print('  mp3_player_type: \"D%s\" # 0(Grove MP3 v2.0 / __USE_KT403A_PLAYER__ ), 1(Grove MP3 v3.0 / __USE_WT2003S_PLAYER__ ), 2(Grove MP3 v4.0 / __USE_WT2605C_PLAYER__ ), 3(DFPlayer mini MP3プレイヤーー / __USE_DF_ROBOT_DF_PLAYER_MINI__)' % configuration['mp3_player']['mp3_player_type'], file=output_file)
+    print('', file=output_file)
+    print('#', file=output_file)
+    print('# simple PWM device', file=output_file)
+    print('#', file=output_file)
+    print('pwm:', file=output_file)
+    if checkYamlVal(configuration['pwm']['use_pwm']):
+        print('  use_pwm: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_pwm: false # true(使う) , false(使わない)' , file=output_file)
+    print('  pwm_pin: \"D%s\" # PWM_PIN' % configuration['pwm']['pwm_pin'], file=output_file)
+    print('', file=output_file)
+    print('#', file=output_file)
+    print('# simple digital(ON/OFF) device (like switch)', file=output_file)
+    print('#', file=output_file)
+    print('switch:', file=output_file)
+    if checkYamlVal(configuration['switch']['use_switch']):
+        print('  use_switch: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_switch: false # true(使う) , false(使わない)' , file=output_file)
+    print('  switch_pin: \"D%s\" # SWITCH_PIN' % configuration['switch']['switch_pin'], file=output_file)
+    print('', file=output_file)
+    print('#', file=output_file)
+    print('# IR LED remote control device', file=output_file)
+    print('#', file=output_file)
+    print('ir_remote:', file=output_file)
+    if checkYamlVal(configuration['ir_remote']['use_ir_remote']):
+        print('  use_ir_remote: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_ir_remote: false # true(使う) , false(使わない)' , file=output_file)
+    print('  ir_remote_pin: \"D%s\" # IR_PIN' % configuration['ir_remote']['ir_remote_pin'], file=output_file)
+    print('', file=output_file)
+    print('#', file=output_file)
+    print('# Graphic display', file=output_file)
+    print('#', file=output_file)
+    print('graphic_display:', file=output_file)
+    if checkYamlVal(configuration['graphic_display']['use_graphic_display']):
+        print('  use_graphic_display: true # true(使う) , false(使わない)' , file=output_file)
+    else:
+        print('  use_graphic_display: false # true(使う) , false(使わない)' , file=output_file)
+    print('  graphic_display_type: \"D%s\" # 0(USE_GIGA_DISPLAY_GFX) , 1(USE_BODMER_TFT_ESPI) , 2(USE_ADAFRUIT_GFX & TFT_ILI9341_TYPE_1), 3(USE_ADAFRUIT_GFX & TFT_ILI9341_TYPE_2)' % configuration['graphic_display']['graphic_display_type'], file=output_file)
+    print('  graphic_display_cs_pin: \"D%s\" # TFT_ILI9341_PIN_CS' % configuration['graphic_display']['graphic_display_cs_pin'], file=output_file)
+    print('  graphic_display_rst_pin: \"D%s\" # TFT_ILI9341_PIN_RST' % configuration['graphic_display']['graphic_display_rst_pin'], file=output_file)
+    print('  graphic_display_dc_pin: \"D%s\" # TFT_ILI9341_PIN_DC' % configuration['graphic_display']['graphic_display_dc_pin'], file=output_file)
+    print('  graphic_display_mosi_pin: \"D%s\" # TFT_ILI9341_PIN_MOSI' % configuration['graphic_display']['graphic_display_mosi_pin'], file=output_file)
+    print('  graphic_display_miso_pin: \"D%s\" # TFT_ILI9341_PIN_MISO' % configuration['graphic_display']['graphic_display_miso_pin'], file=output_file)
+    print('  graphic_display_clk_pin: \"D%s\" # TFT_ILI9341_PIN_CLK' % configuration['graphic_display']['graphic_display_clk_pin'], file=output_file)
+    print('', file=output_file)
+    return "Success"
+
+# YAMLの論理値を検査
+def checkYamlVal(val):
+    if (val==False) or (val == "false") or (val == "False") or (val == "FALSE"):
+        return False
+    return True
+
+# 入力欄の数字確認 isInteger(x) : asciiの数字であることを確認
+def isInteger(x):
+    if isinstance(x,str) and x.isascii() and x.isdecimal():
+        return (True, int(x))
+    return (False, -1)
+
+# 入力欄の数字の範囲確認(min,max) isNumRange(x, min,max) : max≧x≧min
+def isNumRange(x, min,max):
+    (flag,val) = isInteger(x)
+    if not flag:
+        return (False, val)
+    if (val < min) or (val > max):
+        return (False, val)
+    return (True, val)
+
+
+# ピン番号確認 isPinNumber(x) : 範囲は0から53
+def isPinNumber(x):
+    return isNumRange(x, 0, 53)
+
+
+# 入力欄の数字の範囲確認(minのみ) isNumLarger(x,min) : x≧min
+def isNumLarger(x, min):
+    (flag,val) = isInteger(x)
+    if not flag:
+        return (False, val)
+    if val < min:
+        return (False, val)
+    return (True, val)
+
+
+#
+# メイン画面の構成定義
+#
+
+def editWindow(page: ft.Page):
+    global configuration, lastView
+    def create_view0():
+        global config_file_name, helpPageName
+        def pick_config_file_result(e: ft.FilePickerResultEvent):
+            global config_file_name
+            if e.files:
+                selected_config_file.value = e.files[0].path
+            else:
+                selected_config_file.value = "キャンセル"
+            config_file_name = selected_config_file.value
+            selected_config_file.update()
+
+        def load_button_clicked(e):
+            if (config_file_name=="") or (config_file_name=="キャンセル"):
+                warning_message.value = "設定ファイルを選択してください．"
+                warning_message.update()
+                return
+            warning_message.value = loadConfigFile()
+            if warning_message.value!='':
+                warning_message.update()
+                return
+            page.go("/view1")
+
+        pick_config_file_dialog = ft.FilePicker(on_result=pick_config_file_result)
+        selected_config_file = ft.Text()
+
+        page.window_width = 400
+        page.window_height = 450
+        helpPageName = 'loadConfig'
+    
+        page.overlay.append(pick_config_file_dialog)
+
+        load_button = ft.ElevatedButton(text="ロード", on_click=load_button_clicked)
+        warning_message = ft.Text()
+
+        finish_button = ft.ElevatedButton(text="終了", on_click=lambda e: page.window_destroy())
+        
+        return ft.View("/view0", [
+            ft.AppBar(
+                title=ft.Text("設定ファイル選択"),
+                bgcolor=ft.colors.BLUE,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            ft.Text("設定ファイル", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            ft.ElevatedButton(
+                "選択",
+                icon=ft.icons.UPLOAD_FILE,
+                on_click=lambda _: pick_config_file_dialog.pick_files(
+                    allow_multiple=False,
+                    ),
+                ),
+            selected_config_file,
+            ft.Divider(height=2, color="black"),
+            ft.Text("設定ファイル", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            load_button,
+            warning_message,
+            ft.Divider(height=2, color="black"),
+            finish_button
+        ])
+
+    def create_view1():
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 800
+        helpPageName = 'TOC'
+        page.title = "目次"
+        return ft.View("/view1", [
+            ft.AppBar(
+                title=ft.Text("目次"),
+                bgcolor=ft.colors.GREEN,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            ft.Text("設定項目選択", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            ft.ElevatedButton(
+                "先頭から順番に設定", on_click=lambda _: page.go("/view5")),
+            ft.Divider(height=2, color="black"),
+            ft.Text("特定のオプションのみ設定", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            ft.Text("プラットフォーム関係"),
+            ft.ElevatedButton(
+                "ハードウェア", on_click=lambda _: page.go("/view5")),
+            ft.ElevatedButton(
+                "動作ログ", on_click=lambda _: page.go("/view25")),
+            ft.ElevatedButton(
+                "ネットワーク", on_click=lambda _: page.go("/view35")),
+            ft.ElevatedButton(
+                "その他", on_click=lambda _: page.go("/view50")),
+            ft.Divider(height=1, color="black"),
+            ft.Text("アクチュエータ"),
+            ft.ElevatedButton(
+                "キャラクタディスプレイ", on_click=lambda _: page.go("/view100")),
+            ft.ElevatedButton(
+                "LED/NセグメントLED", on_click=lambda _: page.go("/view200")),
+            ft.ElevatedButton(
+                "サーボ", on_click=lambda _: page.go("/view300")),
+            ft.ElevatedButton(
+                "音声デバイス", on_click=lambda _: page.go("/view400")),
+            ft.ElevatedButton(
+                "シンプルPWMデバイス", on_click=lambda _: page.go("/view500")),
+            ft.ElevatedButton(
+                "シンプルデジタルデバイス", on_click=lambda _: page.go("/view600")),
+            ft.ElevatedButton(
+                "赤外線リモコン", on_click=lambda _: page.go("/view700")),
+            ft.ElevatedButton(
+                "グラフィックディスプレイ", on_click=lambda _: page.go("/view800")),
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view5():
+        def goNextPage(selection):
+            if selection=="ethernet":
+                page.go("/view6")
+            page.go("/view7")
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 400
+        helpPageName = 'NetworkMedia'
+        page.title = "ネットワーク選択"
+        return ft.View("/view5", [
+            ft.AppBar(
+                title=ft.Text("ネットワーク種類指定"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            network_type,
+            ft.ElevatedButton(
+                #"次", on_click=lambda _: page.go("/view3")),
+                "次", on_click=goNextPage(network_type.value)),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: page.go("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view6():
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 850
+        helpPageName = 'EthernetSetting'
+        return ft.View("/view6", [
+            ft.AppBar(
+                title=ft.Text("イーサネット設定"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            ft.Text("Chip select pin"),
+            ethernet_chip_select,
+            ft.Divider(height=2, color="black"),
+            ft.Text("MAC address"),
+            ethernet_mac_0,
+            ethernet_mac_1,
+            ethernet_mac_2,
+            ethernet_mac_3,
+            ethernet_mac_4,
+            ethernet_mac_5,
+            ft.ElevatedButton(
+                "次", on_click=lambda _: page.go("/view10")),
+            ft.ElevatedButton(
+                "戻る", on_click=lambda _: page.go("/view5")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view7():
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'WiFiSetting'
+        return ft.View("/view7", [
+            ft.AppBar(
+                title=ft.Text("WiFi設定"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            wifi_ssid,
+            wifi_pass,
+            ft.ElevatedButton(
+                "次", on_click=lambda _: page.go("/view5")),
+            ft.ElevatedButton(
+                "戻る", on_click=lambda _: page.go("/view2")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view10():
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 400
+        helpPageName = 'rtcSetting'
+        return ft.View("/view10", [
+            ft.AppBar(
+                title=ft.Text("リアルタイムクロック選択"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            rtc_type,
+            ft.ElevatedButton(
+                "次", on_click=lambda _: page.go("/view6")),
+            ft.ElevatedButton(
+                "戻る", on_click=lambda _: page.go("/view2")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view15():
+        def goNextPage(selection):
+            if selection:
+                page.go("/view16")
+            page.go("/view17")
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 400
+        helpPageName = 'useLED'
+        return ft.View("/view15", [
+            ft.AppBar(
+                title=ft.Text("稼働状態表示LED"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            led_flag,
+            ft.ElevatedButton(
+                #"次", on_click=lambda _: page.go("/view7")),
+                "次", on_click=goNextPage(led_flag.value)),
+            ft.ElevatedButton(
+                "戻る", on_click=lambda _: page.go("/view10")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view16():
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 600
+        helpPageName = 'ledParam'
+        return ft.View("/view16", [
+            ft.AppBar(
+                title=ft.Text("稼働状態表示LEDパラメータ"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            led_pin,
+            led_long_duration,
+            led_short_duration,
+            ft.ElevatedButton(
+                "次", on_click=lambda _: page.go("/view20")),
+            ft.ElevatedButton(
+                "戻る", on_click=lambda _: page.go("/view15")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view20():
+        def goNextPage(selection):
+            if selection:
+                page.go("/view21")
+            page.go("/view25")
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 400
+        helpPageName = 'useSD'
+        return ft.View("/view20", [
+            ft.AppBar(
+                title=ft.Text("SD/マイクロSD"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            sd_flag,
+            ft.ElevatedButton(
+                #"次", on_click=lambda _: page.go("/view9")),
+                "次", on_click=goNextPage(sd_flag.value)),
+            ft.ElevatedButton(
+                "戻る", on_click=lambda _: page.go("/view15")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view21():
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 400
+        helpPageName = 'sdParam'
+        return ft.View("/view21", [
+            ft.AppBar(
+                title=ft.Text("SD関連パラメータ"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            sd_chip_select_pin,
+            ft.ElevatedButton(
+                "次", on_click=lambda _: page.go("/view25")),
+            ft.ElevatedButton(
+                "戻る", on_click=lambda _: page.go("/view20")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view25():
+        def goNextPage(selection):
+            if selection:
+                page.go("/view30")
+            page.go("/view31")
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 400
+        helpPageName = 'serialSpeed'
+        return ft.View("/view25", [
+            ft.AppBar(
+                title=ft.Text("シリアル"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            serial_speed,
+            ft.ElevatedButton(
+                #"次", on_click=lambda _: page.go("/view11")),
+                "次", on_click=goNextPage(sd_flag.value)),
+            ft.ElevatedButton(
+                "戻る", on_click=lambda _: page.go("/view20")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view30():
+        def goNextPage(file, serial):
+            if file or serial:
+                page.go("/view32")
+            page.go("/view35")
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 500
+        helpPageName = 'logUsage'
+        return ft.View("/view30", [
+            ft.AppBar(
+                title=ft.Text("ログ出力"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            logfile_flag,
+            serial_log_flag,
+            ft.ElevatedButton(
+                #"次", on_click=lambda _: page.go("/view12")),
+                "次", on_click=goNextPage(logfile_flag.value , serial_log_flag.value)),
+            ft.ElevatedButton(
+                "戻る", on_click=lambda _: page.go("/view20")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view31():
+        def goNextPage(selection):
+            if selection:
+                page.go("/view32")
+            page.go("/view35")
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 500
+        helpPageName = 'logUsage'
+        return ft.View("/view31", [
+            ft.AppBar(
+                title=ft.Text("ログ出力"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            serial_log_flag,
+            ft.ElevatedButton(
+                #"次", on_click=lambda _: page.go("/view12")),
+                "次", on_click=goNextPage(serial_log_flag.value)),
+            ft.ElevatedButton(
+                "戻る", on_click=lambda _: page.go("/view20")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view32():
+        def goNextPage(selection):
+            if selection:
+                page.go("/view33")
+            page.go("/view35")
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'logField'
+        return ft.View("/view32", [
+            ft.AppBar(
+                title=ft.Text("ログ関連パラメータ"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            host_name,
+            app_name,
+            ft.ElevatedButton(
+                #"次", on_click=lambda _: page.go("/view13")),
+                "次", on_click=goNextPage(logfile_flag.value)),
+            ft.ElevatedButton(
+                "戻る", on_click=lambda _: page.go("/view20")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view33():
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'logFileParam'
+        return ft.View("/view33", [
+            ft.AppBar(
+                title=ft.Text("ログファイル"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            logfile_name,
+            logfile_size,
+            ft.ElevatedButton(
+                "次", on_click=lambda _: page.go("/view35")),
+            ft.ElevatedButton(
+                "戻る", on_click=lambda _: page.go("/view20")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view35():
+        def goNextPage(selection):
+            if selection:
+                page.go("/view40")
+            page.go("/view36")
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 400
+        helpPageName = 'dhcpFlag'
+        return ft.View("/view35", [
+            ft.AppBar(
+                title=ft.Text("DHCP利用設定"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            dhcp_flag,
+            ft.ElevatedButton(
+                #"次", on_click=lambda _: page.go("/view15")),
+                "次", on_click=goNextPage(dhcp_flag.value)),
+            ft.ElevatedButton(
+                "戻る", on_click=lambda _: page.go("/view20")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view36():
+        global helpPageName
+        page.window_width = 400
+        page.window_height = 900
+        helpPageName = 'staticIP1'
+        return ft.View("/view36", [
+            ft.AppBar(
+                title=ft.Text("固定IP設定"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            ft.Text("IPアドレス"),
+            ip_addr_0,
+            ip_addr_1,
+            ip_addr_2,
+            ip_addr_3,
+            ft.Divider(height=2, color="black"),
+            ft.Text("ネットマスク"),
+            netmask_0,
+            netmask_1,
+            netmask_2,
+            netmask_3,
+            ft.ElevatedButton(
+                "次", on_click=lambda _: page.go("/view37")),
+            ft.ElevatedButton(
+                "戻る", on_click=lambda _: page.go("/view35")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view37():
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 900
+        helpPageName = 'staticIP2'
+        return ft.View("/view37", [
+            ft.AppBar(
+                title=ft.Text("各種サーバ"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            ft.Text("ゲートウェイ"),
+            gateway_0,
+            gateway_1,
+            gateway_2,
+            gateway_3,
+            ft.Divider(height=2, color="black"),
+            ft.Text("DNSサーバ"),
+            dns_server_0,
+            dns_server_1,
+            dns_server_2,
+            dns_server_3,
+            ft.ElevatedButton(
+                "次", on_click=lambda _: page.go("/view40")),
+            ft.ElevatedButton(
+                "戻る", on_click=lambda _: page.go("/view35")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view40():
+        def goNextPage(selection):
+            if selection:
+                page.go("/view41")
+            page.go("/view45")
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 700
+        helpPageName = 'mqttParam'
+        return ft.View("/view40", [
+            ft.AppBar(
+                title=ft.Text("MQTT設定"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            #mqtt_format,
+            mqtt_topic,
+            mqtt_server,
+            mqtt_port,
+            ft.Divider(height=2, color="black"),
+            ft.Text("認証"),
+            mqtt_auth_flag,
+            ft.ElevatedButton(
+                #"次", on_click=lambda _: page.go("/view18")),
+                "次", on_click=goNextPage(mqtt_auth_flag.value)),
+            ft.ElevatedButton(
+                "戻る", on_click=lambda _: page.go("/view35")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view41():
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'mqttAuth'
+        return ft.View("/view41", [
+            ft.AppBar(
+                title=ft.Text("認証パラメータ"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            mqtt_user,
+            mqtt_pass,
+            ft.ElevatedButton(
+                "次", on_click=lambda _: page.go("/view45")),
+            ft.ElevatedButton(
+                "戻る", on_click=lambda _: page.go("/view40")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view45():
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'ntpParam'
+        return ft.View("/view45", [
+            ft.AppBar(
+                title=ft.Text("NTP設定"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            ntp_flag,
+            rtc_ntp_flag,
+            ft.ElevatedButton(
+                "次", on_click=lambda _: page.go("/view50")),
+            ft.ElevatedButton(
+                "戻る", on_click=lambda _: page.go("/view40")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view50():
+        def goNextPage(selection):
+            if selection:
+                page.go("/view51")
+            page.go("/view1")
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 400
+        helpPageName = 'useWDT'
+        return ft.View("/view50", [
+            ft.AppBar(
+                title=ft.Text("Watch Dog Timer設定"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            wdt_flag,
+            ft.ElevatedButton(
+                #"次", on_click=lambda _: page.go("/view21")),
+                "次", on_click=goNextPage(wdt_flag.value)),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: page.go("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view51():
+        global helpPageName
+        page.window_width = 400
+        page.window_height = 450
+        helpPageName = 'wdtParam'
+        return ft.View("/view51", [
+            ft.AppBar(
+                title=ft.Text("Watch Dog Timerパラメータ"),
+                bgcolor=ft.colors.AMBER,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            wdt_duration,
+            wdt_short_duration,
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: page.go("/view1")),
+            ft.ElevatedButton(
+                "戻る", on_click=lambda _: page.go("/view50")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view100(): # キャラクタディスプレイ一覧メニュー
+        def goNextPage(selection):
+            if selection == 1:
+                page.go("/view110")
+            elif selection == 2:
+                page.go("/view120")
+            elif selection == 3:
+                page.go("/view130")
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 900
+        helpPageName = 'characterDisplayList'
+        characterDisplayList = ft.Dropdown(
+            label="キャラクタディスプレイ選択",
+            width=200,
+            options=[
+                ft.dropdown.Option(key=0, text=""),
+                ft.dropdown.Option(key=1, text="Grove character lcd RGB Backlight"),
+                ft.dropdown.Option(key=2, text="ACM1602"),
+                ft.dropdown.Option(key=3, text="Liquid Crystal Display Library (SC1602/SC2004)"),
+            ],
+        )
+        return ft.View("/view100", [
+            ft.AppBar(
+                title=ft.Text("キャラクタディスプレイ選択"),
+                bgcolor=ft.colors.GREEN,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            ft.Text("設定対象選択", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            characterDisplayList,
+            ft.ElevatedButton(
+                #"次", on_click=lambda _: page.go("/view21")),
+                "次", on_click=goNextPage(characterDisplayList.value)),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: page.go("/view1")),
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view110(): # Grove character lcd RGB Backlight
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 500
+        helpPageName = 'Grove_character_lcd_RGB_Backlight'
+        return ft.View("/view110", [
+            ft.AppBar(
+                title=ft.Text("Grove character lcd RGB Backlight"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            grove_lcd_flag,
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: page.go("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view120(): # ACM1602
+        global helpPageName
+        page.window_width = 450
+        page.window_height = 450
+        helpPageName = 'acm1602'
+        return ft.View("/view120", [
+            ft.AppBar(
+                title=ft.Text("ACM1602 I2Cキャラクタディスプレイ"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            acm1602ni_flag,
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: page.go("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view130(): # Liquid Crystal Library LCD (SC1602/SC2004)
+        def checkPinNumber(destination):
+            if not liquid_crystal_flag.value:
+                page.go(destination)
+            checkResult.value = ""
+            (flag, val) = isPinNumber(liquid_crystal_rs_pin.value)
+            if not flag:
+                checkResult.value = "RSピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(liquid_crystal_es_pin.value)
+            if not flag:
+                checkResult.value = "ESピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(liquid_crystal_d4_pin.value)
+            if not flag:
+                checkResult.value = "D4ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(liquid_crystal_d5_pin.value)
+            if not flag:
+                checkResult.value = "D5ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(liquid_crystal_d6_pin.value)
+            if not flag:
+                checkResult.value = "D6ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(liquid_crystal_d7_pin.value)
+            if not flag:
+                checkResult.value = "D7ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            page.go(destination)
+        def goNextPage(destination):
+            if liquid_crystal_flag.value:
+                checkPinNumber(destination)
+            else:
+                page.go(destination)
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'liquid_crystal_library'
+        checkResult = ft.Text()
+        return ft.View("/view130", [
+            ft.AppBar(
+                title=ft.Text("Liquid Crystal Library LCD (SC1602/SC2004)"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            liquid_crystal_flag,
+            ft.Divider(height=2, color="black"),
+            liquid_crystal_type,
+            ft.Text("各ピンの接続先端子番号指定(0～53)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            liquid_crystal_rs_pin,
+            liquid_crystal_es_pin,
+            liquid_crystal_d4_pin,
+            liquid_crystal_d5_pin,
+            liquid_crystal_d6_pin,
+            liquid_crystal_d7_pin,
+            checkResult,
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: goNextPage("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: goNextPage("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view200(): # LED一覧メニュー
+        def goNextPage(selection):
+            if selection == 1:
+                page.go("/view205")
+            elif selection == 2:
+                page.go("/view210")
+            elif selection == 3:
+                page.go("/view215")
+            elif selection == 4:
+                page.go("/view220")
+            elif selection == 5:
+                page.go("/view225")
+            elif selection == 6:
+                page.go("/view230")
+            elif selection == 7:
+                page.go("/view235")
+            elif selection == 8:
+                page.go("/view240")
+            elif selection == 9:
+                page.go("/view245")
+            elif selection == 10:
+                page.go("/view250")
+            elif selection == 11:
+                page.go("/view255")
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 900
+        helpPageName = 'ledList'
+        ledList = ft.Dropdown(
+            label="LED選択",
+            width=200,
+            options=[
+                ft.dropdown.Option(key=0, text=""),
+                ft.dropdown.Option(key=1, text="モノクロLED"),
+                ft.dropdown.Option(key=2, text="アノード/カソードコモンカラーLED"),
+                ft.dropdown.Option(key=3, text="Grove LED Bar"),
+                ft.dropdown.Option(key=4, text="Grove LED circular"),
+                ft.dropdown.Option(key=5, text="Grove chainable LED"),
+                ft.dropdown.Option(key=6, text="Adafruit NeoPixel"),
+                ft.dropdown.Option(key=7, text="OSL12306-16 (16セグメントLED)"),
+                ft.dropdown.Option(key=8, text="OSL20541 (2桁14セグメントLED)"),
+                ft.dropdown.Option(key=9, text="OSL30561 (3桁7セグメントLED)"),
+                ft.dropdown.Option(key=10, text="Grove - 4-Digit Display"),
+                ft.dropdown.Option(key=11, text="DFRobot DFR0090 (8桁7セグメントLED)"),
+            ],
+        )
+        return ft.View("/view200", [
+            ft.AppBar(
+                title=ft.Text("キャラクタディスプレイ選択"),
+                bgcolor=ft.colors.GREEN,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            ft.Text("設定対象選択", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            ledList,
+            ft.ElevatedButton(
+                "次", on_click=goNextPage(ledList.value)),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: page.go("/view1")),
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view205(): # モノクロLED
+        def checkPinNumber(destination):
+            if not simple_mono_led_flag.value:
+                page.go(destination)
+            checkResult.value = ""
+            (flag, val) = isPinNumber(simple_mono_led_pin.value)
+            if not flag:
+                checkResult.value = "ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            page.go(destination)
+        def goNextPage(destination):
+            if simple_mono_led_flag.value:
+                checkPinNumber(destination)
+            else:
+                page.go(destination)
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'simple_mono_led'
+        checkResult = ft.Text()
+        return ft.View("/view205", [
+            ft.AppBar(
+                title=ft.Text("モノクロLED"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            simple_mono_led_flag,
+            ft.Divider(height=2, color="black"),
+            simple_mono_led_type,
+            ft.Text("ピンの接続先端子番号指定(0～53)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            simple_mono_led_pin,
+            checkResult,
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: goNextPage("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: goNextPage("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view210(): # アノード/カソードコモンカラーLED
+        def checkPinNumber(destination):
+            if not simple_color_led_flag.value:
+                page.go(destination)
+            checkResult.value = ""
+            (flag, val) = isPinNumber(simple_color_led_red_pin.value)
+            if not flag:
+                checkResult.value = "Rピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(simple_color_led_green_pin.value)
+            if not flag:
+                checkResult.value = "Gピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(simple_color_led_blue_pin.value)
+            if not flag:
+                checkResult.value = "Bピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            page.go(destination)
+        def goNextPage(destination):
+            if simple_color_led_flag.value:
+                checkPinNumber(destination)
+            else:
+                page.go(destination)
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'simple_color_led'
+        checkResult = ft.Text()
+        return ft.View("/view210", [
+            ft.AppBar(
+                title=ft.Text("アノード/カソードコモンカラーLED"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            simple_color_led_flag,
+            ft.Divider(height=2, color="black"),
+            simple_color_led_type,
+            ft.Text("各ピンの接続先端子番号指定(0～53)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            simple_color_led_red_pin,
+            simple_color_led_green_pin,
+            simple_color_led_blue_pin,
+            checkResult,
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: goNextPage("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: goNextPage("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view215(): # Grove LED bar
+        def checkPinNumber(destination):
+            if not grove_led_bar_flag.value:
+                page.go(destination)
+            checkResult.value = ""
+            (flag, val) = isPinNumber(grove_led_bar_clk_pin.value)
+            if not flag:
+                checkResult.value = "Clockピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(grove_led_bar_data_pin.value)
+            if not flag:
+                checkResult.value = "Dataピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            page.go(destination)
+        def goNextPage(destination):
+            checkResult.value = ""
+            if grove_led_bar_flag.value:
+                (flag, val) = isNumRange(grove_led_bar_leds.value, 1, 10)
+                if not flag:
+                    checkResult.value = "使用するLEDの数(1～10)を指定してください．"
+                    return
+                checkPinNumber(destination)
+            else:
+                page.go(destination)
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'grove_led_bar'
+        checkResult = ft.Text()
+        return ft.View("/view215", [
+            ft.AppBar(
+                title=ft.Text("Grove LED bar"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            grove_led_bar_flag,
+            ft.Divider(height=2, color="black"),
+            ft.Text("使用するLED個数(1～10)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            grove_led_bar_leds,
+            ft.Text("点灯する方向", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            grove_led_bar_direction,
+            ft.Text("各ピンの接続先端子番号指定(0～53)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            grove_led_bar_clk_pin,
+            grove_led_bar_data_pin,
+            checkResult,
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: goNextPage("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: goNextPage("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view220(): # Grove LED circular
+        def checkPinNumber(destination):
+            if not grove_led_circular_flag.value:
+                page.go(destination)
+            checkResult.value = ""
+            (flag, val) = isPinNumber(grove_led_circular_clk_pin.value)
+            if not flag:
+                checkResult.value = "Clockピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(grove_led_circular_data_pin.value)
+            if not flag:
+                checkResult.value = "Dataピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            page.go(destination)
+        def goNextPage(destination):
+            checkResult.value = ""
+            if grove_led_circular_flag.value:
+                (flag, val) = isNumRange(grove_led_circular_leds.value, 1, 24)
+                if not flag:
+                    checkResult.value = "使用するLEDの数(1～24)を指定してください．"
+                    return
+                checkPinNumber(destination)
+            else:
+                page.go(destination)
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'grove_led_circular'
+        checkResult = ft.Text()
+        return ft.View("/view220", [
+            ft.AppBar(
+                title=ft.Text("Grove LED circular"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            grove_led_circular_flag,
+            ft.Divider(height=2, color="black"),
+            ft.Text("使用するLED個数(1～24)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            grove_led_circular_leds,
+            ft.Text("点灯する方向", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            grove_led_circular_direction,
+            ft.Text("各ピンの接続先端子番号指定(0～53)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            grove_led_circular_clk_pin,
+            grove_led_circular_data_pin,
+            checkResult,
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: goNextPage("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: goNextPage("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view225(): # Grove chainable LED
+        def checkPinNumber(destination):
+            if not grove_chainable_led_flag.value:
+                page.go(destination)
+            checkResult.value = ""
+            (flag, val) = isPinNumber(grove_chainable_led_clk_pin.value)
+            if not flag:
+                checkResult.value = "Clockピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(grove_chainable_led_data_pin.value)
+            if not flag:
+                checkResult.value = "Dataピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            page.go(destination)
+        def goNextPage(destination):
+            checkResult.value = ""
+            if grove_chainable_led_flag.value:
+                (flag, val) = isNumLarger(grove_chainable_led_leds.value, 1)
+                if not flag:
+                    checkResult.value = "使用するLEDの数(1以上)を指定してください．"
+                    return
+                checkPinNumber(destination)
+            else:
+                page.go(destination)
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'grove_chainable_led'
+        checkResult = ft.Text()
+        return ft.View("/view225", [
+            ft.AppBar(
+                title=ft.Text("Grove chainable LED"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            grove_chainable_led_flag,
+            ft.Divider(height=2, color="black"),
+            ft.Text("使用するLED個数(1以上)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            grove_chainable_led_leds,
+            ft.Text("各ピンの接続先端子番号指定(0～53)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            grove_chainable_led_clk_pin,
+            grove_chainable_led_data_pin,
+            checkResult,
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: goNextPage("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: goNextPage("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view230(): # Adafruit NeoPixel
+        def checkPinNumber(destination):
+            if not adafuit_neopixel_flag.value:
+                page.go(destination)
+            checkResult.value = ""
+            (flag, val) = isPinNumber(adafuit_neopixel_pin.value)
+            if not flag:
+                checkResult.value = "ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            page.go(destination)
+        def goNextPage(destination):
+            checkResult.value = ""
+            if adafuit_neopixel_flag.value:
+                (flag, val) = isNumLarger(adafuit_neopixel_leds.value, 1)
+                if not flag:
+                    checkResult.value = "使用するLEDの数(1以上)を指定してください．"
+                    return
+                checkPinNumber(destination)
+            else:
+                page.go(destination)
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'adafuit_neopixel'
+        checkResult = ft.Text()
+        return ft.View("/view230", [
+            ft.AppBar(
+                title=ft.Text("Adafruit NeoPixel"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            adafuit_neopixel_flag,
+            ft.Divider(height=2, color="black"),
+            ft.Text("使用するLED個数(1以上)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            adafuit_neopixel_leds,
+            ft.Text("ピンの接続先端子番号指定(0～53)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            adafuit_neopixel_pin,
+            checkResult,
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: goNextPage("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: goNextPage("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view235(): # OSL12306-16 (16セグメントLED)
+        def checkPinNumber(destination):
+            if not osl12306_16_flag.value:
+                page.go(destination)
+            checkResult.value = ""
+            (flag, val) = isPinNumber(osl12306_16_a1_pin.value)
+            if not flag:
+                checkResult.value = "A1ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl12306_16_a2_pin.value)
+            if not flag:
+                checkResult.value = "A2ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl12306_16_b_pin.value)
+            if not flag:
+                checkResult.value = "Bピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl12306_16_c_pin.value)
+            if not flag:
+                checkResult.value = "Cピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl12306_16_d1_pin.value)
+            if not flag:
+                checkResult.value = "D1ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl12306_16_d2_pin.value)
+            if not flag:
+                checkResult.value = "D2ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl12306_16_e_pin.value)
+            if not flag:
+                checkResult.value = "Eピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl12306_16_f_pin.value)
+            if not flag:
+                checkResult.value = "Fピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl12306_16_g1_pin.value)
+            if not flag:
+                checkResult.value = "G1ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl12306_16_g2_pin.value)
+            if not flag:
+                checkResult.value = "G2ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl12306_16_j_pin.value)
+            if not flag:
+                checkResult.value = "Jピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl12306_16_k_pin.value)
+            if not flag:
+                checkResult.value = "Kピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl12306_16_l_pin.value)
+            if not flag:
+                checkResult.value = "Lピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl12306_16_m_pin.value)
+            if not flag:
+                checkResult.value = "Mピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl12306_16_n_pin.value)
+            if not flag:
+                checkResult.value = "Nピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl12306_16_p_pin.value)
+            if not flag:
+                checkResult.value = "Pピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl12306_16_dp_pin.value)
+            if not flag:
+                checkResult.value = "DPピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl12306_16_digit_pin.value)
+            if not flag:
+                checkResult.value = "桁表示(digit)ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            page.go(destination)
+        def goNextPage(destination):
+            if osl12306_16_flag.value:
+                checkPinNumber(destination)
+            else:
+                page.go(destination)
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'osl12306_16'
+        checkResult = ft.Text()
+        return ft.View("/view235", [
+            ft.AppBar(
+                title=ft.Text("OSL12306-16 (16セグメント1桁LED)"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            osl12306_16_flag,
+            ft.Divider(height=2, color="black"),
+            osl12306_16_type,
+            ft.Text("各ピンの接続先端子番号指定(0～53)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            osl12306_16_a1_pin,
+            osl12306_16_a2_pin,
+            osl12306_16_b_pin,
+            osl12306_16_c_pin,
+            osl12306_16_d1_pin,
+            osl12306_16_d2_pin,
+            osl12306_16_e_pin,
+            osl12306_16_f_pin,
+            osl12306_16_g1_pin,
+            osl12306_16_g2_pin,
+            osl12306_16_j_pin,
+            osl12306_16_k_pin,
+            osl12306_16_l_pin,
+            osl12306_16_m_pin,
+            osl12306_16_n_pin,
+            osl12306_16_p_pin,
+            osl12306_16_dp_pin,
+            osl12306_16_digit_pin,
+            checkResult,
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: goNextPage("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: goNextPage("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view240(): # OSL20541 (2桁14セグメントLED)
+        def checkPinNumber(destination):
+            if not osl20541_flag.value:
+                page.go(destination)
+            checkResult.value = ""
+            (flag, val) = isPinNumber(osl20541_a_pin.value)
+            if not flag:
+                checkResult.value = "Aピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl20541_b_pin.value)
+            if not flag:
+                checkResult.value = "Bピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl20541_c_pin.value)
+            if not flag:
+                checkResult.value = "Cピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl20541_d_pin.value)
+            if not flag:
+                checkResult.value = "Dピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl20541_e_pin.value)
+            if not flag:
+                checkResult.value = "Eピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl20541_f_pin.value)
+            if not flag:
+                checkResult.value = "Fピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl20541_g1_pin.value)
+            if not flag:
+                checkResult.value = "G1ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl20541_g2_pin.value)
+            if not flag:
+                checkResult.value = "G2ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl20541_h_pin.value)
+            if not flag:
+                checkResult.value = "Hピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl20541_j_pin.value)
+            if not flag:
+                checkResult.value = "Jピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl20541_k_pin.value)
+            if not flag:
+                checkResult.value = "Kピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl20541_l_pin.value)
+            if not flag:
+                checkResult.value = "Lピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl20541_m_pin.value)
+            if not flag:
+                checkResult.value = "Mピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl20541_n_pin.value)
+            if not flag:
+                checkResult.value = "Nピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl20541_p_pin.value)
+            if not flag:
+                checkResult.value = "Pピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl20541_dp_pin.value)
+            if not flag:
+                checkResult.value = "DPピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl20541_digit1_pin.value)
+            if not flag:
+                checkResult.value = "1桁目表示(digit1)ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl20541_digit2_pin.value)
+            if not flag:
+                checkResult.value = "2桁目表示(digit2)ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            page.go(destination)
+        def goNextPage(destination):
+            if osl20541_flag.value:
+                checkPinNumber(destination)
+            else:
+                page.go(destination)
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'osl20541'
+        checkResult = ft.Text()
+        return ft.View("/view240", [
+            ft.AppBar(
+                title=ft.Text("OSL20541 (2桁14セグメントLED)"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            osl20541_flag,
+            ft.Divider(height=2, color="black"),
+            osl20541_type,
+            ft.Text("各ピンの接続先端子番号指定(0～53)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            osl20541_a_pin,
+            osl20541_b_pin,
+            osl20541_c_pin,
+            osl20541_d_pin,
+            osl20541_e_pin,
+            osl20541_f_pin,
+            osl20541_g1_pin,
+            osl20541_g2_pin,
+            osl20541_h_pin,
+            osl20541_j_pin,
+            osl20541_k_pin,
+            osl20541_l_pin,
+            osl20541_m_pin,
+            osl20541_n_pin,
+            osl20541_p_pin,
+            osl20541_dp_pin,
+            osl20541_digit1_pin,
+            osl20541_digit2_pin,
+            checkResult,
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: goNextPage("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: goNextPage("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view245(): # OSL30561 (3桁7セグメントLED)
+        def checkPinNumber(destination):
+            if not osl30561_flag.value:
+                page.go(destination)
+            checkResult.value = ""
+            (flag, val) = isPinNumber(osl30561_a_pin.value)
+            if not flag:
+                checkResult.value = "Aピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl30561_b_pin.value)
+            if not flag:
+                checkResult.value = "Bピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl30561_c_pin.value)
+            if not flag:
+                checkResult.value = "Cピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl30561_d_pin.value)
+            if not flag:
+                checkResult.value = "Dピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl30561_e_pin.value)
+            if not flag:
+                checkResult.value = "Eピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl30561_f_pin.value)
+            if not flag:
+                checkResult.value = "Fピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl30561_g_pin.value)
+            if not flag:
+                checkResult.value = "Gピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl30561_dp_pin.value)
+            if not flag:
+                checkResult.value = "DPピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl30561_digit1_pin.value)
+            if not flag:
+                checkResult.value = "1桁目表示(digit1)ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl30561_digit2_pin.value)
+            if not flag:
+                checkResult.value = "2桁目表示(digit2)ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(osl30561_digit3_pin.value)
+            if not flag:
+                checkResult.value = "3桁目表示(digit3)ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            page.go(destination)
+        def goNextPage(destination):
+            if osl30561_flag.value:
+                checkPinNumber(destination)
+            else:
+                page.go(destination)
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'osl30561'
+        checkResult = ft.Text()
+        return ft.View("/view245", [
+            ft.AppBar(
+                title=ft.Text("OSL30561 (3桁7セグメントLED)"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            osl30561_flag,
+            ft.Divider(height=2, color="black"),
+            osl30561_type,
+            ft.Text("各ピンの接続先端子番号指定(0～53)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            osl30561_a_pin,
+            osl30561_b_pin,
+            osl30561_c_pin,
+            osl30561_d_pin,
+            osl30561_e_pin,
+            osl30561_f_pin,
+            osl30561_g_pin,
+            osl30561_dp_pin,
+            osl30561_digit1_pin,
+            osl30561_digit2_pin,
+            osl30561_digit3_pin,
+            checkResult,
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: goNextPage("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: goNextPage("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view250(): # Grove - 4-Digit Display (TM1637)
+        def checkPinNumber(destination):
+            if not grove_tm1637_flag.value:
+                page.go(destination)
+            checkResult.value = ""
+            (flag, val) = isPinNumber(grove_tm1637_clk_pin.value)
+            if not flag:
+                checkResult.value = "Clockピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(grove_tm1637_data_pin.value)
+            if not flag:
+                checkResult.value = "Dataピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            page.go(destination)
+        def goNextPage(destination):
+            if grove_tm1637_flag.value:
+                checkPinNumber(destination)
+            else:
+                page.go(destination)
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'grove_tm1637'
+        checkResult = ft.Text()
+        return ft.View("/view250", [
+            ft.AppBar(
+                title=ft.Text("Grove - 4-Digit Display"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            grove_tm1637_flag,
+            ft.Divider(height=2, color="black"),
+            ft.Text("各ピンの接続先端子番号指定(0～53)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            grove_tm1637_clk_pin,
+            grove_tm1637_data_pin,
+            checkResult,
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: goNextPage("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: goNextPage("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view255(): # DFRobot DFR0090 (8桁7セグメントLED)
+        def checkPinNumber(destination):
+            if not dfr0090_flag.value:
+                page.go(destination)
+            checkResult.value = ""
+            (flag, val) = isPinNumber(dfr0090_latch_pin.value)
+            if not flag:
+                checkResult.value = "Latchピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(dfr0090_clk_pin.value)
+            if not flag:
+                checkResult.value = "Clockピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(dfr0090_data_pin.value)
+            if not flag:
+                checkResult.value = "Dataピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            page.go(destination)
+        def goNextPage(destination):
+            checkResult.value = ""
+            if dfr0090_flag.value:
+                (flag, val) = isNumLarger(dfr0090_digits.value, 1)
+                if not flag:
+                    checkResult.value = "使用する桁数(1以上)を指定してください．"
+                    return
+                checkPinNumber(destination)
+            else:
+                page.go(destination)
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'dfr0090'
+        checkResult = ft.Text()
+        return ft.View("/view255", [
+            ft.AppBar(
+                title=ft.Text("DFRobot DFR0090 (8桁7セグメントLED)"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            dfr0090_flag,
+            ft.Divider(height=2, color="black"),
+            ft.Text("使用する桁個数(1以上)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            dfr0090_digits,
+            ft.Text("各ピンの接続先端子番号指定(0～53)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            dfr0090_latch_pin,
+            dfr0090_clk_pin,
+            dfr0090_data_pin,
+            checkResult,
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: goNextPage("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: goNextPage("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view300(): # サーボ
+        def checkPinNumber(destination):
+            if not servo_flag.value:
+                page.go(destination)
+            checkResult.value = ""
+            (flag, val) = isPinNumber(servo_pin.value)
+            if not flag:
+                checkResult.value = "ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            page.go(destination)
+        def goNextPage(destination):
+            if servo_flag.value:
+                checkPinNumber(destination)
+            else:
+                page.go(destination)
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'servo'
+        checkResult = ft.Text()
+        return ft.View("/view300", [
+            ft.AppBar(
+                title=ft.Text("サーボ"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            servo_flag,
+            ft.Divider(height=2, color="black"),
+            ft.Text("ピンの接続先端子番号指定(0～53)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            servo_pin,
+            checkResult,
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: goNextPage("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: goNextPage("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view400(): # 音声デバイス一覧メニュー
+        def goNextPage(selection):
+            if selection == 1:
+                page.go("/view410")
+            elif selection == 2:
+                page.go("/view420")
+            elif selection == 3:
+                page.go("/view430")
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 900
+        helpPageName = 'soundDeviceList'
+        soundDeviceList = ft.Dropdown(
+            label="音声デバイス選択",
+            width=200,
+            options=[
+                ft.dropdown.Option(key=0, text=""),
+                ft.dropdown.Option(key=1, text="スピーカー"),
+                ft.dropdown.Option(key=2, text="ブザー"),
+                ft.dropdown.Option(key=3, text="MP3プレイヤー"),
+            ],
+        )
+        return ft.View("/view400", [
+            ft.AppBar(
+                title=ft.Text("音声デバイス選択"),
+                bgcolor=ft.colors.GREEN,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            ft.Text("設定対象選択", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            soundDeviceList,
+            ft.ElevatedButton(
+                "次", on_click=goNextPage(soundDeviceList.value)),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: page.go("/view1")),
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view410(): # スピーカー
+        def checkPinNumber(destination):
+            if not speaker_flag.value:
+                page.go(destination)
+            checkResult.value = ""
+            (flag, val) = isPinNumber(speaker_pin.value)
+            if not flag:
+                checkResult.value = "ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            page.go(destination)
+        def goNextPage(destination):
+            if speaker_flag.value:
+                checkPinNumber(destination)
+            else:
+                page.go(destination)
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'speaker'
+        checkResult = ft.Text()
+        return ft.View("/view410", [
+            ft.AppBar(
+                title=ft.Text("スピーカー"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            speaker_flag,
+            ft.Divider(height=2, color="black"),
+            ft.Text("ピンの接続先端子番号指定(0～53)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            speaker_pin,
+            checkResult,
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: goNextPage("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: goNextPage("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view420(): # ブザー
+        def checkPinNumber(destination):
+            if not buzzer_flag.value:
+                page.go(destination)
+            checkResult.value = ""
+            (flag, val) = isPinNumber(buzzer_pin.value)
+            if not flag:
+                checkResult.value = "ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            page.go(destination)
+        def goNextPage(destination):
+            if buzzer_flag.value:
+                checkPinNumber(destination)
+            else:
+                page.go(destination)
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'buzzer'
+        checkResult = ft.Text()
+        return ft.View("/view420", [
+            ft.AppBar(
+                title=ft.Text("ブザー"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            buzzer_flag,
+            ft.Divider(height=2, color="black"),
+            ft.Text("ピンの接続先端子番号指定(0～53)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            buzzer_pin,
+            checkResult,
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: goNextPage("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: goNextPage("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view430(): # MP3プレイヤー
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'mp3_player'
+        checkResult = ft.Text()
+        return ft.View("/view430", [
+            ft.AppBar(
+                title=ft.Text("MP3プレイヤー"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            mp3_player_flag,
+            ft.Divider(height=2, color="black"),
+            mp3_player_type,
+            checkResult,
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: page.go("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view500(): # 単純PWMデバイス
+        def checkPinNumber(destination):
+            if not pwm_flag.value:
+                page.go(destination)
+            checkResult.value = ""
+            (flag, val) = isPinNumber(pwm_pin.value)
+            if not flag:
+                checkResult.value = "ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            page.go(destination)
+        def goNextPage(destination):
+            if pwm_flag.value:
+                checkPinNumber(destination)
+            else:
+                page.go(destination)
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'pwm'
+        checkResult = ft.Text()
+        return ft.View("/view500", [
+            ft.AppBar(
+                title=ft.Text("単純PWMデバイス"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            pwm_flag,
+            ft.Divider(height=2, color="black"),
+            ft.Text("ピンの接続先端子番号指定(0～53)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            pwm_pin,
+            checkResult,
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: goNextPage("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: goNextPage("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view600(): # 単純デジタル(On/Off)デバイス (例:スイッチ)
+        def checkPinNumber(destination):
+            if not switch_flag.value:
+                page.go(destination)
+            checkResult.value = ""
+            (flag, val) = isPinNumber(switch_pin.value)
+            if not flag:
+                checkResult.value = "ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            page.go(destination)
+        def goNextPage(destination):
+            if switch_flag.value:
+                checkPinNumber(destination)
+            else:
+                page.go(destination)
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'switch'
+        checkResult = ft.Text()
+        return ft.View("/view600", [
+            ft.AppBar(
+                title=ft.Text("単純デジタル(On/Off)デバイス"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            switch_flag,
+            ft.Divider(height=2, color="black"),
+            ft.Text("ピンの接続先端子番号指定(0～53)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            switch_pin,
+            checkResult,
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: goNextPage("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: goNextPage("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view700(): # 赤外線リモコン
+        def checkPinNumber(destination):
+            if not ir_remote_flag.value:
+                page.go(destination)
+            checkResult.value = ""
+            (flag, val) = isPinNumber(switch_pin.value)
+            if not flag:
+                checkResult.value = "ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            page.go(destination)
+        def goNextPage(destination):
+            if ir_remote_flag.value:
+                checkPinNumber(destination)
+            else:
+                page.go(destination)
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'ir_remote'
+        checkResult = ft.Text()
+        return ft.View("/view700", [
+            ft.AppBar(
+                title=ft.Text("赤外線リモコン(IR remote)"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            ir_remote_flag,
+            ft.Divider(height=2, color="black"),
+            ft.Text("ピンの接続先端子番号指定(0～53)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            ir_remote_pin,
+            checkResult,
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: goNextPage("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: goNextPage("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view800(): # グラフィックディスプレイ
+        def graphic_display_type_changed(e):
+            configuration['graphic_display']['graphic_display_type'] = graphic_display_type.value
+            if graphic_display_type.value ==0:
+                graphic_display_cs_pin.disabled=True
+                graphic_display_rst_pin.disabled=True
+                graphic_display_dc_pin.disabled=True
+                graphic_display_mosi_pin.disabled=True
+                graphic_display_miso_pin.disabled=True
+                graphic_display_clk_pin.disabled=True
+            if graphic_display_type.value ==1:
+                graphic_display_cs_pin.disabled=False
+                graphic_display_rst_pin.disabled=False
+                graphic_display_dc_pin.disabled=False
+                graphic_display_mosi_pin.disabled=True
+                graphic_display_miso_pin.disabled=True
+                graphic_display_clk_pin.disabled=True
+            if graphic_display_type.value ==1:
+                graphic_display_cs_pin.disabled=False
+                graphic_display_rst_pin.disabled=False
+                graphic_display_dc_pin.disabled=False
+                graphic_display_mosi_pin.disabled=False
+                graphic_display_miso_pin.disabled=False
+                graphic_display_clk_pin.disabled=False
+            page.update()
+        def checkPinNumber_full(destination):
+            if not graphic_display_flag.value:
+                page.go(destination)
+            checkResult.value = ""
+            (flag, val) = isPinNumber(graphic_display_cs_pin.value)
+            if not flag:
+                checkResult.value = "チップセレクトピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(graphic_display_rst_pin.value)
+            if not flag:
+                checkResult.value = "リセットピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(graphic_display_dc_pin.value)
+            if not flag:
+                checkResult.value = "DCピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(graphic_display_mosi_pin.value)
+            if not flag:
+                checkResult.value = "MOSIピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(graphic_display_miso_pin.value)
+            if not flag:
+                checkResult.value = "MISOピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(graphic_display_clk_pin.value)
+            if not flag:
+                checkResult.value = "Clockピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            page.go(destination)
+        def checkPinNumber_half(destination):
+            if not graphic_display_flag.value:
+                page.go(destination)
+            checkResult.value = ""
+            (flag, val) = isPinNumber(graphic_display_cs_pin.value)
+            if not flag:
+                checkResult.value = "チップセレクトピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(graphic_display_rst_pin.value)
+            if not flag:
+                checkResult.value = "リセットピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            (flag, val) = isPinNumber(graphic_display_dc_pin.value)
+            if not flag:
+                checkResult.value = "DCピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                return
+            page.go(destination)
+        def goNextPage(destination):
+            if not graphic_display_flag.value:
+                page.go(destination)
+            if graphic_display_type.value == 1:
+                page.go(destination)
+            if graphic_display_type.value == 2:
+                checkPinNumber_half(destination)
+            checkPinNumber_full(destination)
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 450
+        helpPageName = 'graphic_display'
+        checkResult = ft.Text()
+        graphic_display_type.on_change = graphic_display_type_changed
+        return ft.View("/view800", [
+            ft.AppBar(
+                title=ft.Text("グラフィックディスプレイ"),
+                bgcolor=ft.colors.CYAN_ACCENT,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            graphic_display_flag,
+            ft.Divider(height=2, color="black"),
+            graphic_display_type,
+            ft.Text("各ピンの接続先端子番号指定(0～53)", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            graphic_display_cs_pin,
+            graphic_display_rst_pin,
+            graphic_display_dc_pin,
+            graphic_display_mosi_pin,
+            graphic_display_miso_pin,
+            graphic_display_clk_pin,
+            checkResult,
+            ft.Divider(height=2, color="black"),
+            ft.ElevatedButton(
+                "目次", on_click=lambda _: goNextPage("/view1")),
+            ft.Divider(height=1, color="black"),
+            ft.ElevatedButton(
+                "保存", on_click=lambda _: goNextPage("/view9998")),
+            ft.ElevatedButton(
+                "終了", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def create_view9998():
+        global output_file_name, lastView, helpPageName
+        def pick_output_file_result(e: ft.FilePickerResultEvent):
+            global output_file_name
+            selected_output_file.value = e.path
+            output_file_name = selected_output_file.value
+            selected_output_file.update()
+        def save_button_clicked(e):
+            if (output_file_name=="") or (output_file_name=="Canceled."):
+                warning_message.value = "Please select output file."
+                warning_message.update()
+                return
+            warning_message.value = saveConfig(output_file_name)
+            warning_message.update()
+
+        pick_output_file_dialog = ft.FilePicker(on_result=pick_output_file_result)
+        selected_output_file = ft.Text()
+        page.window_width = 400
+        page.window_height = 500
+        helpPageName = 'saveConfig'
+        page.overlay.append(pick_output_file_dialog)
+        save_button = ft.ElevatedButton(text="実行", on_click=save_button_clicked)
+        warning_message = ft.Text()
+        finish_button = ft.ElevatedButton(text="Close", on_click=lambda e: page.window_destroy())
+        saveMenuValue()
+        return ft.View("/view9998", [
+            ft.AppBar(
+                title=ft.Text("config出力"),
+                bgcolor=ft.colors.BLUE,
+                actions=[
+                    ft.IconButton(icon = ft.icons.HELP_CENTER, on_click=icon_clicked),
+                ]
+            ),
+            ft.Text("出力ファイル", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            ft.ElevatedButton(
+                "選択",
+                icon=ft.icons.UPLOAD_FILE,
+                on_click=lambda _: pick_output_file_dialog.save_file(),
+                ),
+            selected_output_file,
+            ft.Divider(height=2, color="black"),
+            ft.Text("保存", style=ft.TextThemeStyle.TITLE_MEDIUM),
+            save_button,
+            warning_message,
+            ft.ElevatedButton(
+                "戻る", on_click=lambda _: page.go(lastView)),
+            finish_button
+        ])
+
+    def create_view9999(): # All definition done
+        global helpPageName
+        page.window_width = 300
+        page.window_height = 250
+        #helpPageName = ''
+        return ft.View("/view9999", [
+            ft.AppBar(title=ft.Text("Finish definition"),
+            bgcolor=ft.colors.GREEN),
+            ft.ElevatedButton(
+                "Main menu", on_click=lambda _: page.go("/view1")),
+            ft.ElevatedButton(
+                "Save", on_click=lambda _: page.go("/view9998")),
+            ft.ElevatedButton(
+                "Close", on_click=lambda _: page.window_destroy()),
+        ])
+
+    def route_change(handler):
+        global configuration, lastView
+        troute = ft.TemplateRoute(handler.route)
+        page.views.clear()
+        if troute.match("/view0"):
+            lastView="/view0"
+            page.views.append(create_view0())
+        elif troute.match("/view1"):
+            lastView="/view1"
+            saveMenuValue()
+            page.views.append(create_view1())
+        elif troute.match("/view5"):
+            lastView="/view5"
+            saveMenuValue()
+            page.views.append(create_view5())
+        elif troute.match("/view6"):
+            lastView="/view6"
+            saveMenuValue()
+            page.views.append(create_view6())
+        elif troute.match("/view7"):
+            lastView="/view7"
+            saveMenuValue()
+            page.views.append(create_view7())
+        elif troute.match("/view10"):
+            lastView="/view10"
+            saveMenuValue()
+            page.views.append(create_view10())
+        elif troute.match("/view15"):
+            lastView="/view15"
+            saveMenuValue()
+            page.views.append(create_view15())
+        elif troute.match("/view16"):
+            lastView="/view16"
+            saveMenuValue()
+            page.views.append(create_view16())
+        elif troute.match("/view20"):
+            lastView="/view20"
+            saveMenuValue()
+            page.views.append(create_view20())
+        elif troute.match("/view21"):
+            lastView="/view21"
+            saveMenuValue()
+            page.views.append(create_view21())
+        elif troute.match("/view25"):
+            lastView="/view25"
+            saveMenuValue()
+            page.views.append(create_view25())
+        elif troute.match("/view30"):
+            lastView="/view30"
+            saveMenuValue()
+            page.views.append(create_view30())
+        elif troute.match("/view31"):
+            lastView="/view31"
+            saveMenuValue()
+            page.views.append(create_view31())
+        elif troute.match("/view32"):
+            lastView="/view32"
+            saveMenuValue()
+            page.views.append(create_view32())
+        elif troute.match("/view33"):
+            lastView="/view33"
+            saveMenuValue()
+            page.views.append(create_view33())
+        elif troute.match("/view35"):
+            lastView="/view35"
+            saveMenuValue()
+            page.views.append(create_view35())
+        elif troute.match("/view36"):
+            lastView="/view36"
+            saveMenuValue()
+            page.views.append(create_view36())
+        elif troute.match("/view37"):
+            lastView="/view37"
+            saveMenuValue()
+            page.views.append(create_view37())
+        elif troute.match("/view40"):
+            lastView="/view40"
+            saveMenuValue()
+            page.views.append(create_view40())
+        elif troute.match("/view41"):
+            lastView="/view41"
+            saveMenuValue()
+            page.views.append(create_view41())
+        elif troute.match("/view45"):
+            lastView="/view45"
+            saveMenuValue()
+            page.views.append(create_view45())
+        elif troute.match("/view50"):
+            lastView="/view50"
+            saveMenuValue()
+            page.views.append(create_view50())
+        elif troute.match("/view51"):
+            lastView="/view51"
+            saveMenuValue()
+            page.views.append(create_view51())
+        elif troute.match("/view100"):
+            lastView="/view100"
+            saveMenuValue()
+            page.views.append(create_view100())
+        elif troute.match("/view110"):
+            lastView="/view110"
+            saveMenuValue()
+            page.views.append(create_view110())
+        elif troute.match("/view120"):
+            lastView="/view120"
+            saveMenuValue()
+            page.views.append(create_view120())
+        elif troute.match("/view130"):
+            lastView="/view130"
+            saveMenuValue()
+            page.views.append(create_view130())
+        elif troute.match("/view200"):
+            lastView="/view200"
+            saveMenuValue()
+            page.views.append(create_view200())
+        elif troute.match("/view205"):
+            lastView="/view205"
+            saveMenuValue()
+            page.views.append(create_view205())
+        elif troute.match("/view210"):
+            lastView="/view210"
+            saveMenuValue()
+            page.views.append(create_view210())
+        elif troute.match("/view215"):
+            lastView="/view215"
+            saveMenuValue()
+            page.views.append(create_view215())
+        elif troute.match("/view220"):
+            lastView="/view220"
+            saveMenuValue()
+            page.views.append(create_view220())
+        elif troute.match("/view225"):
+            lastView="/view225"
+            saveMenuValue()
+            page.views.append(create_view225())
+        elif troute.match("/view230"):
+            lastView="/view230"
+            saveMenuValue()
+            page.views.append(create_view230())
+        elif troute.match("/view235"):
+            lastView="/view235"
+            saveMenuValue()
+            page.views.append(create_view235())
+        elif troute.match("/view240"):
+            lastView="/view240"
+            saveMenuValue()
+            page.views.append(create_view240())
+        elif troute.match("/view245"):
+            lastView="/view245"
+            saveMenuValue()
+            page.views.append(create_view245())
+        elif troute.match("/view250"):
+            lastView="/view250"
+            saveMenuValue()
+            page.views.append(create_view250())
+        elif troute.match("/view255"):
+            lastView="/view255"
+            saveMenuValue()
+            page.views.append(create_view255())
+        elif troute.match("/view300"):
+            lastView="/view300"
+            saveMenuValue()
+            page.views.append(create_view300())
+        elif troute.match("/view400"):
+            lastView="/view400"
+            saveMenuValue()
+            page.views.append(create_view400())
+        elif troute.match("/view410"):
+            lastView="/view410"
+            saveMenuValue()
+            page.views.append(create_view410())
+        elif troute.match("/view420"):
+            lastView="/view420"
+            saveMenuValue()
+            page.views.append(create_view420())
+        elif troute.match("/view430"):
+            lastView="/view430"
+            saveMenuValue()
+            page.views.append(create_view430())
+        elif troute.match("/view500"):
+            lastView="/view500"
+            saveMenuValue()
+            page.views.append(create_view500())
+        elif troute.match("/view600"):
+            lastView="/view600"
+            saveMenuValue()
+            page.views.append(create_view600())
+        elif troute.match("/view700"):
+            lastView="/view700"
+            saveMenuValue()
+            page.views.append(create_view700())
+        elif troute.match("/view800"):
+            lastView="/view800"
+            saveMenuValue()
+            page.views.append(create_view800())
+        elif troute.match("/view9998"):
+            saveMenuValue()
+            page.views.append(create_view9998())
+        elif troute.match("/view9999"):
+            lastView="/view9999"
+            saveMenuValue()
+            page.views.append(create_view9999())
+        page.update()
+
+    page.on_route_change = route_change
+    page.title = "Edit config file"
+    page.go("/view0")
+
+#def icon_clicked(e):
+#    global helpPageName
+#    p = subPage(
+#        controls=[
+#            ft.Markdown(
+#                help[helpPageName],
+#                selectable=True,
+#                extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
+#            )
+#        ],
+#        page_props={"window_width":800},
+#    )
+#    p.start()
+
+def icon_clicked(e):
+    ft.app(target=helpWindow)
+    #global helpPageName, help
+    #p = subPage(
+    #    controls=[
+    #       ft.Markdown(
+    #            help[helpPageName],
+    #            selectable=True,
+    #            extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
+    #        )
+    #    ],
+    #    page_props={"window_width":800},
+    #)
+    #p.start()
+
+def helpWindow(page: ft.Page):
+    global helpPageName, help
+    page.title = "Help"
+    page.window_width = 800
+    page.window_height = 500
+    page.autoscroll = True
+    help_contents = ft.Markdown(help[helpPageName], selectable=True, extension_set=ft.MarkdownExtensionSet.GITHUB_WEB)
+    page.add(help_contents)
+
+def errorWindow(page: ft.Page):
+    global error
+    page.title = "Error"
+    page.window_width = 400
+    page.window_height = 500
+    page.autoscroll = True
+    finish_button = ft.ElevatedButton(text="終了", on_click=lambda e: page.window_destroy())
+    page.add(
+        ft.AppBar(title=ft.Text("エラー"),
+        bgcolor=ft.colors.RED),
+    )
+    page.add(
+        ft.Text(error)
+    )
+    page.add(
+        ft.Divider(height=2, color="black")
+    )
+    page.add(finish_button)
+
+def load_init_file():
+    global help_file, defaults_file, configuration, help, error
+    try:
+        with open(help_file, mode='r', encoding='utf-8') as f:
+            help = yaml.safe_load(f)
+    except Exception as e:
+        error = 'ヘルプファイルをロードできません．'
+        return error
+    try:
+        with open(defaults_file, mode='r', encoding='utf-8') as f:
+            configuration = yaml.safe_load(f)
+    except Exception as e:
+        error = '設定ファイルをロードできません．'
+        return error
+    loadMenuValue()
+    return ''
+
+if __name__ == "__main__":
+    if "" == load_init_file():
+        ft.app(target=editWindow)
+    else:
+        ft.app(target=errorWindow)
+
+
