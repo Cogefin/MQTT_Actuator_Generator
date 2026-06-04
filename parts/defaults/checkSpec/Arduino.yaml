@@ -1,0 +1,287 @@
+
+#
+# Arduino機種情報
+#
+Arduino:
+  deviceList:
+    - UnoR4
+    - GigaR1
+    - M0Pro
+    - MKRZero
+    - Nano33IoT
+    - NanoESP32
+  UnoR4:
+    name: "Arduino Uno R4 minima/WiFi"
+    voltage:
+      3V3: false
+      5V : true
+    max_pin: 19
+    serial:
+      RX: 0
+      TX: 1
+    spi:
+      SCK: 13
+      MISO: 12
+      MOSI: 11
+    i2c:
+      SCL: 19
+      SDA: 18
+    pwm:
+      0: false
+      1: false
+      2: false
+      3: true
+      4: false
+      5: true
+      6: true
+      7: false
+      8: false
+      9: true
+      10: true
+      11: true
+      12: false
+      13: false
+      14: false
+      15: false
+      16: false
+      17: false
+      18: false
+      19: false
+  GigaR1:
+    name: "Arduino Giga R1 WiFi"
+    voltage:
+      3V3: true
+      5V : false
+    max_pin: 53
+    serial:
+      RX: 0
+      TX: 1
+    spi:
+      SCK: 13
+      MISO: 12
+      MOSI: 11
+    i2c:
+      SCL: 8
+      SDA: 9
+    pwm:
+      0: false
+      1: false
+      2: true
+      3: true
+      4: true
+      5: true
+      6: true
+      7: true
+      8: true
+      9: true
+      10: true
+      11: true
+      12: true
+      13: true
+      14: false
+      15: false
+      16: false
+      17: false
+      18: false
+      19: false
+      20: false
+      21: false
+      22: false
+      23: false
+      24: false
+      25: false
+      26: false
+      27: false
+      28: false
+      29: false
+      30: false
+      31: false
+      32: false
+      33: false
+      34: false
+      35: false
+      36: false
+      37: false
+      38: false
+      39: false
+      40: false
+      41: false
+      42: false
+      43: false
+      44: false
+      45: false
+      46: false
+      47: false
+      48: false
+      49: false
+      50: false
+      51: false
+      52: false
+      53: false
+  M0Pro:
+    name: "Arduino M0 Pro"
+    voltage:
+      3V3: true
+      5V : false
+    max_pin: 29
+    serial:
+      RX: 0
+      TX: 1
+    spi:
+      SCK: 20
+      MISO: 18
+      MOSI: 21
+    i2c:
+      SCL: 17
+      SDA: 16
+    pwm:
+      0: false
+      1: false
+      2: true
+      3: true
+      4: true
+      5: true
+      6: true
+      7: true
+      8: true
+      9: true
+      10: true
+      11: true
+      12: true
+      13: true
+      14: false
+      15: false
+      16: false
+      17: false
+      18: false
+      19: false
+      20: false
+      21: false
+      22: false
+      23: false
+      24: false
+      25: false
+      26: false
+      27: false
+      28: false
+      29: false
+  MKRZero:
+    name: "Arduino MKR Zero/MKR WiFi 1010"
+    voltage:
+      3V3: true
+      5V : false
+    max_pin: 21
+    serial:
+      RX: 13
+      TX: 14
+    spi:
+      SCK: 9
+      MISO: 10
+      MOSI: 8
+    i2c:
+      SCL: 12
+      SDA: 11
+    pwm:
+      0: true
+      1: true
+      2: true
+      3: true
+      4: true
+      5: true
+      6: true
+      7: true
+      8: true
+      9: false
+      10: true
+      11: false
+      12: true
+      13: false
+      14: false
+      15: false
+      16: false
+      17: false
+      18: true
+      19: true
+      20: false
+      21: false
+  Nano33IoT:
+    name: "Arduino Nano 33 IoT"
+    voltage:
+      3V3: true
+      5V : false
+    max_pin: 21
+    serial:
+      RX: 0
+      TX: 1
+    spi:
+      SCK: 13
+      MISO: 12
+      MOSI: 11
+    i2c:
+      SCL: 19
+      SDA: 18
+    pwm:
+      0: false
+      1: false
+      2: true
+      3: true
+      4: false
+      5: true
+      6: true
+      7: false
+      8: false
+      9: true
+      10: true
+      11: true
+      12: true
+      13: false
+      14: false
+      15: false
+      16: true
+      17: true
+      18: false
+      19: true
+      20: false
+      21: false
+  NanoESP32:
+    name: "Arduino Nano ESP32"
+    voltage:
+      3V3: true
+      5V : false
+    max_pin: 24
+    serial:
+      RX: 0
+      TX: 1
+    spi:
+      SCK: 13
+      MISO: 12
+      MOSI: 11
+    i2c:
+      SCL: 22
+      SDA: 21
+    pwm:
+      0: true
+      1: true
+      2: true
+      3: true
+      4: true
+      5: true
+      6: true
+      7: true
+      8: true
+      9: true
+      10: true
+      11: true
+      12: true
+      13: true
+      14: false
+      15: false
+      16: false
+      17: true
+      18: true
+      19: true
+      20: true
+      21: true
+
+
+

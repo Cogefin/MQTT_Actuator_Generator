@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>グラフィックディスプレイ</title>
+</head>
+<body>
+  <h1>グラフィックディスプレイ</h1>
+
+
+  <pre>
+Arduinoで制御できるグラフィックディスプレイで選択できるのは以下の2種類．
+</pre>
+
+
+<ul>
+  <li><a href="https://docs.arduino.cc/hardware/giga-display-shield/">GIGA Display Shield (Arduino Giga専用)</a></li>
+  <li><a href="https://akizukidenshi.com/catalog/g/g116265/">ILI9341搭載2.8インチSPI制御タッチパネル付TFT液晶 MSP2807</a></li>
+</ul>
+
+
+
+<pre>
+ここで入力するのは，以下の8項目であるが，<a href="https://docs.arduino.cc/hardware/giga-display-shield/">GIGA Display Shield</a>の場合は，最初の2つのみ設定すれば良い．
+「ILI9341 ハードウェアSPI接続」の場合は，「DC端子」までの5つを設定する必要がある．「ILI9341 ソフトウェアSPI接続」の場合は，全ての項目を設定する必要がある．
+</pre>
+
+<ul>
+<li>MP3プレーヤーを使うか否か</li>
+<li>使用する機種(と接続方式)</li>
+<li>CS端子を接続するArduinoのピン番号("D12"のような形式)</li>
+<li>RST端子を接続するArduinoのピン番号("D13"のような形式)</li>
+<li>DC端子を接続するArduinoのピン番号("D14"のような形式)</li>
+<li>MOSI端子を接続するArduinoのピン番号("D15"のような形式)</li>
+<li>MISO端子を接続するArduinoのピン番号("D16"のような形式)</li>
+<li>クロック端子を接続するArduinoのピン番号("D17"のような形式)</li>
+</ul>
+
+
+
+
+</body>
+</html>

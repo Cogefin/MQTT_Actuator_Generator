@@ -20,7 +20,9 @@ PORT_LOWER_LIMIT = 8000
 # Help file
 HELP_DIRECTORY = "parts/Help/actuatorSelector/"
 HELP_FILES = [
-    "test.html"
+    "About.html",
+    "ArduinoSelection.html",
+    "ActuatorCategory.html"
 ]
 
 # device definition file
@@ -65,6 +67,65 @@ def mainWindow(page: ft.Page):
     def createViewTop():
         def icon_clicked(e):
             global PORT, url_header
+            url = url_header + str(PORT) + "/About.html"
+            webbrowser.open(url)
+        async def finish_button_clicked(e):
+            await page.window.destroy()
+        async def next_button_clicked(e):
+            await page.push_route("/viewArduino")
+        lastView="/viewTop"
+        page.title = "このアプリについて"
+        #page.window_width = 400
+        #page.window_height = 500
+        page.autoscroll = True
+        pageTitleBar = ft.AppBar(
+            title=ft.Text("このアプリについて"),
+            bgcolor=ft.Colors.YELLOW,
+            actions=[
+                ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
+            ]
+        )
+        about_title = ft.Text('はじめに', weight=ft.FontWeight.BOLD, size=20)
+        about_message = ft.Text('このアプリケーションでは，IoT用アクチュエータ端末を構成するデバイスを選択するお手伝いをするもので，次の手順で作業を進めます．')
+        procedure1 = ft.Text('1) IoT端末作成に利用するArduinoの機種をドロップダウンメニューで選択')
+        procedure2 = ft.Text('2) 選択したArduinoの動作電圧とデバイスのカタログ上の動作電圧が一致するのみを表示対象とするか否かをチェックボックスで指定')
+        procedure3 = ft.Text('3) デバイスの種類(LED等)を指定')
+        procedure4 = ft.Text('4) Arduinのアーキテクチャと電圧の両方に互換性のある機器だけを表示')
+        divider = ft.Divider(height=2, color="black")
+        caution_title = ft.Text('電圧についての注意', weight=ft.FontWeight.BOLD, size=20)
+        caution_message1 = ft.Text('アクチュエータデバイスのカタログスペック上の動作電圧と実際の装置の動作電圧は同じとは限りません．例えば，5V指定のLEDであっても，3.3V動作のArduinoで利用した場合，暗いながらも動作します．')
+        caution_message2 = ft.Text('カタログ上の動作電圧を無視する指定(チェックボックス操作)をした場合，作者のテストの環境で動作したデバイスは表示対象となります．')
+        caution_message3 = ft.Text('デバイスの個体差等も考えられるため，カタログ上の動作電圧を無視し，電圧変換回路等を用いない場合は，ユーザ環境で動作する保証はありません．')
+        next_button = ft.Button(content="次", on_click=next_button_clicked)
+        finish_button = ft.Button(content="閉じる", on_click=finish_button_clicked)
+        return ft.View(route="/viewTop", controls=[
+            ft.SafeArea(
+                content=ft.Column(
+                    controls=[
+                        pageTitleBar,
+                        about_title,
+                        about_message,
+                        procedure1,
+                        procedure2,
+                        procedure3,
+                        procedure4,
+                        divider,
+                        caution_title,
+                        caution_message1,
+                        caution_message2,
+                        caution_message3,
+                        divider,
+                        ft.Row(
+                            [next_button,finish_button,]
+                        ),
+                    ],
+                ),
+            ) 
+        ])
+
+    def createViewArduino():
+        def icon_clicked(e):
+            global PORT, url_header
             url = url_header + str(PORT) + "/ArduinoSelection.html"
             webbrowser.open(url)
         async def finish_button_clicked(e):
@@ -80,7 +141,7 @@ def mainWindow(page: ft.Page):
             await page.push_route("/viewActuatorCategory")
 
         global lastView, arduino_info, selected_arduino, voltage_check
-        lastView="/viewTop"
+        lastView="/createViewArduino"
         page.title = "Arduino機種選択"
         #page.window_width = 400
         #page.window_height = 500
@@ -103,7 +164,7 @@ def mainWindow(page: ft.Page):
         voltage_CheckBox = ft.Checkbox(label="選択したArduinoの動作電圧と同じアクチュエータだけを選択可能にする", value=voltage_check)
         next_button = ft.Button(content="次", on_click=next_button_clicked)
         finish_button = ft.Button(content="閉じる", on_click=finish_button_clicked)
-        return ft.View(route="/viewTop", controls=[
+        return ft.View(route="/viewArduino", controls=[
             ft.SafeArea(
                 content=ft.Column(
                     controls=[
@@ -132,7 +193,7 @@ def mainWindow(page: ft.Page):
             selected_actuator['category'] = category_menu.value
             await page.push_route("/viewActuatorDevice")
         async def back_button_clicked(e):
-            await page.push_route("/viewTop")
+            await page.push_route("/viewArduino")
         global lastView, actuator_info, selected_arduino, voltage_check
         lastView="/viewActuatorCategory"
         page.title = "アクチュエータ種類選択"
@@ -188,12 +249,13 @@ def mainWindow(page: ft.Page):
     def createViewActuatorDevice():
         def icon_clicked(e):
             global PORT, url_header, actuator_info, selected_actuator
-            url = url_header + str(PORT) + actuator_info['category'][selected_actuator['category']]['helpFile']
+            url = url_header + str(PORT) + '/' + actuator_info['category'][selected_actuator['category']]['helpFile']
             webbrowser.open(url)
+
         async def finish_button_clicked(e):
             await page.window.destroy()
         async def back_button_clicked(e):
-            await page.push_route("/viewTop")
+            await page.push_route("/viewArduino")
         global lastView, arduino_info, selected_arduino, voltage_check, actuator_info, selected_actuator
         lastView="/viewActuatorDevice"
         page.title = actuator_info['category'][selected_actuator['category']]['title']
@@ -227,6 +289,8 @@ def mainWindow(page: ft.Page):
         controlArray=[pageTitleBar, arduino_name, arduino_voltage, category_name, voltage_check_message, ft.Divider(height=2, color="black"), device_table_header]
         possibleDevice=0
         for deviceSymbol in actuator_info[selected_actuator['category']]['deviceList']:
+            if actuator_info[selected_actuator['category']][deviceSymbol]['stock'] == False:
+                continue
             deviceName = actuator_info[selected_actuator['category']][deviceSymbol]['name']
             appendText_name = ft.Text(deviceName)
             if actuator_info[selected_actuator['category']][deviceSymbol]['connecter']['spi'] > 0:
@@ -248,7 +312,7 @@ def mainWindow(page: ft.Page):
             controlArray.append(ft.Text('利用可能なアクチュエータデバイスはありません．'))
         else:
             controlArray.append(actuator_device_table)
-        back_button = ft.Button(content="はじめに戻る", on_click=back_button_clicked)
+        back_button = ft.Button(content="戻る", on_click=back_button_clicked)
         finish_button = ft.Button(content="閉じる", on_click=finish_button_clicked)
         controlArray.append(ft.Divider(height=2, color="black"))
         controlArray.append(ft.Row(
@@ -267,6 +331,8 @@ def mainWindow(page: ft.Page):
         page.views.clear()
         if page.route == "/viewTop":
             page.views.append(createViewTop())
+        if page.route == "/viewArduino":
+            page.views.append(createViewArduino())
         if page.route == "/viewActuatorCategory":
             page.views.append(createViewCategory())
         if page.route == "/viewActuatorDevice":
@@ -276,6 +342,7 @@ def mainWindow(page: ft.Page):
         page.update()
     page.on_route_change = route_change
     asyncio.create_task(page.push_route("/viewTop"))
+    #asyncio.create_task(page.push_route("/viewArduino"))
 
 
 
@@ -284,10 +351,10 @@ def errorWindow(page: ft.Page):
         await page.window.destroy()
     global error
     page.title = "エラー"
-    page.window_width = 400
-    page.window_height = 500
+    #page.window_width = 400
+    #page.window_height = 500
     page.autoscroll = True
-    finish_button = ft.Button(content="閉じる", on_click=finish_button_clicked)
+    finish_button = ft.Button(content="終了", on_click=finish_button_clicked)
     page.add(
         ft.SafeArea(
             content=ft.Column(
@@ -308,15 +375,6 @@ def init():
     pwd = pwd.replace('\\', '/')
     pwd = pwd.replace(' ', '\\ ')
     pwd = pwd + "/"
-    # check help files.
-    for file in HELP_FILES:
-        target_path = HELP_DIRECTORY + file
-        if not (os.path.isfile(pwd+target_path)):
-            error += "本プログラムのヘルプファィル「"
-            error += file
-            error += "」が「"
-            error += HELP_DIRECTORY
-            error += "」にありません．\n"
     # check configuration files.
     for file in CONFIG_FILES:
         target_path = CONFIG_FILE_DIR + file
@@ -339,6 +397,25 @@ def init():
                         actuator_info = yaml.safe_load(f)
                 except Exception as e:
                     error += 'アクチュエータの情報ファイル(ActuatorDevices.yaml)が読み読み込みできません．\n'
+    # check help files, phase 1.
+    for file in HELP_FILES:
+        target_path = HELP_DIRECTORY + file
+        if not (os.path.isfile(pwd+target_path)):
+            error += "本プログラムのヘルプファィル「"
+            error += file
+            error += "」が「"
+            error += HELP_DIRECTORY
+            error += "」にありません．\n"
+    # check help files, phase 2.   actuator_info['category'][selected_actuator['category']]['helpFile']    actuator_info['category']['key']
+    for category in actuator_info['category']['key']:
+        helpFile = actuator_info['category'][category]['helpFile']
+        target_path = HELP_DIRECTORY + helpFile
+        if not (os.path.isfile(pwd+target_path)):
+            error += "本プログラムのヘルプファィル「"
+            error += helpFile
+            error += "」が「"
+            error += HELP_DIRECTORY
+            error += "」にありません．\n"
     return error
 
 if __name__ == "__main__":

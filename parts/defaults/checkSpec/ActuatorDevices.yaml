@@ -15,39 +15,39 @@ category:
     - graphic_display
   characterDisplay:
     name: "キャラクタディスプレイ"
-    helpFile: "ActuatorCharacterDisplay.html"
+    helpFile: "/ActuatorCharacterDisplay.html"
     title: "キャラクタディスプレイリスト"
   led:
     name: "LED"
-    helpFile: "ActuatorLED.html"
+    helpFile: "/ActuatorLED.html"
     title: "LEDリスト"
   nseg_led:
     name: "NセグメントLED"
-    helpFile: "ActuatorNSegLED.html"
+    helpFile: "/ActuatorNSegLED.html"
     title: "NセグメントLEDリスト"
   servo:
     name: "サーボ"
-    helpFile: "ActuatorServo.html"
+    helpFile: "/ActuatorServo.html"
     title: "サーボリスト"
   soundDevice:
     name: "音声出力デバイス"
-    helpFile: "ActuatorSound.html"
+    helpFile: "/ActuatorSound.html"
     title: "音声出力デバイスリスト"
   pwm:
     name: "単純PWMデバイス"
-    helpFile: "ActuatorSimplePWM.html"
+    helpFile: "/ActuatorSimplePWM.html"
     title: "単純PWMデバイスリスト"
   switch:
     name: "単純デジタル(ON/OFF)デバイス"
-    helpFile: "ActuatorSimpleDigital.html"
+    helpFile: "/ActuatorSimpleDigital.html"
     title: "単純デジタル(ON/OFF)デバイスリスト"
   ir_remote_controller:
     name: "赤外線リモコン"
-    helpFile: "ActuatorIrRemote.html"
+    helpFile: "/ActuatorIrRemote.html"
     title: "赤外線リモコンリスト"
   graphic_display:
     name: "グラフィックディスプレイ"
-    helpFile: "ActuatorGraphicDisplay.html"
+    helpFile: "/ActuatorGraphicDisplay.html"
     title: "グラフィックディスプレイリスト"
 
 #
@@ -71,13 +71,13 @@ characterDisplay:
   grove_lcd:
     name: "Grove LCD RGBバックライト"
     group: grove_lcd
-    stock: true
     voltage:
       3V3: false
       5V : true
     connecter:
       spi: 0
       i2c: 1
+      serial: 0
       digital: 0
     description: "16x2文字表示 フルカラーバックライト付き"
     architecture:
@@ -91,13 +91,13 @@ characterDisplay:
   acm1602ni:
     name: "ACM1602NI (秋月電子)"
     group: acm1602ni
-    stock: true
     voltage:
       3V3: true
       5V : false
     connecter:
       spi: 0
       i2c: 1
+      serial: 0
       digital: 0
     description: "16x2文字表示"
     architecture:
@@ -111,13 +111,13 @@ characterDisplay:
   acm2004:
     name: "ACM2004 (秋月電子)"
     group: acm1602ni
-    stock: true
     voltage:
       3V3: false
       5V : true
     connecter:
       spi: 0
       i2c: 1
+      serial: 0
       digital: 0
     description: "20x4文字表示"
     architecture:
@@ -131,13 +131,13 @@ characterDisplay:
   sc1602bslb3V3:
     name: "SC1602BSLB3V3 (秋月電子)"
     group: liquid_crystal
-    stock: true
     voltage:
       3V3: true
       5V : false
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 6
     description: "16x2文字表示"
     architecture:
@@ -151,13 +151,13 @@ characterDisplay:
   sc1602bslb:
     name: "SC1602BSLB (秋月電子)"
     group: liquid_crystal
-    stock: true
     voltage:
       3V3: false
       5V : true
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 6
     description: "16x2文字表示"
     architecture:
@@ -171,13 +171,13 @@ characterDisplay:
   sc2004cslb:
     name: "SC2004CSLB (秋月電子)"
     group: liquid_crystal
-    stock: true
     voltage:
       3V3: false
       5V : true
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 6
     description: "20x4文字表示"
     architecture:
@@ -212,13 +212,13 @@ led:
   grove_mono_led:
     name: "Grove モノクロ LED"
     group: simple_mono_led
-    stock: true
     voltage:
       3V3: true
       5V : true
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 1
     description: "明るさを制御する場合はPWM制御可能な端子への接続が必須"
     architecture:
@@ -232,13 +232,13 @@ led:
   cathod_common_color_led:
     name: "アノード/カソードコモン カラーLED"
     group: simple_color_led
-    stock: true
     voltage:
       3V3: true
       5V : true
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 3
     description: "全てPWM制御可能な端子への接続が必須"
     architecture:
@@ -252,13 +252,13 @@ led:
   grove_led_bar:
     name: "Grove LED bar"
     group: grove_led_bar
-    stock: true
     voltage:
       3V3: true
       5V : true
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 2
     description: "独自プロトコルで制御する棒状モノクロLED(10個)"
     architecture:
@@ -272,13 +272,13 @@ led:
   grove_led_circular:
     name: "Grove LED circular"
     group: grove_led_circular
-    stock: true
     voltage:
       3V3: false
       5V : true
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 2
     description: "独自プロトコルで制御する環状モノクロLED(24個)"
     architecture:
@@ -290,15 +290,15 @@ led:
       NanoESP32: true
   # Grove chainable LED
   grove_chainable_led:
-    name: "Grove chainable LED"
+    name: "Grove chainable RGB LED"
     group: grove_chainable_led
-    stock: true
     voltage:
       3V3: false
       5V : true
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 2
     description: "独自プロトコルで制御するフルカラーLED(連結可能)"
     architecture:
@@ -312,13 +312,13 @@ led:
   grove_rgb_led_stick:
     name: "Grove - RGB LED スティック"
     group: adafuit_neopixel
-    stock: true
     voltage:
       3V3: true
       5V : true
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 1
     description: "マイコン(WS2813)内蔵LEDで構成され，独自プロトコルで制御するフルカラーLED"
     architecture:
@@ -351,13 +351,13 @@ nseg_led:
   osl12306_16_ira:
     name: "OSL12306-16-IRA"
     group: osl12306_16
-    stock: true
     voltage:
       3V3: false
       5V : true
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 18
     description: "16セグメントLED (秋月電子)．Gigaでは暗すぎるため，実用性はほぼない．"
     architecture:
@@ -371,13 +371,13 @@ nseg_led:
   osl20541:
     name: "OSL20541-IR"
     group: osl20541
-    stock: true
     voltage:
       3V3: true
       5V : false
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 17
     description: "2桁14セグメントLED (秋月電子)"
     architecture:
@@ -391,13 +391,13 @@ nseg_led:
   osl30561:
     name: "OSL30561"
     group: osl30561
-    stock: true
     voltage:
       3V3: true
       5V : false
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 11
     description: "3桁7セグメントLED(秋月電子)"
     architecture:
@@ -411,13 +411,13 @@ nseg_led:
   grove_4_digit_7seg_led:
     name: "Grove - 4-Digit Display"
     group: grove_tm1637
-    stock: true
     voltage:
       3V3: true
       5V : true
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 2
     description: "時計型の7セグメントLED"
     architecture:
@@ -431,13 +431,13 @@ nseg_led:
   dfr0090:
     name: "DFROBOT DFR0090"
     group: dfr0090
-    stock: true
     voltage:
       3V3: true
       5V : true
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 3
     description: "8桁 7セグメント 3-Wire LED Module．MKRファミリおよびNano33IoTでは，外部電源による給電が必須"
     architecture:
@@ -462,13 +462,13 @@ servo:
   grove_servo:
     name: "Grove サーボ"
     group: arduino_servo
-    stock: true
     voltage:
       3V3: false
       5V : true
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 1
     description: "サーボモーター"
     architecture:
@@ -497,13 +497,13 @@ soundDevice:
   grove_speaker:
     name: "Groveスピーカー"
     group: simple_sound
-    stock: true
     voltage:
       3V3: false
       5V : true
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 1
     description: ""
     architecture:
@@ -517,13 +517,13 @@ soundDevice:
   grove_buzzer:
     name: "Groveブサー"
     group: simple_sound
-    stock: true
     voltage:
       3V3: true
       5V : true
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 1
     description: ""
     architecture:
@@ -537,14 +537,14 @@ soundDevice:
   grove_mp3_v4:
     name: "Grove MP3 player v4.0"
     group: mp3_player
-    stock: true
     voltage:
       3V3: false
       5V : true
     connecter:
       spi: 0
       i2c: 0
-      digital: 1
+      serial: 1
+      digital: 0
     description: ""
     architecture:
       UnoR4: true
@@ -557,14 +557,14 @@ soundDevice:
   df_player_mini:
     name: "DF ROBOT DFPlayer Mini"
     group: mp3_player
-    stock: true
     voltage:
       3V3: true
       5V : true
     connecter:
       spi: 0
       i2c: 0
-      digital: 1
+      serial: 1
+      digital: 0
     description: ""
     architecture:
       UnoR4: true
@@ -586,15 +586,15 @@ pwm:
     - grove_mono_led
   # モノクロLED
   grove_mono_led:
-    name: "Grove モノクロ LED"
+    name: "Grove モノクロ LED(PMW代替)"
     group: simple_pwm
-    stock: true
     voltage:
       3V3: true
       5V : true
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 1
     description: ""
     architecture:
@@ -670,13 +670,13 @@ ir_remote_controller:
   grove_ir_emitter:
     name: "Grove - 赤外線エミッター"
     group: ir_remote
-    stock: true
     voltage:
       3V3: true
       5V : true
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 1
     description: "赤外線リモコンの送信機として使えるデバイス"
     architecture:
@@ -703,13 +703,13 @@ graphic_display:
     - ili9341_type_2
   giga_display_shield:
     name: "Arduino Gigaディスプレイシールド"
-    stock: true
     voltage:
       3V3: true
       5V : false
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 0
     description: "GigaWifi専用デバイスで，専用端子に接続して使用"
     architecture:
@@ -720,14 +720,14 @@ graphic_display:
       Nano33IoT: false
       NanoESP32: false
   ili9341_type_1:
-    name: "ILI9341コントローラ搭載ディスプレイ(ハードウェアSPI接続)"
-    stock: true
+    name: "ILI9341コントローラ搭載ディスプレイtype1(ハードウェアSPI接続)"
     voltage:
       3V3: true
       5V : false
     connecter:
-      spi: 0
+      spi: 1
       i2c: 0
+      serial: 0
       digital: 3
     description: ""
     architecture:
@@ -738,14 +738,14 @@ graphic_display:
       Nano33IoT: false
       NanoESP32: false
   ili9341_type_2:
-    name: "ILI9341コントローラ搭載ディスプレイ(ソフトウェアSPI接続)"
-    stock: true
+    name: "ILI9341コントローラ搭載ディスプレイtype2(ソフトウェアSPI接続)"
     voltage:
       3V3: true
       5V : false
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 6
     description: ""
     architecture:

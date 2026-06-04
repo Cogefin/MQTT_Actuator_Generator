@@ -1,0 +1,1380 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+import http.server
+import socketserver
+
+import threading
+
+import flet as ft
+import asyncio
+
+import webbrowser
+
+import yaml
+import os
+
+
+
+# IP configuration for help
+PORT_RANGE=100
+PORT_LOWER_LIMIT = 8000
+
+# Help file
+HELP_DIRECTORY = "parts/Help/checkSpec/"
+HELP_FILES = [
+    "About.html",
+    "ArduinoSelection.html",
+    "LoadSpec.html",
+    "Summary.html"
+]
+
+# device definition file
+CONFIG_FILE_DIR = "parts/defaults/checkSpec/"
+CONFIG_FILES = [
+    "Arduino.yaml",
+    "ActuatorDevices.yaml"
+]
+
+# HELP page information
+url_header = "http://localhost:"
+LOCAL_HOST_IP = "127.0.0.1"
+
+# 初期値
+selected_arduino = {
+    'name' : 'UnoR4',
+    'voltage' : '5V'
+}
+voltage_check = True
+selected_actuator = {
+    'category' : 'characterDisplay'
+}
+pin_assignment = {
+    'spi': False,
+    'i2c': False,
+    'serial': 0,
+    'digital': []
+}
+PIN_MAX = 54
+voltage_error_devices = []
+
+def setup_pin_assignment():
+    global pin_assignment
+    for i in range(PIN_MAX):
+        pin_assignment['digital'].append(0)
+
+def clear_pin_assignment():
+    global pin_assignment
+    for i in range(PIN_MAX):
+        pin_assignment['digital'][i]=0
+    pin_assignment['spi']=False
+    pin_assignment['i2c']=False
+    pin_assignment['serial']=0
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=HELP_DIRECTORY, **kwargs)
+
+def documentServer():
+    global PORT
+    flag=True
+    PORT=PORT_LOWER_LIMIT
+    while flag:
+        try:
+            with socketserver.TCPServer((LOCAL_HOST_IP, PORT), Handler) as httpd:
+                flag=False
+                httpd.serve_forever()
+        except Exception as e:
+            PORT+=1
+
+def pinNumber(pinStr):
+    if (pinStr=="D0") or (pinStr=="0"):
+        return 0
+    elif (pinStr=="D1") or (pinStr=="1"):
+        return 1
+    elif (pinStr=="D2") or (pinStr=="2"):
+        return 2
+    elif (pinStr=="D3") or (pinStr=="3"):
+        return 3
+    elif (pinStr=="D4") or (pinStr=="4"):
+        return 4
+    elif (pinStr=="D5") or (pinStr=="5"):
+        return 5
+    elif (pinStr=="D6") or (pinStr=="6"):
+        return 6
+    elif (pinStr=="D7") or (pinStr=="7"):
+        return 7
+    elif (pinStr=="D8") or (pinStr=="8"):
+        return 8
+    elif (pinStr=="D9") or (pinStr=="9"):
+        return 9
+    elif (pinStr=="D10") or (pinStr=="10"):
+        return 10
+    elif (pinStr=="D11") or (pinStr=="11"):
+        return 11
+    elif (pinStr=="D12") or (pinStr=="12"):
+        return 12
+    elif (pinStr=="D13") or (pinStr=="13"):
+        return 13
+    elif (pinStr=="D14") or (pinStr=="14"):
+        return 14
+    elif (pinStr=="D15") or (pinStr=="15"):
+        return 15
+    elif (pinStr=="D16") or (pinStr=="16"):
+        return 16
+    elif (pinStr=="D17") or (pinStr=="17"):
+        return 17
+    elif (pinStr=="D18") or (pinStr=="18"):
+        return 18
+    elif (pinStr=="D19") or (pinStr=="19"):
+        return 19
+    elif (pinStr=="D20") or (pinStr=="20"):
+        return 20
+    elif (pinStr=="D21") or (pinStr=="21"):
+        return 21
+    elif (pinStr=="D22") or (pinStr=="22"):
+        return 22
+    elif (pinStr=="D23") or (pinStr=="23"):
+        return 23
+    elif (pinStr=="D24") or (pinStr=="24"):
+        return 24
+    elif (pinStr=="D25") or (pinStr=="25"):
+        return 25
+    elif (pinStr=="D26") or (pinStr=="26"):
+        return 26
+    elif (pinStr=="D27") or (pinStr=="27"):
+        return 27
+    elif (pinStr=="D28") or (pinStr=="28"):
+        return 28
+    elif (pinStr=="D29") or (pinStr=="29"):
+        return 29
+    elif (pinStr=="D30") or (pinStr=="30"):
+        return 30
+    elif (pinStr=="D31") or (pinStr=="31"):
+        return 31
+    elif (pinStr=="D32") or (pinStr=="32"):
+        return 32
+    elif (pinStr=="D33") or (pinStr=="33"):
+        return 33
+    elif (pinStr=="D34") or (pinStr=="34"):
+        return 34
+    elif (pinStr=="D35") or (pinStr=="35"):
+        return 35
+    elif (pinStr=="D36") or (pinStr=="36"):
+        return 36
+    elif (pinStr=="D37") or (pinStr=="37"):
+        return 37
+    elif (pinStr=="D38") or (pinStr=="38"):
+        return 38
+    elif (pinStr=="D39") or (pinStr=="39"):
+        return 39
+    elif (pinStr=="D40") or (pinStr=="40"):
+        return 40
+    elif (pinStr=="D41") or (pinStr=="41"):
+        return 41
+    elif (pinStr=="D42") or (pinStr=="42"):
+        return 42
+    elif (pinStr=="D43") or (pinStr=="43"):
+        return 43
+    elif (pinStr=="D44") or (pinStr=="44"):
+        return 44
+    elif (pinStr=="D45") or (pinStr=="45"):
+        return 45
+    elif (pinStr=="D46") or (pinStr=="46"):
+        return 46
+    elif (pinStr=="D47") or (pinStr=="47"):
+        return 47
+    elif (pinStr=="D48") or (pinStr=="48"):
+        return 48
+    elif (pinStr=="D49") or (pinStr=="49"):
+        return 49
+    elif (pinStr=="D50") or (pinStr=="50"):
+        return 50
+    elif (pinStr=="D51") or (pinStr=="51"):
+        return 51
+    elif (pinStr=="D52") or (pinStr=="52"):
+        return 52
+    elif (pinStr=="D53") or (pinStr=="53"):
+        return 53
+    else:
+        return -1
+
+def configurationPinMap():
+    global configuration, pin_assignment, selected_arduino, arduino_info
+    #
+    if configuration['platform']['network_hardware']['network_type']=='ethernet':
+        pin_num = pinNumber(configuration['platform']['network_hardware']['ethernet_chip_select'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_assignment['spi'] = True
+    if configuration['platform']['color_led']['use_led']:
+        pin_num = pinNumber(configuration['platform']['color_led']['led_pin'])
+        pin_assignment['digital'][pin_num] += 1
+    if configuration['platform']['sd']['use_sd']:
+        pin_num = pinNumber(configuration['platform']['sd']['sd_chip_select'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_assignment['spi'] = True
+    if configuration['common']['log']['use_serial_log']:
+        pin_assignment['serial'] += 1
+    #
+    # character display
+    #
+    # Grove character lcd RGB Backlight
+    if configuration['grove_lcd']['use_grove_lcd']:
+        pin_assignment['i2c'] = True
+    # ACM1602NI
+    if configuration['acm1602ni']['use_acm1602ni']:
+        pin_assignment['i2c'] = True
+    # ACM2004 (秋月電子) 未サポート
+    # Liquid crystal library SC1602BSLB3V3, SC1602BSLB, SC2004CSLB等
+    if configuration['liquid_crystal']['use_liquid_crystal']:
+        pin_num = pinNumber(configuration['liquid_crystal']['liquid_crystal_rs_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['liquid_crystal']['liquid_crystal_es_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['liquid_crystal']['liquid_crystal_d4_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['liquid_crystal']['liquid_crystal_d5_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['liquid_crystal']['liquid_crystal_d6_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['liquid_crystal']['liquid_crystal_d7_pin'])
+        pin_assignment['digital'][pin_num] += 1
+    #
+    # さまざまなLED
+    #
+    # Simple mono LED
+    if configuration['simple_mono_led']['use_simple_mono_led']:
+        pin_num = pinNumber(configuration['simple_mono_led']['simple_mono_led_pin'])
+        pin_assignment['digital'][pin_num] += 1
+    # Anode/Cathod common RGB LED
+    if configuration['simple_color_led']['use_simple_color_led']:
+        pin_num = pinNumber(configuration['simple_color_led']['simple_color_led_red_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['simple_color_led']['simple_color_led_green_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['simple_color_led']['simple_color_led_blue_pin'])
+        pin_assignment['digital'][pin_num] += 1
+    # Grove LED bar
+    if configuration['grove_led_bar']['use_grove_led_bar']:
+        pin_num = pinNumber(configuration['grove_led_bar']['grove_led_bar_clk_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['grove_led_bar']['grove_led_bar_data_pin'])
+        pin_assignment['digital'][pin_num] += 1
+    # Grove LED circular
+    if configuration['grove_led_circular']['use_grove_led_circular']:
+        pin_num = pinNumber(configuration['grove_led_circular']['grove_led_circular_clk_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['grove_led_circular']['grove_led_circular_data_pin'])
+        pin_assignment['digital'][pin_num] += 1
+    # Grove chainable LED
+    if configuration['grove_chainable_led']['use_grove_chainable_led']:
+        pin_num = pinNumber(configuration['grove_chainable_led']['grove_chainable_led_clk_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['grove_chainable_led']['grove_chainable_led_data_pin'])
+        pin_assignment['digital'][pin_num] += 1
+    # Adafruit NeoPixel
+    if configuration['adafuit_neopixel']['use_adafuit_neopixel']:
+        pin_num = pinNumber(configuration['adafuit_neopixel']['adafuit_neopixel_pin'])
+        pin_assignment['digital'][pin_num] += 1
+    #
+    # NセグメントLED
+    #
+    # OSL12306-16
+    if configuration['osl12306_16']['use_osl12306_16']:
+        pin_num = pinNumber(configuration['osl12306_16']['osl12306_16_a1_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl12306_16']['osl12306_16_a2_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl12306_16']['osl12306_16_b_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl12306_16']['osl12306_16_c_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl12306_16']['osl12306_16_d1_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl12306_16']['osl12306_16_d2_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl12306_16']['osl12306_16_e_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl12306_16']['osl12306_16_f_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl12306_16']['osl12306_16_g1_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl12306_16']['osl12306_16_g2_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl12306_16']['osl12306_16_j_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl12306_16']['osl12306_16_k_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl12306_16']['osl12306_16_l_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl12306_16']['osl12306_16_m_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl12306_16']['osl12306_16_n_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl12306_16']['osl12306_16_p_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl12306_16']['osl12306_16_dp_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl12306_16']['osl12306_16_digit_pin'])
+        pin_assignment['digital'][pin_num] += 1
+    # OSL20541
+    if configuration['osl20541']['use_osl20541']:
+        pin_num = pinNumber(configuration['osl20541']['osl20541_a_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl20541']['osl20541_b_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl20541']['osl20541_c_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl20541']['osl20541_d_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl20541']['osl20541_e_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl20541']['osl20541_f_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl20541']['osl20541_g1_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl20541']['osl20541_g2_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl20541']['osl20541_h_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl20541']['osl20541_j_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl20541']['osl20541_k_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl20541']['osl20541_l_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl20541']['osl20541_m_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl20541']['osl20541_n_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl20541']['osl20541_dp_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl20541']['osl20541_digit1_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl20541']['osl20541_digit2_pin'])
+        pin_assignment['digital'][pin_num] += 1
+    # OSL30561
+    if configuration['osl30561']['use_osl30561']:
+        pin_num = pinNumber(configuration['osl30561']['osl30561_a_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl30561']['osl30561_b_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl30561']['osl30561_c_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl30561']['osl30561_d_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl30561']['osl30561_e_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl30561']['osl30561_f_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl30561']['osl30561_g_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl30561']['osl30561_dp_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl30561']['osl30561_digit1_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl30561']['osl30561_digit2_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['osl30561']['osl30561_digit3_pin'])
+        pin_assignment['digital'][pin_num] += 1
+    # Grove - 4-Digit Display (clock type)
+    if configuration['grove_tm1637']['use_grove_tm1637']:
+        pin_num = pinNumber(configuration['grove_tm1637']['grove_tm1637_clk_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['grove_tm1637']['grove_tm1637_data_pin'])
+        pin_assignment['digital'][pin_num] += 1
+    #  DFROBOT 7セグメント 8digit 3-Wire LED Module DFR0090
+    if configuration['dfr0090']['use_dfr0090']:
+        pin_num = pinNumber(configuration['dfr0090']['dfr0090_latch_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['dfr0090']['dfr0090_clk_pin'])
+        pin_assignment['digital'][pin_num] += 1
+        pin_num = pinNumber(configuration['dfr0090']['dfr0090_data_pin'])
+        pin_assignment['digital'][pin_num] += 1
+    # サーボ
+    if configuration['servo']['use_servo']:
+        pin_num = pinNumber(configuration['servo']['servo_pin'])
+        pin_assignment['digital'][pin_num] += 1
+    # スピーカー
+    if configuration['speaker']['use_speaker']:
+        pin_num = pinNumber(configuration['speaker']['speaker_pin'])
+        pin_assignment['digital'][pin_num] += 1
+    # ブザー
+    if configuration['buzzer']['use_buzzer']:
+        pin_num = pinNumber(configuration['buzzer']['buzzer_pin'])
+        pin_assignment['digital'][pin_num] += 1
+    # MP3 player
+    if configuration['mp3_player']['use_mp3_player']:
+        pin_assignment['serial'] +=1
+    # simple PWM device
+        if configuration['pwm']['use_pwm']:
+            pin_num = pinNumber(configuration['pwm']['pwm_pin'])
+            pin_assignment['digital'][pin_num] += 1
+    # simple digital(ON/OFF) device (like switch)
+    if configuration['switch']['use_switch']:
+        pin_num = pinNumber(configuration['switch']['switch_pin'])
+        pin_assignment['digital'][pin_num] += 1
+    # IR LED remote control device
+    if configuration['ir_remote']['use_ir_remote']:
+        pin_num = pinNumber(configuration['ir_remote']['ir_remote_pin'])
+        pin_assignment['digital'][pin_num] += 1
+    # Graphic display
+    if configuration['graphic_display']['use_graphic_display']:
+        if configuration['graphic_display']['graphic_display_type']==2:
+            # ILI9341コントローラ搭載ディスプレイtype1(ハードウェアSPI接続)
+            pin_num = pinNumber(configuration['graphic_display']['graphic_display_cs_pin'])
+            pin_assignment['digital'][pin_num] += 1
+            pin_num = pinNumber(configuration['graphic_display']['graphic_display_rst_pin'])
+            pin_assignment['digital'][pin_num] += 1
+            pin_num = pinNumber(configuration['graphic_display']['graphic_display_dc_pin'])
+            pin_assignment['digital'][pin_num] += 1
+            pin_assignment['spi'] = True
+        elif configuration['graphic_display']['graphic_display_type']==3:
+            # ILI9341コントローラ搭載ディスプレイtype2(ソフトウェアSPI接続)
+            pin_num = pinNumber(configuration['graphic_display']['graphic_display_cs_pin'])
+            pin_assignment['digital'][pin_num] += 1
+            pin_num = pinNumber(configuration['graphic_display']['graphic_display_rst_pin'])
+            pin_assignment['digital'][pin_num] += 1
+            pin_num = pinNumber(configuration['graphic_display']['graphic_display_dc_pin'])
+            pin_assignment['digital'][pin_num] += 1
+            pin_num = pinNumber(configuration['graphic_display']['graphic_display_mosi_pin'])
+            pin_assignment['digital'][pin_num] += 1
+            pin_num = pinNumber(configuration['graphic_display']['graphic_display_miso_pin'])
+            pin_assignment['digital'][pin_num] += 1
+            pin_num = pinNumber(configuration['graphic_display']['graphic_display_clk_pin'])
+            pin_assignment['digital'][pin_num] += 1
+    #
+    # expand SPI, I2C, Serial
+    #
+    # get pin number
+    arduino_name = selected_arduino['name']
+    sck_pin = arduino_info['Arduino'][arduino_name]['spi']['SCK']
+    mosi_pin = arduino_info['Arduino'][arduino_name]['spi']['MOSI']
+    miso_pin = arduino_info['Arduino'][arduino_name]['spi']['MISO']
+    i2c_clk_pin = arduino_info['Arduino'][arduino_name]['i2c']['SCL']
+    i2c_data_pin = arduino_info['Arduino'][arduino_name]['i2c']['SDA']
+    serial_tx_pin = arduino_info['Arduino'][arduino_name]['serial']['TX']
+    serial_rx_pin = arduino_info['Arduino'][arduino_name]['serial']['RX']
+    if pin_assignment['spi']:
+        pin_assignment['digital'][sck_pin] += 1
+        pin_assignment['digital'][mosi_pin] += 1
+        pin_assignment['digital'][miso_pin] += 1
+    if pin_assignment['i2c']:
+        pin_assignment['digital'][i2c_clk_pin] += 1
+        pin_assignment['digital'][i2c_data_pin] += 1
+    if pin_assignment['serial']>0:
+        pin_assignment['digital'][serial_tx_pin] = pin_assignment['digital'][serial_tx_pin] + pin_assignment['serial']
+        pin_assignment['digital'][serial_rx_pin] = pin_assignment['digital'][serial_rx_pin] + pin_assignment['serial']
+
+def checkPinMap():
+    global pin_assignment, selected_arduino, arduino_info
+    controls = []
+    # 最大ピン番号の確認
+    arduino_max_pin = arduino_info['Arduino'][selected_arduino['name']]['max_pin']
+    if arduino_max_pin!=(PIN_MAX-1):
+        for i in range(arduino_max_pin+1, PIN_MAX, 1):
+            if pin_assignment['digital'][i]>0:
+                controls.append(ft.Text('Arduinoの最大ピン番号を超えるピンが割り当てられています．Arduinoの最大ピン番号は{}ですが，{}が割り当てられています．'.format(arduino_max_pin, i)))
+    # ピンの重複の確認
+    for i in range(0, arduino_max_pin+1, 1):
+        if pin_assignment['digital'][i]>1:
+            controls.append(ft.Text('ピン{}が複数のデバイスに割り当てられています．'.format(i)))
+    # シリアルの重複の確認
+    if pin_assignment['serial']>1:
+        controls.append(ft.Text('シリアルインターフェースを使えるデバイスは1つに制限されます．'))
+    # get pin number
+    arduino_name = selected_arduino['name']
+    sck_pin = arduino_info['Arduino'][arduino_name]['spi']['SCK']
+    mosi_pin = arduino_info['Arduino'][arduino_name]['spi']['MOSI']
+    miso_pin = arduino_info['Arduino'][arduino_name]['spi']['MISO']
+    i2c_clk_pin = arduino_info['Arduino'][arduino_name]['i2c']['SCL']
+    i2c_data_pin = arduino_info['Arduino'][arduino_name]['i2c']['SDA']
+    if pin_assignment['spi']:
+        if (pin_assignment['digital'][sck_pin] > 1) or (pin_assignment['digital'][mosi_pin] > 1) or (pin_assignment['digital'][miso_pin] > 1):
+            controls.append(ft.Text('SPIインターフェースのピンが他の用途で使われています．'))
+    if pin_assignment['i2c']:
+        if (pin_assignment['digital'][i2c_clk_pin] > 1) or (pin_assignment['digital'][i2c_data_pin] > 1):
+            controls.append(ft.Text('I2Cインターフェースのピンが他の用途で使われています．'))
+    return controls
+
+def checkCompatibility(category, device, arduino_name):
+    global actuator_info
+    if actuator_info[category][device]['architecture'][arduino_name]:
+        return True
+    else:
+        return False
+
+def checkMcuCompatibility():
+    global configuration, selected_arduino, actuator_info
+    arduino_name = selected_arduino['name']
+    controls = []
+    #
+    # character display
+    #
+    # Grove character lcd RGB Backlight
+    if configuration['grove_lcd']['use_grove_lcd']:
+        if not checkCompatibility('characterDisplay', 'grove_lcd', arduino_name):
+            device_name = actuator_info['characterDisplay']['grove_lcd']['name']
+            controls.append(ft.Text(device_name))
+    # ACM1602NI
+    if configuration['acm1602ni']['use_acm1602ni']:
+        if not checkCompatibility('characterDisplay', 'acm1602ni', arduino_name):
+            device_name = actuator_info['characterDisplay']['acm1602ni']['name']
+            controls.append(ft.Text(device_name))
+    # ACM2004 (秋月電子) 未サポート
+    # Liquid crystal library SC1602BSLB3V3, SC1602BSLB, SC2004CSLB等
+    if configuration['liquid_crystal']['use_liquid_crystal']:
+        controls.append(ft.Text('SC1602BSLB3V3, SC1602BSLB, SC2004CSLB等のLCDデバイスは互換性確認が自動ではできないので，各自型番から確認してください．'))
+    #
+    # さまざまなLED
+    #
+    # Simple mono LED
+    if configuration['simple_mono_led']['use_simple_mono_led']:
+        if not checkCompatibility('led', 'grove_mono_led', arduino_name):
+            device_name = actuator_info['led']['grove_mono_led']['name']
+            controls.append(ft.Text(device_name))
+    # Simple color LED
+    if configuration['simple_color_led']['use_simple_color_led']:
+        if not checkCompatibility('led', 'cathod_common_color_led', arduino_name):
+            device_name = actuator_info['led']['cathod_common_color_led']['name']
+            controls.append(ft.Text(device_name))
+    # Grove LED bar
+    if configuration['grove_led_bar']['use_grove_led_bar']:
+        if not checkCompatibility('led', 'grove_led_bar', arduino_name):
+            device_name = actuator_info['led']['grove_led_bar']['name']
+            controls.append(ft.Text(device_name))
+    # Grove LED circular
+    if configuration['grove_led_circular']['use_grove_led_circular']:
+        if not checkCompatibility('led', 'grove_led_circular', arduino_name):
+            device_name = actuator_info['led']['grove_led_circular']['name']
+            controls.append(ft.Text(device_name))
+    # Grove chainable LED
+    if configuration['grove_chainable_led']['use_grove_chainable_led']:
+        if not checkCompatibility('led', 'grove_chainable_led', arduino_name):
+            device_name = actuator_info['led']['grove_chainable_led']['name']
+            controls.append(ft.Text(device_name))
+    # Adafruit NeoPixel
+    if configuration['adafuit_neopixel']['use_adafuit_neopixel']:
+        if not checkCompatibility('led', 'grove_rgb_led_stick', arduino_name):
+            device_name = actuator_info['led']['grove_rgb_led_stick']['name']
+            controls.append(ft.Text(device_name))
+    #
+    # NセグメントLED
+    #
+    # OSL12306-16
+    if configuration['osl12306_16']['use_osl12306_16']:
+        if not checkCompatibility('nseg_led', 'osl12306_16_ira', arduino_name):
+            device_name = actuator_info['nseg_led']['osl12306_16_ira']['name']
+            controls.append(ft.Text(device_name))
+    # OSL20541
+    if configuration['osl20541']['use_osl20541']:
+        if not checkCompatibility('nseg_led', 'osl20541', arduino_name):
+            device_name = actuator_info['nseg_led']['osl20541']['name']
+            controls.append(ft.Text(device_name))
+    # Grove - 4-Digit Display (clock type)
+    if configuration['grove_tm1637']['use_grove_tm1637']:
+        if not checkCompatibility('nseg_led', 'grove_4_digit_7seg_led', arduino_name):
+            device_name = actuator_info['nseg_led']['grove_4_digit_7seg_led']['name']
+            controls.append(ft.Text(device_name))
+    #  DFROBOT 7セグメント 8digit 3-Wire LED Module DFR0090
+    if configuration['dfr0090']['use_dfr0090']:
+        if not checkCompatibility('nseg_led', 'dfr0090', arduino_name):
+            device_name = actuator_info['nseg_led']['dfr0090']['name']
+            controls.append(ft.Text(device_name))
+    # サーボ
+    if configuration['servo']['use_servo']:
+        if not checkCompatibility('servo', 'grove_servo', arduino_name):
+            device_name = actuator_info['servo']['grove_servo']['name']
+            controls.append(ft.Text(device_name))
+    # スピーカー
+    if configuration['speaker']['use_speaker']:
+        if not checkCompatibility('soundDevice', 'grove_speaker', arduino_name):
+            device_name = actuator_info['soundDevice']['grove_speaker']['name']
+            controls.append(ft.Text(device_name))
+    # ブザー
+    if configuration['buzzer']['use_buzzer']:
+        if not checkCompatibility('soundDevice', 'grove_buzzer', arduino_name):
+            device_name = actuator_info['soundDevice']['grove_buzzer']['name']
+            controls.append(ft.Text(device_name))
+    # MP3 player
+    if configuration['mp3_player']['use_mp3_player']:
+        if configuration['mp3_player']['mp3_player_type']==2:
+            if not checkCompatibility('soundDevice', 'grove_mp3_v4', arduino_name):
+                device_name = actuator_info['soundDevice']['grove_mp3_v4']['name']
+                controls.append(ft.Text(device_name))
+        elif configuration['mp3_player']['mp3_player_type']==3:
+            if not checkCompatibility('soundDevice', 'df_player_mini', arduino_name):
+                device_name = actuator_info['soundDevice']['df_player_mini']['name']
+                controls.append(ft.Text(device_name))
+    # simple PWM device
+    #if configuration['pwm']['use_pwm']:
+    #    if not checkCompatibility('pwm', 'grove_mono_led', arduino_name):
+    #        device_name = actuator_info['pwm']['grove_mono_led']['name']
+    #        controls.append(ft.Text(device_name))
+    # simple digital(ON/OFF) device (like switch)
+    #if configuration['switch']['use_switch']:
+    #    if not checkCompatibility('switch', 'grove_mono_led', arduino_name):
+    #        device_name = actuator_info['switch']['grove_mono_led']['name']
+    #        controls.append(ft.Text(device_name))
+    # IR LED remote control device
+    if configuration['ir_remote']['use_ir_remote']:
+        if not checkCompatibility('ir_remote_controller', 'grove_ir_emitter', arduino_name):
+            device_name = actuator_info['ir_remote_controller']['grove_ir_emitter']['name']
+            controls.append(ft.Text(device_name))
+    # Graphic display
+    if configuration['graphic_display']['use_graphic_display']:
+        if configuration['graphic_display']['graphic_display_type']==0:
+            # Giga Display Shield
+            if not checkCompatibility('graphic_display', 'giga_display_shield', arduino_name):
+                device_name = actuator_info['graphic_display']['giga_display_shield']['name']
+                controls.append(ft.Text(device_name))
+        if configuration['graphic_display']['graphic_display_type']==2:
+            # ILI9341コントローラ搭載ディスプレイtype1(ハードウェアSPI接続)
+            if not checkCompatibility('graphic_display', 'ili9341_type_1', arduino_name):
+                device_name = actuator_info['graphic_display']['ili9341_type_1']['name']
+                controls.append(ft.Text(device_name))
+        elif configuration['graphic_display']['graphic_display_type']==3:
+            # ILI9341コントローラ搭載ディスプレイtype2(ソフトウェアSPI接続)
+            if not checkCompatibility('graphic_display', 'ili9341_type_2', arduino_name):
+                device_name = actuator_info['graphic_display']['ili9341_type_2']['name']
+                controls.append(ft.Text(device_name))
+    return controls
+
+def checkVoltage(category, device, arduino_voltage):
+    global actuator_info
+    if actuator_info[category][device]['voltage'][arduino_voltage]:
+        return True
+    else:
+        return False
+
+def checkActuatorVoltage():
+    global configuration, arduino_info, selected_arduino, actuator_info
+    arduino_name = selected_arduino['name']
+    if arduino_info['Arduino'][arduino_name]['voltage']['3V3']:
+        arduino_voltage = "3V3"
+    elif arduino_info['Arduino'][arduino_name]['voltage']['5V']:
+        arduino_voltage = "5V"
+    controls = []
+    #
+    # character display
+    #
+    # Grove character lcd RGB Backlight
+    if configuration['grove_lcd']['use_grove_lcd']:
+        if not checkVoltage('characterDisplay', 'grove_lcd', arduino_voltage):
+            device_name = actuator_info['characterDisplay']['grove_lcd']['name']
+            controls.append(ft.Text(device_name))
+    # ACM1602NI
+    if configuration['acm1602ni']['use_acm1602ni']:
+        if not checkVoltage('characterDisplay', 'acm1602ni', arduino_voltage):
+            device_name = actuator_info['characterDisplay']['acm1602ni']['name']
+            controls.append(ft.Text(device_name))
+    # ACM2004 (秋月電子) 未サポート
+    # Liquid crystal library SC1602BSLB3V3, SC1602BSLB, SC2004CSLB等
+    if configuration['liquid_crystal']['use_liquid_crystal']:
+        controls.append(ft.Text('SC1602BSLB3V3, SC1602BSLB, SC2004CSLB等のLCDデバイスは電圧確認が自動ではできないので，各自型番から定格を確認してください．'))
+    #
+    # さまざまなLED
+    #
+    # Simple mono LED
+    if configuration['simple_mono_led']['use_simple_mono_led']:
+        if not checkVoltage('led', 'grove_mono_led', arduino_voltage):
+            device_name = actuator_info['led']['grove_mono_led']['name']
+            controls.append(ft.Text(device_name))
+    # Simple color LED
+    if configuration['simple_color_led']['use_simple_color_led']:
+            
+            device_name = actuator_info['led']['cathod_common_color_led']['name']
+            controls.append(ft.Text(device_name))
+    # Grove LED bar
+    if configuration['grove_led_bar']['use_grove_led_bar']:
+        if not checkVoltage('led', 'grove_led_bar', arduino_voltage):
+            device_name = actuator_info['led']['grove_led_bar']['name']
+            controls.append(ft.Text(device_name))
+    # Grove LED circular
+    if configuration['grove_led_circular']['use_grove_led_circular']:
+        if not checkVoltage('led', 'grove_led_circular', arduino_voltage):
+            device_name = actuator_info['led']['grove_led_circular']['name']
+            controls.append(ft.Text(device_name))
+    # Grove chainable LED
+    if configuration['grove_chainable_led']['use_grove_chainable_led']:
+        if not checkVoltage('led', 'grove_chainable_led', arduino_voltage):
+            device_name = actuator_info['led']['grove_chainable_led']['name']
+            controls.append(ft.Text(device_name))
+    # Adafruit NeoPixel
+    if configuration['adafuit_neopixel']['use_adafuit_neopixel']:
+        if not checkVoltage('led', 'grove_rgb_led_stick', arduino_voltage):
+            device_name = actuator_info['led']['grove_rgb_led_stick']['name']
+            controls.append(ft.Text(device_name))
+    #
+    # NセグメントLED
+    #
+    # OSL12306-16
+    if configuration['osl12306_16']['use_osl12306_16']:
+        if not checkVoltage('nseg_led', 'osl12306_16_ira', arduino_voltage):
+            device_name = actuator_info['nseg_led']['osl12306_16_ira']['name']
+            controls.append(ft.Text(device_name))
+    # OSL20541
+    if configuration['osl20541']['use_osl20541']:
+        if not checkVoltage('nseg_led', 'osl20541', arduino_voltage):
+            device_name = actuator_info['nseg_led']['osl20541']['name']
+            controls.append(ft.Text(device_name))
+    # Grove - 4-Digit Display (clock type)
+    if configuration['grove_tm1637']['use_grove_tm1637']:
+        if not checkVoltage('nseg_led', 'grove_4_digit_7seg_led', arduino_voltage):
+            device_name = actuator_info['nseg_led']['grove_4_digit_7seg_led']['name']
+            controls.append(ft.Text(device_name))
+    #  DFROBOT 7セグメント 8digit 3-Wire LED Module DFR0090
+    if configuration['dfr0090']['use_dfr0090']:
+        if not checkVoltage('nseg_led', 'dfr0090', arduino_voltage):
+            device_name = actuator_info['nseg_led']['dfr0090']['name']
+            controls.append(ft.Text(device_name))
+    # サーボ
+    if configuration['servo']['use_servo']:
+        if not checkVoltage('servo', 'grove_servo', arduino_voltage):
+            device_name = actuator_info['servo']['grove_servo']['name']
+            controls.append(ft.Text(device_name))
+    # スピーカー
+    if configuration['speaker']['use_speaker']:
+        if not checkVoltage('soundDevice', 'grove_speaker', arduino_voltage):
+            device_name = actuator_info['soundDevice']['grove_speaker']['name']
+            controls.append(ft.Text(device_name))
+    # ブザー
+    if configuration['buzzer']['use_buzzer']:
+        if not checkVoltage('soundDevice', 'grove_buzzer', arduino_voltage):
+            device_name = actuator_info['soundDevice']['grove_buzzer']['name']
+            controls.append(ft.Text(device_name))
+    # MP3 player
+    if configuration['mp3_player']['use_mp3_player']:
+        if configuration['mp3_player']['mp3_player_type']==2:
+            if not checkVoltage('soundDevice', 'grove_mp3_v4', arduino_voltage):
+                device_name = actuator_info['soundDevice']['grove_mp3_v4']['name']
+                controls.append(ft.Text(device_name))
+        elif configuration['mp3_player']['mp3_player_type']==3:
+            if not checkVoltage('soundDevice', 'df_player_mini', arduino_voltage):
+                device_name = actuator_info['soundDevice']['df_player_mini']['name']
+                controls.append(ft.Text(device_name))
+    # simple PWM device
+    if configuration['pwm']['use_pwm']:
+        controls.append(ft.Text('単純PMWのデバイスは電圧確認が自動ではできないので，各自型番から定格を確認してください．'))
+        #if not checkVoltage('pwm', 'grove_mono_led', arduino_voltage):
+        #    device_name = actuator_info['pwm']['grove_mono_led']['name']
+        #    controls.append(ft.Text(device_name))
+    # simple digital(ON/OFF) device (like switch)
+    if configuration['switch']['use_switch']:
+        controls.append(ft.Text('LEDやリレー等のデバイスは電圧確認が自動ではできないので，各自型番から定格を確認してください．'))
+        #if not checkVoltage('switch', 'grove_mono_led', arduino_voltage):
+        #    device_name = actuator_info['switch']['grove_mono_led']['name']
+        #    controls.append(ft.Text(device_name))
+    # IR LED remote control device
+    if configuration['ir_remote']['use_ir_remote']:
+        if not checkVoltage('ir_remote_controller', 'grove_ir_emitter', arduino_voltage):
+            device_name = actuator_info['ir_remote_controller']['grove_ir_emitter']['name']
+            controls.append(ft.Text(device_name))
+    # Graphic display
+    if configuration['graphic_display']['use_graphic_display']:
+        if configuration['graphic_display']['graphic_display_type']==0:
+            # Giga Display Shield
+            if not checkVoltage('graphic_display', 'giga_display_shield', arduino_voltage):
+                device_name = actuator_info['graphic_display']['giga_display_shield']['name']
+                controls.append(ft.Text(device_name))
+        if configuration['graphic_display']['graphic_display_type']==2:
+            # ILI9341コントローラ搭載ディスプレイtype1(ハードウェアSPI接続)
+            if not checkVoltage('graphic_display', 'ili9341_type_1', arduino_voltage):
+                device_name = actuator_info['graphic_display']['ili9341_type_1']['name']
+                controls.append(ft.Text(device_name))
+        elif configuration['graphic_display']['graphic_display_type']==3:
+            # ILI9341コントローラ搭載ディスプレイtype2(ソフトウェアSPI接続)
+            if not checkVoltage('graphic_display', 'ili9341_type_2', arduino_voltage):
+                device_name = actuator_info['graphic_display']['ili9341_type_2']['name']
+                controls.append(ft.Text(device_name))
+    return controls
+
+def listupActuators():
+    global configuration, actuator_info
+    controls = []
+    #
+    # character display
+    #
+    # Grove character lcd RGB Backlight
+    if configuration['grove_lcd']['use_grove_lcd']:
+        device_name = actuator_info['characterDisplay']['grove_lcd']['name']
+        controls.append(ft.Text(device_name))
+    # ACM1602NI
+    if configuration['acm1602ni']['use_acm1602ni']:
+        device_name = actuator_info['characterDisplay']['acm1602ni']['name']
+        controls.append(ft.Text(device_name))
+    # ACM2004 (秋月電子) 未サポート
+    # Liquid crystal library SC1602BSLB3V3, SC1602BSLB, SC2004CSLB等
+    if configuration['liquid_crystal']['use_liquid_crystal']:
+        if configuration['liquid_crystal']['liquid_crystal_type']==0:
+            device_name = "SC1602BSLB, SC1602BSLB3V3(秋月電子)"
+        elif configuration['liquid_crystal']['liquid_crystal_type']==1:
+            device_name = "SC2004CSLB(秋月電子)等"
+        controls.append(ft.Text(device_name))
+    #
+    # さまざまなLED
+    #
+    # Simple mono LED
+    if configuration['simple_mono_led']['use_simple_mono_led']:
+        device_name = actuator_info['led']['grove_mono_led']['name']
+        controls.append(ft.Text(device_name))
+    # Simple color LED
+    if configuration['simple_color_led']['use_simple_color_led']:
+        device_name = actuator_info['led']['cathod_common_color_led']['name']
+        controls.append(ft.Text(device_name))
+    # Grove LED bar
+    if configuration['grove_led_bar']['use_grove_led_bar']:
+        device_name = actuator_info['led']['grove_led_bar']['name']
+        controls.append(ft.Text(device_name))
+    # Grove LED circular
+    if configuration['grove_led_circular']['use_grove_led_circular']:
+        device_name = actuator_info['led']['grove_led_circular']['name']
+        controls.append(ft.Text(device_name))
+    # Grove chainable LED
+    if configuration['grove_chainable_led']['use_grove_chainable_led']:
+        device_name = actuator_info['led']['grove_chainable_led']['name']
+        controls.append(ft.Text(device_name))
+    # Adafruit NeoPixel
+    if configuration['adafuit_neopixel']['use_adafuit_neopixel']:
+        device_name = actuator_info['led']['grove_rgb_led_stick']['name']
+        controls.append(ft.Text(device_name))
+    #
+    # NセグメントLED
+    #
+    # OSL12306-16
+    if configuration['osl12306_16']['use_osl12306_16']:
+        device_name = actuator_info['nseg_led']['osl12306_16_ira']['name']
+        controls.append(ft.Text(device_name))
+    # OSL20541
+    if configuration['osl20541']['use_osl20541']:
+        device_name = actuator_info['nseg_led']['osl20541']['name']
+        controls.append(ft.Text(device_name))
+    # OSL30561
+    if configuration['osl30561']['use_osl30561']:
+        device_name = actuator_info['nseg_led']['osl30561']['name']
+        controls.append(ft.Text(device_name))
+    # Grove - 4-Digit Display (clock type)
+    if configuration['grove_tm1637']['use_grove_tm1637']:
+        device_name = actuator_info['nseg_led']['grove_4_digit_7seg_led']['name']
+        controls.append(ft.Text(device_name))
+    #  DFROBOT 7セグメント 8digit 3-Wire LED Module DFR0090
+    if configuration['dfr0090']['use_dfr0090']:
+        device_name = actuator_info['nseg_led']['dfr0090']['name']
+        controls.append(ft.Text(device_name))
+    # サーボ
+    if configuration['servo']['use_servo']:
+        device_name = actuator_info['servo']['grove_servo']['name']
+        controls.append(ft.Text(device_name))
+    # スピーカー
+    if configuration['speaker']['use_speaker']:
+        device_name = actuator_info['soundDevice']['grove_speaker']['name']
+        controls.append(ft.Text(device_name))
+    # ブザー
+    if configuration['buzzer']['use_buzzer']:
+        device_name = actuator_info['soundDevice']['grove_buzzer']['name']
+        controls.append(ft.Text(device_name))
+    # MP3 player
+    if configuration['mp3_player']['use_mp3_player']:
+        #device_name = ""
+        if configuration['mp3_player']['mp3_player_type']==2:
+            device_name = actuator_info['soundDevice']['grove_mp3_v4']['name']
+            controls.append(ft.Text(device_name))
+        elif configuration['mp3_player']['mp3_player_type']==3:
+            device_name = actuator_info['soundDevice']['df_player_mini']['name']
+            controls.append(ft.Text(device_name))
+    # simple PWM device
+    if configuration['pwm']['use_pwm']:
+        device_name = "LED等"
+        #device_name = actuator_info['pwm']['grove_mono_led']['name']
+        controls.append(ft.Text(device_name))
+    # simple digital(ON/OFF) device (like switch)
+    if configuration['switch']['use_switch']:
+        device_name = "LEDやリレー等"
+        #device_name = actuator_info['switch']['grove_mono_led']['name']
+        controls.append(ft.Text(device_name))
+    # IR LED remote control device
+    if configuration['ir_remote']['use_ir_remote']:
+        device_name = actuator_info['ir_remote_controller']['grove_ir_emitter']['name']
+        controls.append(ft.Text(device_name))
+    # Graphic display
+    if configuration['graphic_display']['use_graphic_display']:
+        device_name = ""
+        if configuration['graphic_display']['graphic_display_type']==0:
+            # Giga Display Shield
+            device_name = actuator_info['graphic_display']['giga_display_shield']['name']
+            controls.append(ft.Text(device_name))
+        if configuration['graphic_display']['graphic_display_type']==2:
+            # ILI9341コントローラ搭載ディスプレイtype1(ハードウェアSPI接続)
+            device_name = actuator_info['graphic_display']['ili9341_type_1']['name']
+            controls.append(ft.Text(device_name))
+        elif configuration['graphic_display']['graphic_display_type']==3:
+            # ILI9341コントローラ搭載ディスプレイtype2(ソフトウェアSPI接続)
+            device_name = actuator_info['graphic_display']['ili9341_type_2']['name']
+            controls.append(ft.Text(device_name))
+    return controls
+
+def mainWindow(page: ft.Page):
+    def createViewTop():
+        def icon_clicked(e):
+            global PORT, url_header
+            url = url_header + str(PORT) + "/About.html"
+            webbrowser.open(url)
+        async def finish_button_clicked(e):
+            await page.window.destroy()
+        async def next_button_clicked(e):
+            await page.push_route("/viewArduino")
+        page.title = "このアプリについて"
+        #page.autoscroll = True
+        #page.window.height = 550
+        pageTitleBar = ft.AppBar(
+            title=ft.Text("このアプリについて"),
+            bgcolor=ft.Colors.YELLOW,
+            actions=[
+                ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
+            ]
+        )
+        about_title = ft.Text('はじめに', weight=ft.FontWeight.BOLD, size=20)
+        about_message = ft.Text('このアプリケーションでは，IoT用アクチュエータ端末の仕様を検査するためのもので，次の手順で作業を進めます．')
+        procedure1 = ft.Text('1) IoT端末作成に利用するArduinoの機種をドロップダウンメニューで選択')
+        procedure2 = ft.Text('2) 選択したArduinoの動作電圧とデバイスのカタログ上の動作電圧が一致するのみを表示対象とするか否かをチェックボックスで指定')
+        procedure3 = ft.Text('3) 仕様ファイル(YAML形式)を読み込み')
+        procedure4 = ft.Text('4) Arduinのアーキテクチャと動作電圧が仕様に定義されたアクチュエータと一致しているかを検査')
+        procedure5 = ft.Text('5) 使用するピンに重複がないかを検査')
+        divider = ft.Divider(height=2, color="black")
+        caution_title = ft.Text('電圧についての注意', weight=ft.FontWeight.BOLD, size=20)
+        caution_message1 = ft.Text('アクチュエータデバイスのカタログスペック上の動作電圧と実際の装置の動作電圧は同じとは限りません．例えば，5V指定のLEDであっても，3.3V動作のArduinoで利用した場合，暗いながらも動作します．')
+        caution_message2 = ft.Text('カタログ上の動作電圧を無視する指定(チェックボックス操作)をした場合，作者のテストの環境で動作したデバイスは表示対象となります．')
+        caution_message3 = ft.Text('デバイスの個体差等も考えられるため，カタログ上の動作電圧を無視し，電圧変換回路等を用いない場合は，ユーザ環境で動作する保証はありません．')
+        next_button = ft.Button(content="次", on_click=next_button_clicked)
+        finish_button = ft.Button(content="閉じる", on_click=finish_button_clicked)
+        return ft.View(route="/viewTop", controls=[
+            ft.SafeArea(
+                content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
+                    controls=[
+                        pageTitleBar,
+                        about_title,
+                        about_message,
+                        procedure1,
+                        procedure2,
+                        procedure3,
+                        procedure4,
+                        procedure5,
+                        divider,
+                        caution_title,
+                        caution_message1,
+                        caution_message2,
+                        caution_message3,
+                        divider,
+                        ft.Row(
+                            [next_button,finish_button,]
+                        ),
+                    ],
+                ),
+            ) 
+        ])
+
+    def createViewArduino():
+        def icon_clicked(e):
+            global PORT, url_header
+            url = url_header + str(PORT) + "/ArduinoSelection.html"
+            webbrowser.open(url)
+
+        async def finish_button_clicked(e):
+            await page.window.destroy()
+
+        async def next_button_clicked(e):
+            global selected_arduino, voltage_check, arduino_info
+            selected_arduino['name'] = arduino_menu.value
+            if arduino_info['Arduino'][arduino_menu.value]['voltage']['3V3']:
+                selected_arduino['voltage']= '3V3'
+            if arduino_info['Arduino'][arduino_menu.value]['voltage']['5V']:
+                selected_arduino['voltage']= '5V'
+            voltage_check = voltage_CheckBox.value
+            await page.push_route("/viewLoadFile")
+
+        global arduino_info, selected_arduino, voltage_check
+        #lastView="/createViewArduino"
+        page.title = "Arduino機種選択"
+        #page.autoscroll = True
+        pageTitleBar = ft.AppBar(
+            title=ft.Text("Arduino機種選択"),
+            bgcolor=ft.Colors.YELLOW,
+            actions=[
+                ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
+            ]
+        )
+        arduino_selection_message = ft.Text("アクチュエータ端末の制作に利用するArduinoの機種を選択してください．")
+        arduino_menu_options = []
+        for i in arduino_info['Arduino']['deviceList']:
+            arduino_menu_options.append(ft.dropdown.Option(key = i, text = arduino_info['Arduino'][i]['name']))
+        arduino_menu = ft.Dropdown(
+                            value=selected_arduino['name'],
+                            options = arduino_menu_options,
+                        )
+        voltage_CheckBox = ft.Checkbox(label="Arduinoとアクチュエータの動作電圧を確認する", value=voltage_check)
+        next_button = ft.Button(content="次", on_click=next_button_clicked)
+        finish_button = ft.Button(content="閉じる", on_click=finish_button_clicked)
+        return ft.View(route="/viewArduino", controls=[
+            ft.SafeArea(
+                content=ft.Column(
+                    height=600,
+                    scroll=ft.ScrollMode.ALWAYS,
+                    controls=[
+                        pageTitleBar,
+                        arduino_selection_message,
+                        arduino_menu,
+                        voltage_CheckBox,
+                        ft.Divider(height=2, color="black"),
+                        ft.Row(
+                            [next_button,finish_button,]
+                        ),
+                    ],
+                ),
+            )   
+        ])
+
+    def createViewLoadFile():
+        def icon_clicked(e):
+            global PORT, url_header
+            url = url_header + str(PORT) + "/LoadSpec.html"
+            webbrowser.open(url)
+
+        async def next_button_clicked(e):
+            global configuration
+            if source_file_name=="":
+                warning_message.value = "入力の仕様ファイルを選択してください．"
+                warning_message.update()
+                return
+            try:
+                with open(source_file_name, mode='r', encoding='utf-8') as f:
+                    configuration = yaml.safe_load(f)
+            except Exception as e:
+                warning_message.value = '仕様ファイルのロードに失敗しました．'
+                warning_message.update()
+                return
+            await page.push_route("/viewSummary")
+            
+        async def pick_input_file_dialog(e: ft.Event[ft.Button]):
+            global source_file_name
+            files = await ft.FilePicker().pick_files(allow_multiple=False)
+            if files:
+                selected_input_file.value = files[0].path
+                source_file_name = selected_input_file.value
+            else:
+                selected_input_file.value = "キャンセルされました."
+                source_file_name = ""
+            selected_input_file.update()
+
+        async def finish_button_clicked(e: ft.Event[ft.Button]):
+            await page.window.destroy()
+
+        #page.autoscroll = True
+        pageTitleBar = ft.AppBar(
+            title=ft.Text("仕様ファイルロード"),
+            bgcolor=ft.Colors.BLUE,
+            actions=[
+                ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
+            ]
+        )
+        selected_input_file = ft.Text()
+        next_button = ft.Button(content="次", on_click=next_button_clicked)
+        warning_message = ft.Text()
+        finish_button = ft.Button(content="終了", on_click=finish_button_clicked)
+        specFileSelectionButton = ft.Button(
+            content="ファイル選択",
+            icon=ft.Icons.UPLOAD_FILE,
+            on_click=pick_input_file_dialog,
+        )
+        return ft.View(route="/viewLoadFile", controls=[
+            ft.SafeArea(
+                content=ft.Column(
+                    height=600,
+                    scroll=ft.ScrollMode.ALWAYS,
+                    controls=[
+                        pageTitleBar,
+                        ft.Text("仕様ファイル指定", theme_style=ft.TextThemeStyle.TITLE_MEDIUM),
+                        specFileSelectionButton,
+                        selected_input_file,
+                        ft.Divider(height=2, color="black"),
+                        warning_message,
+                        ft.Row(
+                            [next_button,finish_button,]
+                        ),
+                        #finish_button,
+                    ],
+                ),
+            )   
+        ])
+
+    def createViewSummary():
+        def icon_clicked(e):
+            global PORT, url_header
+            url = url_header + str(PORT) + "/Summary.html"
+            webbrowser.open(url)
+
+        async def finish_button_clicked(e):
+            await page.window.destroy()
+
+        async def exec_button_clicked(e):
+            await page.push_route("/viewAnalyzeResulty")
+
+        async def back_button_clicked(e):
+            clear_pin_assignment()
+            await page.push_route("/viewArduino")
+
+        global configuration, actuator_info, selected_arduino, voltage_check, pin_assignment
+        #page.autoscroll = True
+        pageTitleBar = ft.AppBar(
+            title=ft.Text("仕様の一覧"),
+            bgcolor=ft.Colors.YELLOW,
+            actions=[
+                ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
+            ]
+        )
+        arduino_title = ft.Text('Arduinoの機種', weight=ft.FontWeight.BOLD, size=20)
+        arduino_name = ft.Text('選択されたArduino : '+selected_arduino['name'])
+        arduino_voltage = ft.Text('選択されたArduinoの電圧 : '+selected_arduino['voltage'])
+        divider = ft.Divider(height=2, color="black")
+        voltage_check_title = ft.Text('電圧チェック', weight=ft.FontWeight.BOLD, size=20)
+        if voltage_check:
+            voltage_check_message = ft.Text('選択されたArduinoとアクチュエータの動作電圧を確認する')
+        else:
+            voltage_check_message = ft.Text('選択されたArduinoとアクチュエータの動作電圧は確認しない')
+        # divider
+        platform_title = ft.Text('ネットワーク等の周辺回路', weight=ft.FontWeight.BOLD, size=20)
+        network_info = ft.Text()
+        if configuration['platform']['network_hardware']['network_type']!='ethernet':
+            network_info.value = 'ネットワークでArduinoの端子は利用しない'
+        else:
+            network_info.value = 'イーサネット : ' + configuration['platform']['network_hardware']['ethernet_chip_select']
+            #pin = pinNumber(configuration['platform']['network_hardware']['ethernet_chip_select'])
+            #pin_assignment['digital'][pin] += 1
+            #pin_assignment['spi'] = True
+        indicator_info = ft.Text()
+        if configuration['platform']['color_led']['use_led']:
+            indicator_info.value = '動作表示LED : ' + configuration['platform']['color_led']['led_pin']
+            #pin = pinNumber(configuration['platform']['color_led']['led_pin'])
+            #pin_assignment['digital'][pin] += 1
+        else:
+            indicator_info.value = '動作表示LED : 利用しない'
+        sd_info = ft.Text()
+        if configuration['platform']['sd']['use_sd']:
+            sd_info.value = 'SDカード : ' + configuration['platform']['sd']['sd_chip_select']
+            #pin = pinNumber(configuration['platform']['sd']['sd_chip_select'])
+            #pin_assignment['digital'][pin] += 1
+            #pin_assignment['spi'] = True
+        else:
+            sd_info.value = 'SDカード : 利用しない'
+        serial_info = ft.Text()
+        if configuration['common']['log']['use_serial_log']:
+            serial_info.value = 'シリアル端子 : 利用する'
+            #pin_assignment['serial'] += 1
+        else:
+            serial_info.value = 'シリアル端子 : 利用しない'
+        # divider
+        actuator_title = ft.Text('アクチュエータ', weight=ft.FontWeight.BOLD, size=20)
+        lv = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=True)
+        lv.controls = listupActuators()
+        exec_button = ft.Button(content="仕様分析実行", on_click=exec_button_clicked)
+        back_button = ft.Button(content="戻る", on_click=back_button_clicked)
+        finish_button = ft.Button(content="閉じる", on_click=finish_button_clicked)
+        return ft.View(route="/viewSummary", controls=[
+            ft.SafeArea(
+                content=ft.Column(
+                    height=600,
+                    scroll=ft.ScrollMode.ALWAYS,
+                    controls=[
+                        pageTitleBar,
+                        arduino_title,
+                        arduino_name,
+                        arduino_voltage,
+                        divider,
+                        voltage_check_title,
+                        voltage_check_message,
+                        divider,
+                        platform_title,
+                        network_info,
+                        indicator_info,
+                        sd_info,
+                        serial_info,
+                        divider,
+                        actuator_title,
+                        lv,
+                        divider,
+                        ft.Row(
+                            [exec_button, back_button, finish_button,]
+                        ),
+                    ],
+                ),
+            ) 
+        ])
+
+    def createViewAnalyzeResult():
+        def icon_clicked(e):
+            global PORT, url_header
+            url = url_header + str(PORT) + "/AnalyzeResult.html"
+            webbrowser.open(url)
+
+        async def finish_button_clicked(e):
+            await page.window.destroy()
+
+        async def back_button_clicked(e):
+            clear_pin_assignment()
+            await page.push_route("/viewArduino")
+
+        global configuration, actuator_info, selected_arduino, voltage_check, pin_assignment
+        #page.autoscroll = True
+        #page.window.height = 1200
+        pageTitleBar = ft.AppBar(
+            title=ft.Text("仕様分析結果"),
+            bgcolor=ft.Colors.YELLOW,
+            actions=[
+                ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
+            ]
+        )
+        arduino_title = ft.Text('Arduinoの機種', weight=ft.FontWeight.BOLD, size=20)
+        arduino_name = ft.Text('選択されたArduino : '+selected_arduino['name'])
+        arduino_voltage = ft.Text('選択されたArduinoの電圧 : '+selected_arduino['voltage'])
+        divider = ft.Divider(height=2, color="black")
+        # アーキテクチャチェック
+        architecture_title = ft.Text('選択したArduinoのMCUとの互換性がないデバイス', weight=ft.FontWeight.BOLD, size=20)
+        architecture_lv = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=True)
+        architecture_lv.controls = checkMcuCompatibility()
+        if len(architecture_lv.controls)==0:
+            architecture_lv.controls.append(ft.Text('互換性に問題があるデバイスはありません'))
+        # 電圧チェック
+        voltage_title = ft.Text('動作電圧が一致しないデバイス', weight=ft.FontWeight.BOLD, size=20)
+        voltage_lv = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=True)
+        if voltage_check:
+            voltage_lv.controls = checkActuatorVoltage()
+            if len(voltage_lv.controls)==0:
+                voltage_lv.controls.append(ft.Text('動作電圧に問題があるデバイスはありません'))
+        else:
+            voltage_lv.controls.append(ft.Text('動作電圧検査は実施しません'))
+        # pinの重複利用の確認
+        configurationPinMap()
+        pinmap_title = ft.Text('接続先ピンの問題', weight=ft.FontWeight.BOLD, size=20)
+        #pinmap_lv = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=True)
+        pinmap_lv = ft.ListView(spacing=10, padding=20, auto_scroll=True)
+        pinmap_lv.controls = checkPinMap()
+        if len(pinmap_lv.controls)==0:
+            pinmap_lv.controls.append(ft.Text('接続先ピン番号に問題があるデバイスはありません'))
+        back_button = ft.Button(content="戻る", on_click=back_button_clicked)
+        finish_button = ft.Button(content="閉じる", on_click=finish_button_clicked)
+        return ft.View(route="/viewAnalyzeResulty", controls=[
+            ft.SafeArea(
+                content=ft.Column(
+                    height=600,
+                    scroll=ft.ScrollMode.ALWAYS,
+                    controls=[
+                        pageTitleBar,
+                        arduino_title,
+                        arduino_name,
+                        arduino_voltage,
+                        divider,
+                        architecture_title,
+                        architecture_lv,
+                        divider,
+                        voltage_title,
+                        voltage_lv,
+                        divider,
+                        pinmap_title,
+                        pinmap_lv,
+                        divider,
+                        ft.Row(
+                            [back_button, finish_button,]
+                        ),
+                    ],
+                ),
+            ) 
+        ])
+
+    def route_change(handler):
+        global configuration #, lastView
+        page.views.clear()
+        if page.route == "/viewTop":
+            page.views.append(createViewTop())
+        if page.route == "/viewArduino":
+            page.views.append(createViewArduino())
+        if page.route == "/viewLoadFile":
+            page.views.append(createViewLoadFile())
+        if page.route == "/viewSummary":
+            page.views.append(createViewSummary())
+        if page.route == "/viewAnalyzeResulty":
+            page.views.append(createViewAnalyzeResult())
+        page.update()
+    page.on_route_change = route_change
+    page.window.height = 600
+    asyncio.create_task(page.push_route("/viewTop"))
+
+def errorWindow(page: ft.Page):
+    async def finish_button_clicked(e):
+        await page.window.destroy()
+    global error
+    page.title = "エラー"
+    page.autoscroll = True
+    finish_button = ft.Button(content="終了", on_click=finish_button_clicked)
+    page.add(
+        ft.SafeArea(
+            content=ft.Column(
+                height=600,
+                scroll=ft.ScrollMode.ALWAYS,
+                controls=[
+                    ft.AppBar(title=ft.Text("重大なエラー"), bgcolor=ft.Colors.RED),
+                    ft.Text(error),
+                    ft.Divider(height=2, color="black"),
+                    finish_button,
+                ],
+            )
+        )
+    )
+
+def init():
+    global error, arduino_info, actuator_info, HELP_DIRECTORY, HELP_FILES, CONFIG_FILE_DIR, CONFIG_FILES
+    error=''
+    pwd=os.getcwd()
+    pwd = pwd.replace('\\', '/')
+    pwd = pwd.replace(' ', '\\ ')
+    pwd = pwd + "/"
+    # check configuration files.
+    for file in CONFIG_FILES:
+        target_path = CONFIG_FILE_DIR + file
+        if not (os.path.isfile(pwd+target_path)):
+            error += "本プログラムの設定ファィル「"
+            error += file
+            error += "」が「"
+            error += CONFIG_FILE_DIR
+            error += "」にありません．\n"
+        else:
+            if file == "Arduino.yaml":
+                try:
+                    with open(target_path, mode='r', encoding='utf-8') as f:
+                        arduino_info = yaml.safe_load(f)
+                except Exception as e:
+                    error += 'Arduinoの機種情報ファイル(Arduino.yaml)が読み読み込みできません．\n'
+            elif file == "ActuatorDevices.yaml":
+                try:
+                    with open(target_path, mode='r', encoding='utf-8') as f:
+                        actuator_info = yaml.safe_load(f)
+                except Exception as e:
+                    error += 'アクチュエータの情報ファイル(ActuatorDevices.yaml)が読み読み込みできません．\n'
+    # check help files, phase 1.
+    for file in HELP_FILES:
+        target_path = HELP_DIRECTORY + file
+        if not (os.path.isfile(pwd+target_path)):
+            error += "本プログラムのヘルプファィル「"
+            error += file
+            error += "」が「"
+            error += HELP_DIRECTORY
+            error += "」にありません．\n"
+    setup_pin_assignment()
+    return error
+
+if __name__ == "__main__":
+    if "" == init():
+        thread = threading.Thread(target=documentServer, daemon=True) # 処理を割り当てる
+        thread.start() # スレッドを起動する
+        ft.run(mainWindow)
+    else:
+        ft.run(errorWindow)

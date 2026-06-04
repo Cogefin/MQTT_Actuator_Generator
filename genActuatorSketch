@@ -9,6 +9,13 @@ import sys
 import shutil
 import os
 
+#import http.server
+#import socketserver
+
+#import threading
+
+#import webbrowser
+
 
 source_file_name=""
 output_directory_path=""
@@ -31,6 +38,30 @@ watchdog_source = util_dir + 'watchdog.cpp'
 driver_dir = util_dir + 'src'
 
 num_of_actuators=0
+
+## HELP page information
+#url_header = "http://localhost:"
+#LOCAL_HOST_IP = "127.0.0.1"
+
+## IP configuration for help
+#PORT_RANGE=100
+#PORT_LOWER_LIMIT = 8000
+
+#class Handler(http.server.SimpleHTTPRequestHandler):
+#    def __init__(self, *args, **kwargs):
+#        super().__init__(*args, directory=HELP_DIRECTORY, **kwargs)
+
+#def documentServer():
+#    global PORT
+#    flag=True
+#    PORT=PORT_LOWER_LIMIT
+#    while flag:
+#        try:
+#            with socketserver.TCPServer((LOCAL_HOST_IP, PORT), Handler) as httpd:
+#                flag=False
+#                httpd.serve_forever()
+#        except Exception as e:
+#            PORT+=1
 
 def copySketch():
     global output_directory_path, output_dir, sketch_name, sketch_source
@@ -440,13 +471,13 @@ def checkConfiguration():
             checkResult += '仕様ファイルの「buzzer」セクション中に「use_buzzer」の定義がありません．\n'
         if not ('buzzer_pin' in configuration['buzzer']):
             checkResult += '仕様ファイルの「buzzer」セクション中に「buzzer_pin」の定義がありません．\n'
-    if not ('pmw' in configuration):
-        checkResult += '仕様ファイルに「pmw」の定義がありません．\n'
+    if not ('pwm' in configuration):
+        checkResult += '仕様ファイルに「pwm」の定義がありません．\n'
     else:
-        if not ('use_pmw' in configuration['pmw']):
-            checkResult += '仕様ファイルの「pmw」セクション中に「use_pmw」の定義がありません．\n'
-        if not ('pmw_pin' in configuration['pmw']):
-            checkResult += '仕様ファイルの「pmw」セクション中に「pmw_pin」の定義がありません．\n'
+        if not ('use_pwm' in configuration['pwm']):
+            checkResult += '仕様ファイルの「pwm」セクション中に「use_pwm」の定義がありません．\n'
+        if not ('pwm_pin' in configuration['pwm']):
+            checkResult += '仕様ファイルの「pwm」セクション中に「pwm_pin」の定義がありません．\n'
     if not ('switch' in configuration):
         checkResult += '仕様ファイルに「switch」の定義がありません．\n'
     else:
@@ -573,10 +604,10 @@ def exec_command():
     if 'buzzer' in configuration:
         buzzer(configuration['buzzer'])
     #
-    # simple PMW device
+    # simple PWM device
     #
-    if 'pmw' in configuration:
-        pmw(configuration['pmw'])
+    if 'pwm' in configuration:
+        pwm(configuration['pwm'])
     #
     # simple digital(ON/OFF) device (like switch)
     #
@@ -1237,16 +1268,16 @@ def buzzer(buzzer):
     print("#define BUZZER_PIN %s" % buzzer['buzzer_pin'], file=output_file)
 
 #
-# simple PMW device
-#   USE_PMW
-def pmw(pmw):
+# simple PWM device
+#   USE_PWM
+def pwm(pwm):
     global output_file, num_of_actuators
     num_of_actuators=num_of_actuators+1
-    if pmw['use_pmw']:
-        print('#define USE_PMW', file=output_file)
+    if pwm['use_pwm']:
+        print('#define USE_PWM', file=output_file)
     else:
-        print('#undef USE_PMW', file=output_file)
-    print("#define PMW_PIN %s" % pmw['pmw_pin'], file=output_file)
+        print('#undef USE_PWM', file=output_file)
+    print("#define PWM_PIN %s" % pwm['pwm_pin'], file=output_file)
 
 #
 # simple digital(ON/OFF) device (like switch)
@@ -1420,6 +1451,8 @@ def checkApplicationEnvironment():
 
 if __name__ == "__main__":
     if "" == checkApplicationEnvironment():
+        #thread = threading.Thread(target=documentServer, daemon=True) # 処理を割り当てる
+        #thread.start() # スレッドを起動する
         ft.run(fileWindow)
     else:
         ft.run(errorWindow)
