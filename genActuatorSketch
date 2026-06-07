@@ -806,10 +806,10 @@ def fileWindow(page: ft.Page):
                         outputFolderSelectionButton,
                         selected_output_file,
                         ft.Divider(height=2, color="black"),
+                        warning_message,
                         ft.Row(
-                            [exec_button,warning_message,]
+                            [exec_button,finish_button,]
                         ),
-                        finish_button,
                     ],
                 ),
             )   
