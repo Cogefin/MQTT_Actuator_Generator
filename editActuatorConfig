@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import flet as ft
+import os
 
 import yaml
 
@@ -17,11 +18,10 @@ import asyncio
 
 config_file_name=""
 output_file_name=""
-lastView=""
 
 # HELP
-help_file="parts/Help/editActuatorConfig/help.yaml"
-helpPageName = ''
+#help_file="parts/Help/editActuatorConfig/help.yaml"
+#helpPageName = ''
 
 # Default Values
 defaults_file="parts/defaults/editActuatorConfig/editActuatorConfig.yaml"
@@ -29,9 +29,58 @@ defaults_file="parts/defaults/editActuatorConfig/editActuatorConfig.yaml"
 error = ''
 
 # Help file
-HELP_DIRECTORY = "parts/Help/actuatorSelector/"
+HELP_DIRECTORY = "parts/Help/editActuatorConfig/"
 HELP_FILES = [
-    "test.html"
+    "/TOP.html", 
+    "/LoadConfig.html", 
+    "/TOC.html", 
+    "/NetworkMedia.html", 
+    "/EthernetSetting.html", 
+    "/WiFiSetting.html", 
+    "/RTC.html", 
+    "/platformLED.html", 
+    "/platformLEDSetting.html", 
+    "/Storage.html", 
+    "/StorageSetting.html", 
+    "/Serial.html", 
+    "/Log.html", 
+    "/SerialLog.html", 
+    "/LogSetting.html", 
+    "/logFileParam.html", 
+    "/DHCP.html", 
+    "/staticIP.html", 
+    "/networkService.html", 
+    "/mqtt.html", 
+    "/mqttAuth.html", 
+    "/ntp.html", 
+    "/wdt.html", 
+    "/wdtParam.html", 
+    "/characterDisplay.html", 
+    "/grove_character_lcd_RGB_Backlight.html", 
+    "/acm1602.html", 
+    "/liquid_crystal_library.html", 
+    "/led.html", 
+    "/simple_mono_led.html", 
+    "/akcommon_color_led.html", 
+    "/grove_led_bar.html", 
+    "/grove_led_circular.html", 
+    "/grove_chainable_led.html", 
+    "/adafruit_neopixel.html", 
+    "/OSL12306_16.html", 
+    "/OSL20541.html", 
+    "/OSL30561.html", 
+    "/grove_4_digit_display.html", 
+    "/dfrobot_dfr0090.html", 
+    "/servo.html", 
+    "/sound_device.html", 
+    "/speaker.html", 
+    "/buzzer.html", 
+    "/mp3player.html", 
+    "/simplePWM.html", 
+    "/simpleDigital.html", 
+    "/ir_remote.html", 
+    "/graphic_display.html", 
+    "/save_config.html"
 ]
 
 # IP configuration for help
@@ -57,6 +106,12 @@ def documentServer():
                 httpd.serve_forever()
         except Exception as e:
             PORT+=1
+
+def checkTFvalue(value):
+    if value == "True" or value == "true" or value == True:
+        return True
+    else:
+        return False
 
 #
 # 共通部分(主にハードウェア)
@@ -111,7 +166,7 @@ rtc_type = ft.Dropdown(
 
 # LED関係
 def led_flag_changed(e):
-    configuration['platform']['color_led']['use_led'] = led_flag.value
+    configuration['platform']['color_led']['use_led'] = checkTFvalue(led_flag.value)
 
 led_flag = ft.Dropdown(
     label="稼働状態表示LED",
@@ -285,7 +340,7 @@ def rtc_ntp_flag_changed(e):
     configuration['common']['clock']['update_rtc_by_ntp'] = rtc_ntp_flag.value
 
 rtc_ntp_flag = ft.Dropdown(
-    label="RTCの時刻をNTPで更新",
+    label="RTCの時刻をNTPで設定",
     width=200,
     on_text_change=rtc_ntp_flag_changed,
     options=[
@@ -628,7 +683,6 @@ osl20541_k_pin = ft.TextField(label="Kピン") # configuration['osl20541']['osl2
 osl20541_l_pin = ft.TextField(label="Lピン") # configuration['osl20541']['osl20541_l_pin']
 osl20541_m_pin = ft.TextField(label="Mピン") # configuration['osl20541']['osl20541_m_pin']
 osl20541_n_pin = ft.TextField(label="Nピン") # configuration['osl20541']['osl20541_n_pin']
-#osl20541_p_pin = ft.TextField(label="Pピン") # configuration['osl20541']['osl20541_p_pin']
 osl20541_dp_pin = ft.TextField(label="DPピン") # configuration['osl20541']['osl20541_dp_pin']
 osl20541_digit1_pin = ft.TextField(label="digit1ピン") # configuration['osl20541']['osl20541_digit1_pin']
 osl20541_digit2_pin = ft.TextField(label="digit2ピン") # configuration['osl20541']['osl20541_digit2_pin']
@@ -1182,7 +1236,6 @@ def loadMenuValue():
     dns_server_2.value = configuration['network']['ip']['dns_server'][2]
     dns_server_3.value = configuration['network']['ip']['dns_server'][3]
     # MQTT
-    #mqtt_format.value = configuration['network']['mqtt']['mqtt_format']
     mqtt_topic.value = configuration['network']['mqtt']['mqtt_topic']
     mqtt_server.value = configuration['network']['mqtt']['mqtt_server']
     mqtt_port.value = configuration['network']['mqtt']['mqtt_port']
@@ -1287,7 +1340,6 @@ def loadMenuValue():
     osl20541_l_pin.value = configuration['osl20541']['osl20541_l_pin']
     osl20541_m_pin.value = configuration['osl20541']['osl20541_m_pin']
     osl20541_n_pin.value = configuration['osl20541']['osl20541_n_pin']
-    #osl20541_p_pin.value = configuration['osl20541']['osl20541_p_pin']
     osl20541_dp_pin.value = configuration['osl20541']['osl20541_dp_pin']
     osl20541_digit1_pin.value = configuration['osl20541']['osl20541_digit1_pin']
     osl20541_digit2_pin.value = configuration['osl20541']['osl20541_digit2_pin']
@@ -1631,7 +1683,6 @@ def saveConfig(output_file_name):
     print('  osl20541_l_pin: \"D%s\" # OSL20541_PIN_L' % configuration['osl20541']['osl20541_l_pin'], file=output_file)
     print('  osl20541_m_pin: \"D%s\" # OSL20541_PIN_M' % configuration['osl20541']['osl20541_m_pin'], file=output_file)
     print('  osl20541_n_pin: \"D%s\" # OSL20541_PIN_N' % configuration['osl20541']['osl20541_n_pin'], file=output_file)
-    #print('  osl20541_dp_pin: \"D%s\" # OSL20541_PIN_P' % configuration['osl20541']['osl20541_p_pin'], file=output_file)
     print('  osl20541_dp_pin: \"D%s\" # OSL20541_PIN_DP' % configuration['osl20541']['osl20541_dp_pin'], file=output_file)
     print('  osl20541_digit1_pin: \"D%s\" # OSL20541_PIN_DIGIT_1' % configuration['osl20541']['osl20541_digit1_pin'], file=output_file)
     print('  osl20541_digit2_pin: \"D%s\" # OSL20541_PIN_DIGIT_2' % configuration['osl20541']['osl20541_digit2_pin'], file=output_file)
@@ -1805,7 +1856,6 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def start_button_clicked(e):
-            global method_menu
             if method_menu.value == '1':
                 await page.push_route("/viewTOC")
             elif method_menu.value == '2':
@@ -1880,7 +1930,6 @@ def editWindow(page: ft.Page):
         async def finish_button_clicked(e):
             await page.window.destroy()
 
-        global configuration, lastView
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("設定ファイル選択"),
@@ -1910,10 +1959,10 @@ def editWindow(page: ft.Page):
                         selected_config_file,
                         ft.Divider(height=2, color="black"),
                         config_load_subtitle,
-                        load_button,
                         warning_message,
-                        ft.Divider(height=2, color="black"),
-                        finish_button,
+                        ft.Row(
+                            [load_button, finish_button,]
+                        ),
                     ],
                 ),
             ) 
@@ -2012,8 +2061,9 @@ def editWindow(page: ft.Page):
                         actuator_option_ir_remote_button,
                         actuator_option_graphic_display_button,
                         divider,
-                        save_button,
-                        finish_button,
+                        ft.Row(
+                            [save_button, finish_button,]
+                        ),
                     ],
                 ),
             )
@@ -2029,6 +2079,7 @@ def editWindow(page: ft.Page):
             global network_type
             if network_type.value=="ethernet":
                 await page.push_route("/viewPlatformEthernet")
+                return
             await page.push_route("/viewPlatformWiFi")
 
         async def toc_button_clicked(e):
@@ -2044,7 +2095,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("ネットワーク種類指定"),
-            bgcolor=ft.Colors.AMBER,
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -2093,7 +2144,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("イーサネット設定"),
-            bgcolor=ft.Colors.AMBER,
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -2154,7 +2205,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("WiFi設定"),
-            bgcolor=ft.Colors.AMBER,
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -2189,7 +2240,7 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def next_button_clicked(e):
-            await page.push_route("/createViewPlatformLED")
+            await page.push_route("/viewPlatformLED")
 
         async def back_button_clicked(e):
             await page.push_route("/viewPlatformNetwork")
@@ -2204,7 +2255,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("リアルタイムクロック選択"),
-            bgcolor=ft.Colors.AMBER,
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -2213,7 +2264,7 @@ def editWindow(page: ft.Page):
         back_button = ft.Button(content="戻る", on_click=back_button_clicked)
         save_button = ft.Button(content="保存", on_click=save_button_clicked)
         finish_button = ft.Button(content="終了", on_click=finish_button_clicked)
-        return ft.View(route="/viewPlatformLED", controls=[
+        return ft.View(route="/viewPlatformRTC", controls=[
             ft.SafeArea(
                 content=ft.Column(
                     controls=[
@@ -2239,9 +2290,10 @@ def editWindow(page: ft.Page):
 
         async def next_button_clicked(e):
             global led_flag
-            if led_flag.value:
+            if checkTFvalue(led_flag.value) == True:
                 await page.push_route("/viewPlatformLedSetting")
-            await page.push_route("/viewPlatformStorage")
+            else:
+                await page.push_route("/viewPlatformStorage")
 
         async def back_button_clicked(e):
             await page.push_route("/viewRTC")
@@ -2256,7 +2308,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("稼働状態表示LED"),
-            bgcolor=ft.Colors.AMBER,
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -2293,7 +2345,7 @@ def editWindow(page: ft.Page):
             await page.push_route("/viewPlatformStorage")
 
         async def back_button_clicked(e):
-            await page.push_route("/viewPlatformRTC")
+            await page.push_route("/viewPlatformLED")
 
         async def save_button_clicked(e):
             await page.push_route("/viewSaveConfig")
@@ -2305,7 +2357,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("稼働状態表示LEDパラメータ"),
-            bgcolor=ft.Colors.AMBER,
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -2342,9 +2394,10 @@ def editWindow(page: ft.Page):
 
         async def next_button_clicked(e):
             global sd_flag
-            if sd_flag.value:
+            if True==checkTFvalue(sd_flag.value):
                 await page.push_route("/viewPlatformStorageSetting")
-            await page.push_route("/viewSerial")
+            else:
+                await page.push_route("/viewSerial")
 
         async def back_button_clicked(e):
             await page.push_route("/viewPlatformLED")
@@ -2359,11 +2412,12 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("SD/マイクロSD"),
-            bgcolor=ft.Colors.AMBER,
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
         )
+        attention_message = ft.Text("「ログを保存する場合」と「グラフィックディスプレイを使用する場合」は「使う」を選択してください．")
         next_button = ft.Button(content="次", on_click=next_button_clicked)
         back_button = ft.Button(content="戻る", on_click=back_button_clicked)
         save_button = ft.Button(content="保存", on_click=save_button_clicked)
@@ -2373,6 +2427,7 @@ def editWindow(page: ft.Page):
                 content=ft.Column(
                     controls=[
                         pageTitle,
+                        attention_message,
                         sd_flag,
                         ft.Row(
                             [next_button, back_button,]
@@ -2408,7 +2463,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("SD関連パラメータ"),
-            bgcolor=ft.Colors.AMBER,
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -2443,9 +2498,10 @@ def editWindow(page: ft.Page):
 
         async def next_button_clicked(e):
             global sd_flag
-            if sd_flag.value:
+            if True == checkTFvalue(sd_flag.value):
                 await page.push_route("/viewLog")
-            await page.push_route("/viewSerialLog")
+            else:
+                await page.push_route("/viewSerialLog")
 
         async def back_button_clicked(e):
             await page.push_route("/viewPlatformStorage")
@@ -2460,11 +2516,12 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("シリアル"),
-            bgcolor=ft.Colors.AMBER,
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
         )
+        attention_message = ft.Text("「シリアル通信を行うデバイス(例:MP3プレーヤー)」を使う場合は，その通信速度に合わせてください．")
         next_button = ft.Button(content="次", on_click=next_button_clicked)
         back_button = ft.Button(content="戻る", on_click=back_button_clicked)
         save_button = ft.Button(content="保存", on_click=save_button_clicked)
@@ -2474,6 +2531,7 @@ def editWindow(page: ft.Page):
                 content=ft.Column(
                     controls=[
                         pageTitle,
+                        attention_message,
                         serial_speed,
                         ft.Row(
                             [next_button, back_button,]
@@ -2495,9 +2553,10 @@ def editWindow(page: ft.Page):
 
         async def next_button_clicked(e):
             global logfile_flag, serial_log_flag
-            if logfile_flag.value or serial_log_flag.value:
+            if True == checkTFvalue(logfile_flag.value) or True == checkTFvalue(serial_log_flag.value):
                 await page.push_route("/viewLogSetting")
-            await page.push_route("/viewDHCP")
+            else:
+                await page.push_route("/viewDHCP")
 
         async def back_button_clicked(e):
             await page.push_route("/viewSerial")
@@ -2512,7 +2571,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("ログ出力"),
-            bgcolor=ft.Colors.AMBER,
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -2548,9 +2607,10 @@ def editWindow(page: ft.Page):
 
         async def next_button_clicked(e):
             global serial_log_flag
-            if serial_log_flag.value:
+            if True == checkTFvalue(serial_log_flag.value):
                 await page.push_route("/viewLogSetting")
-            await page.push_route("/viewDHCP")
+            else:
+                await page.push_route("/viewDHCP")
 
         async def back_button_clicked(e):
             await page.push_route("/viewSerial")
@@ -2565,7 +2625,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("シリアル"),
-            bgcolor=ft.Colors.AMBER,
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -2600,9 +2660,10 @@ def editWindow(page: ft.Page):
 
         async def next_button_clicked(e):
             global logfile_flag
-            if logfile_flag.value:
+            if True == checkTFvalue(logfile_flag.value):
                 await page.push_route("/viewLogFile")
-            await page.push_route("/viewDHCP")
+            else:
+                await page.push_route("/viewDHCP")
 
         async def back_button_clicked(e):
             await page.push_route("/viewLog")
@@ -2617,11 +2678,12 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("ログ関連パラメータ"),
-            bgcolor=ft.Colors.AMBER,
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
         )
+        attention_message = ft.Text("syslog形式の「ホスト名フィールド」と「アプリ名フィールド」に相当する文字列を入力してください．．")
         next_button = ft.Button(content="次", on_click=next_button_clicked)
         back_button = ft.Button(content="戻る", on_click=back_button_clicked)
         save_button = ft.Button(content="保存", on_click=save_button_clicked)
@@ -2631,6 +2693,7 @@ def editWindow(page: ft.Page):
                 content=ft.Column(
                     controls=[
                         pageTitle,
+                        attention_message,
                         host_name,
                         app_name,
                         ft.Row(
@@ -2667,11 +2730,12 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("ログファイル設定"),
-            bgcolor=ft.Colors.AMBER,
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
         )
+        attention_message = ft.Text("ログファイル名と最大サイズを指定してください．")
         next_button = ft.Button(content="次", on_click=next_button_clicked)
         back_button = ft.Button(content="戻る", on_click=back_button_clicked)
         save_button = ft.Button(content="保存", on_click=save_button_clicked)
@@ -2681,6 +2745,7 @@ def editWindow(page: ft.Page):
                 content=ft.Column(
                     controls=[
                         pageTitle,
+                        attention_message,
                         logfile_name,
                         logfile_size,
                         ft.Row(
@@ -2703,12 +2768,13 @@ def editWindow(page: ft.Page):
 
         async def next_button_clicked(e):
             global dhcp_flag
-            if dhcp_flag.value:
+            if True == checkTFvalue(dhcp_flag.value):
                 await page.push_route("/viewMQTT")
-            await page.push_route("/viewStaticIP")
+            else:
+                await page.push_route("/viewStaticIP")
 
         async def back_button_clicked(e):
-            await page.push_route("/viewLog")
+            await page.push_route("/viewSerial")
 
         async def save_button_clicked(e):
             await page.push_route("/viewSaveConfig")
@@ -2720,7 +2786,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("DHCP利用設定"),
-            bgcolor=ft.Colors.AMBER,
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -2769,11 +2835,12 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("固定IP設定"),
-            bgcolor=ft.Colors.AMBER,
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
         )
+        attention_message = ft.Text("IPアドレスとネットマスクの各オクテットの値(0～255)を入力してください．")
         addressTitle = ft.Text("IPアドレス", weight=ft.FontWeight.BOLD, size=20)
         divider = ft.Divider(height=2, color="black")
         netmaskTitle = ft.Text("ネットマスク", weight=ft.FontWeight.BOLD, size=20)
@@ -2786,6 +2853,8 @@ def editWindow(page: ft.Page):
                 content=ft.Column(
                     controls=[
                         pageTitle,
+                        attention_message,
+                        divider,
                         addressTitle,
                         ip_addr_0,
                         ip_addr_1,
@@ -2830,13 +2899,14 @@ def editWindow(page: ft.Page):
         global gateway_0, gateway_1, gateway_2, gateway_3, dns_server_0, dns_server_1, dns_server_2, dns_server_3
         page.autoscroll = True
         pageTitle = ft.AppBar(
-            title=ft.Text("各種サーバ"),
-            bgcolor=ft.Colors.AMBER,
+            title=ft.Text("ネットワークサーバのIPアドレス設定"),
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
         )
-        gatewayTitle = ft.Text("ゲートウェイ", weight=ft.FontWeight.BOLD, size=20)
+        attention_message = ft.Text("サーバのIPアドレスの各オクテットの値(0～255)を入力してください．")
+        gatewayTitle = ft.Text("ゲートウェイ(ルータ)", weight=ft.FontWeight.BOLD, size=20)
         divider = ft.Divider(height=2, color="black")
         dnsTitle = ft.Text("DNSサーバ", weight=ft.FontWeight.BOLD, size=20)
         next_button = ft.Button(content="次", on_click=next_button_clicked)
@@ -2848,6 +2918,8 @@ def editWindow(page: ft.Page):
                 content=ft.Column(
                     controls=[
                         pageTitle,
+                        attention_message,
+                        divider,
                         gatewayTitle,
                         gateway_0,
                         gateway_1,
@@ -2879,9 +2951,10 @@ def editWindow(page: ft.Page):
 
         async def next_button_clicked(e):
             global mqtt_auth_flag
-            if mqtt_auth_flag.value:
+            if True == checkTFvalue(mqtt_auth_flag.value):
                 await page.push_route("/viewMQTTauth")
-            await page.push_route("/viewNTP")
+            else:
+                await page.push_route("/viewNTP")
 
         async def back_button_clicked(e):
             await page.push_route("/viewDHCP")
@@ -2896,7 +2969,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("MQTT設定"),
-            bgcolor=ft.Colors.AMBER,
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -2953,8 +3026,8 @@ def editWindow(page: ft.Page):
         global mqtt_user, mqtt_pass
         page.autoscroll = True
         pageTitle = ft.AppBar(
-            title=ft.Text("認証パラメータ"),
-            bgcolor=ft.Colors.AMBER,
+            title=ft.Text("MQTT認証パラメータ"),
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -3005,7 +3078,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("NTP設定"),
-            bgcolor=ft.Colors.AMBER,
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -3041,9 +3114,10 @@ def editWindow(page: ft.Page):
 
         async def next_button_clicked(e):
             global wdt_flag
-            if wdt_flag.value:
+            if True == checkTFvalue(wdt_flag.value):
                 await page.push_route("/viewWatchDogSetting")
-            await page.push_route("/viewTOC")
+            else:
+                await page.push_route("/viewTOC")
 
         async def back_button_clicked(e):
             await page.push_route("/viewNTP")
@@ -3058,11 +3132,13 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("Watch Dog Timer設定"),
-            bgcolor=ft.Colors.AMBER,
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
         )
+        attention_message = ft.Text("端末のフリーズ防止機能(Watch Dog Timer)を使う場合は「使う」を選択してください．")
+        attention_message2 = ft.Text("注：Arduinoの機種によっては，サポート外の場合もあります．")
         next_button = ft.Button(content="次", on_click=next_button_clicked)
         back_button = ft.Button(content="戻る", on_click=back_button_clicked)
         save_button = ft.Button(content="保存", on_click=save_button_clicked)
@@ -3072,6 +3148,8 @@ def editWindow(page: ft.Page):
                 content=ft.Column(
                     controls=[
                         pageTitle,
+                        attention_message,
+                        attention_message2,
                         wdt_flag,
                         ft.Row(
                             [next_button, back_button,]
@@ -3107,7 +3185,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("Watch Dog Timerパラメータ"),
-            bgcolor=ft.Colors.AMBER,
+            bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -3142,7 +3220,6 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def next_button_clicked(e):
-            global characterDisplayList
             if characterDisplayList.value == '1':
                 await page.push_route("/viewGroveLcd_RGB_Backlight")
             elif characterDisplayList.value == '2':
@@ -3162,14 +3239,13 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("キャラクタディスプレイ選択"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
         )
         characterDisplayList = ft.Dropdown( 
             label="キャラクタディスプレイリスト",
-            #width=200,
             options=[
                 ft.dropdown.Option(key=0, text=""),
                 ft.dropdown.Option(key=1, text="Grove character lcd RGB Backlight"),
@@ -3221,7 +3297,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("Grove character lcd RGB Backlight"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -3271,7 +3347,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("ACM1602 I2Cキャラクタディスプレイ"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -3307,45 +3383,47 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def checkPinNumber(destination):
-            if not liquid_crystal_flag.value:
+            global liquid_crystal_flag, liquid_crystal_rs_pin, liquid_crystal_es_pin, liquid_crystal_d4_pin, liquid_crystal_d5_pin, liquid_crystal_d6_pin, liquid_crystal_d7_pin
+            if False == checkTFvalue(liquid_crystal_flag.value):
                 await page.push_route(destination)
-            checkResult.value = ""
-            (flag, val) = isPinNumber(liquid_crystal_rs_pin.value)
-            if not flag:
-                checkResult.value = "RSピン接続先にArduinoの端子番号(0～53)を指定してください．\n"
-                return
-            (flag, val) = isPinNumber(liquid_crystal_es_pin.value)
-            if not flag:
-                checkResult.value = checkResult.value + "ESピン接続先にArduinoの端子番号(0～53)を指定してください．\n"
-                return
-            (flag, val) = isPinNumber(liquid_crystal_d4_pin.value)
-            if not flag:
-                checkResult.value = checkResult.value + "D4ピン接続先にArduinoの端子番号(0～53)を指定してください．\n"
-                return
-            (flag, val) = isPinNumber(liquid_crystal_d5_pin.value)
-            if not flag:
-                checkResult.value = checkResult.value + "D5ピン接続先にArduinoの端子番号(0～53)を指定してください．\n"
-                return
-            (flag, val) = isPinNumber(liquid_crystal_d6_pin.value)
-            if not flag:
-                checkResult.value = checkResult.value + "D6ピン接続先にArduinoの端子番号(0～53)を指定してください．\n"
-                return
-            (flag, val) = isPinNumber(liquid_crystal_d7_pin.value)
-            if not flag:
-                checkResult.value = checkResult.value + "D7ピン接続先にArduinoの端子番号(0～53)を指定してください．\n"
-                return
-            await page.push_route(destination)
+            else:
+                checkResult.value = ""
+                (flag, val) = isPinNumber(liquid_crystal_rs_pin.value)
+                if not flag:
+                    checkResult.value = "RSピン接続先にArduinoの端子番号(0～53)を指定してください．\n"
+                    return
+                (flag, val) = isPinNumber(liquid_crystal_es_pin.value)
+                if not flag:
+                    checkResult.value = checkResult.value + "ESピン接続先にArduinoの端子番号(0～53)を指定してください．\n"
+                    return
+                (flag, val) = isPinNumber(liquid_crystal_d4_pin.value)
+                if not flag:
+                    checkResult.value = checkResult.value + "D4ピン接続先にArduinoの端子番号(0～53)を指定してください．\n"
+                    return
+                (flag, val) = isPinNumber(liquid_crystal_d5_pin.value)
+                if not flag:
+                    checkResult.value = checkResult.value + "D5ピン接続先にArduinoの端子番号(0～53)を指定してください．\n"
+                    return
+                (flag, val) = isPinNumber(liquid_crystal_d6_pin.value)
+                if not flag:
+                    checkResult.value = checkResult.value + "D6ピン接続先にArduinoの端子番号(0～53)を指定してください．\n"
+                    return
+                (flag, val) = isPinNumber(liquid_crystal_d7_pin.value)
+                if not flag:
+                    checkResult.value = checkResult.value + "D7ピン接続先にArduinoの端子番号(0～53)を指定してください．\n"
+                    return
+                await page.push_route(destination)
 
         async def toc_button_clicked(e):
             global liquid_crystal_flag
-            if liquid_crystal_flag.value:
+            if True == checkTFvalue(liquid_crystal_flag.value):
                 await checkPinNumber("/viewTOC")
             else:
                 await page.push_route("/viewTOC")
 
         async def back_button_clicked(e):
             global liquid_crystal_flag
-            if liquid_crystal_flag.value:
+            if True == checkTFvalue(liquid_crystal_flag.value):
                 await checkPinNumber("/viewCharacterDisplay")
             else:
                 await page.push_route("/viewCharacterDisplay")
@@ -3360,7 +3438,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("Liquid Crystal Library LCD (SC1602/SC2004)"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -3406,7 +3484,7 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def next_button_clicked(e):
-            global ledList
+            #global ledList
             selection = ledList.value
             if selection == '1':
                 await page.push_route("/viewMonoLED")
@@ -3443,14 +3521,13 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("LED選択"),
-            bgcolor=ft.Colors.GREEN,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
         )
         ledList = ft.Dropdown(
             label="LEDリスト",
-            #width=200,
             options=[
                 ft.dropdown.Option(key=0, text=""),
                 ft.dropdown.Option(key=1, text="モノクロLED"),
@@ -3495,19 +3572,21 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
     
         async def checkPinNumber(destination):
-            if not simple_mono_led_flag.value:
+            global simple_mono_led_flag, simple_mono_led_pin
+            if False == checkTFvalue(simple_mono_led_flag.value):
                 await page.push_route(destination)
-            checkResult.value = ""
-            (flag, val) = isPinNumber(simple_mono_led_pin.value)
-            if not flag:
-                checkResult.value = "RSピン接続先にArduinoの端子番号(0～53)を指定してください．"
-                return
-            await page.push_route(destination)
+            else:
+                checkResult.value = ""
+                (flag, val) = isPinNumber(simple_mono_led_pin.value)
+                if not flag:
+                    checkResult.value = "RSピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    return
+                await page.push_route(destination)
 
         async def toc_button_clicked(e):
             global simple_mono_led_flag
             destination = "/viewTOC"
-            if simple_mono_led_flag.value:
+            if True == checkTFvalue(simple_mono_led_flag.value):
                 await checkPinNumber(destination)
             else:
                 await page.push_route(destination)
@@ -3515,7 +3594,7 @@ def editWindow(page: ft.Page):
         async def back_button_clicked(e):
             global simple_mono_led_flag
             destination = "/viewLED"
-            if simple_mono_led_flag.value:
+            if True == checkTFvalue(simple_mono_led_flag.value):
                 await checkPinNumber(destination)
             else:
                 await page.push_route(destination)
@@ -3530,11 +3609,12 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("モノクロLED"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
         )
+        attention_message = ft.Text("LEDの全機能を使用するためには，接続先端子はPWM対応端子である必要があります．")
         checkResult = ft.Text()
         toc_button = ft.Button(content="目次", on_click=toc_button_clicked)
         back_button = ft.Button(content="戻る", on_click=back_button_clicked)
@@ -3545,6 +3625,7 @@ def editWindow(page: ft.Page):
                 content=ft.Column(
                     controls=[
                         pageTitle,
+                        attention_message,
                         simple_mono_led_flag,
                         ft.Divider(height=2, color="black"),
                         simple_mono_led_type,
@@ -3571,27 +3652,29 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
     
         async def checkPinNumber(destination):
-            if not simple_color_led_flag.value:
+            global simple_color_led_flag, simple_color_led_red_pin, simple_color_led_green_pin, simple_color_led_blue_pin
+            if False == checkTFvalue(simple_color_led_flag.value):
                 await page.push_route(destination)
-            checkResult.value = ""
-            (flag, val) = isPinNumber(simple_color_led_red_pin.value)
-            if not flag:
-                checkResult.value = "Rピン接続先にArduinoの端子番号(0～53)を指定してください．"
-                return
-            (flag, val) = isPinNumber(simple_color_led_green_pin.value)
-            if not flag:
-                checkResult.value = "Gピン接続先にArduinoの端子番号(0～53)を指定してください．"
-                return
-            (flag, val) = isPinNumber(simple_color_led_blue_pin.value)
-            if not flag:
-                checkResult.value = "Bピン接続先にArduinoの端子番号(0～53)を指定してください．"
-                return
-            await page.push_route(destination)
+            else:
+                checkResult.value = ""
+                (flag, val) = isPinNumber(simple_color_led_red_pin.value)
+                if not flag:
+                    checkResult.value = "Rピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    return
+                (flag, val) = isPinNumber(simple_color_led_green_pin.value)
+                if not flag:
+                    checkResult.value = "Gピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    return
+                (flag, val) = isPinNumber(simple_color_led_blue_pin.value)
+                if not flag:
+                    checkResult.value = "Bピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    return
+                await page.push_route(destination)
 
         async def toc_button_clicked(destination):
             global simple_color_led_flag
             destination = "/viewTOC"
-            if simple_color_led_flag.value:
+            if True == checkTFvalue(simple_color_led_flag.value):
                 await checkPinNumber(destination)
             else:
                 await page.push_route(destination)
@@ -3599,7 +3682,7 @@ def editWindow(page: ft.Page):
         async def back_button_clicked(destination):
             global simple_color_led_flag
             destination = "/viewLED"
-            if simple_color_led_flag.value:
+            if True == checkTFvalue(simple_color_led_flag.value):
                 await checkPinNumber(destination)
             else:
                 await page.push_route(destination)
@@ -3614,11 +3697,12 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("アノード/カソードコモンカラーLED"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
         )
+        attention_message = ft.Text("LEDの全機能を使用するためには，接続先端子はPWM対応端子である必要があります．")
         checkResult = ft.Text()
         toc_button = ft.Button(content="目次", on_click=toc_button_clicked)
         back_button = ft.Button(content="戻る", on_click=back_button_clicked)
@@ -3629,6 +3713,7 @@ def editWindow(page: ft.Page):
                 content=ft.Column(
                     controls=[
                         pageTitle,
+                        attention_message,
                         simple_color_led_flag,
                         ft.Divider(height=2, color="black"),
                         simple_color_led_type,
@@ -3657,24 +3742,26 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def checkPinNumber(destination):
-            if not grove_led_bar_flag.value:
+            global grove_led_bar_flag, grove_led_bar_clk_pin, grove_led_bar_data_pin
+            if False == checkTFvalue(grove_led_bar_flag.value):
                 await page.push_route(destination)
-            checkResult.value = ""
-            (flag, val) = isPinNumber(grove_led_bar_clk_pin.value)
-            if not flag:
-                checkResult.value = "Clockピン接続先にArduinoの端子番号(0～53)を指定してください．"
-                return
-            (flag, val) = isPinNumber(grove_led_bar_data_pin.value)
-            if not flag:
-                checkResult.value = "Dataピン接続先にArduinoの端子番号(0～53)を指定してください．"
-                return
-            await page.push_route(destination)
+            else:
+                checkResult.value = ""
+                (flag, val) = isPinNumber(grove_led_bar_clk_pin.value)
+                if not flag:
+                    checkResult.value = "Clockピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    return
+                (flag, val) = isPinNumber(grove_led_bar_data_pin.value)
+                if not flag:
+                    checkResult.value = "Dataピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    return
+                await page.push_route(destination)
 
         async def toc_button_clicked(e):
-            global checkResult,grove_led_bar_leds, grove_led_bar_flag
+            global grove_led_bar_leds, grove_led_bar_flag
             destination = "/viewTOC"
             checkResult.value = ""
-            if grove_led_bar_flag.value:
+            if True == checkTFvalue(grove_led_bar_flag.value):
                 (flag, val) = isNumRange(grove_led_bar_leds.value, 1, 10)
                 if not flag:
                     checkResult.value = "使用するLEDの数(1～10)を指定してください．"
@@ -3684,10 +3771,10 @@ def editWindow(page: ft.Page):
                 await page.push_route(destination)
 
         async def back_button_clicked(e):
-            global checkResult,grove_led_bar_leds, grove_led_bar_flag
+            global grove_led_bar_leds, grove_led_bar_flag
             destination = "/viewLED"
             checkResult.value = ""
-            if grove_led_bar_flag.value:
+            if True == checkTFvalue(grove_led_bar_flag.value):
                 (flag, val) = isNumRange(grove_led_bar_leds.value, 1, 10)
                 if not flag:
                     checkResult.value = "使用するLEDの数(1～10)を指定してください．"
@@ -3706,7 +3793,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("Grove LED bar"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -3751,24 +3838,26 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def checkPinNumber(destination):
-            if not grove_led_circular_flag.value:
+            global grove_led_circular_flag, grove_led_circular_clk_pin, grove_led_circular_data_pin
+            if False == checkTFvalue(grove_led_circular_flag.value):
                 await page.push_route(destination)
-            checkResult.value = ""
-            (flag, val) = isPinNumber(grove_led_circular_clk_pin.value)
-            if not flag:
-                checkResult.value = "Clockピン接続先にArduinoの端子番号(0～53)を指定してください．"
-                return
-            (flag, val) = isPinNumber(grove_led_circular_data_pin.value)
-            if not flag:
-                checkResult.value = "Dataピン接続先にArduinoの端子番号(0～53)を指定してください．"
-                return
-            await page.push_route(destination)
+            else:
+                checkResult.value = ""
+                (flag, val) = isPinNumber(grove_led_circular_clk_pin.value)
+                if not flag:
+                    checkResult.value = "Clockピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    return
+                (flag, val) = isPinNumber(grove_led_circular_data_pin.value)
+                if not flag:
+                    checkResult.value = "Dataピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    return
+                await page.push_route(destination)
 
         async def toc_button_clicked(e):
-            global checkResult,grove_led_circular_leds, grove_led_circular_flag
+            global grove_led_circular_leds, grove_led_circular_flag
             destination = "/viewTOC"
             checkResult.value = ""
-            if grove_led_circular_flag.value:
+            if True == checkTFvalue(grove_led_circular_flag.value):
                 (flag, val) = isNumRange(grove_led_circular_leds.value, 1, 24)
                 if not flag:
                     checkResult.value = "使用するLEDの数(1～24)を指定してください．"
@@ -3778,10 +3867,10 @@ def editWindow(page: ft.Page):
                 await page.push_route(destination)
 
         async def back_button_clicked(e):
-            global checkResult,grove_led_circular_leds, grove_led_circular_flag
+            global grove_led_circular_leds, grove_led_circular_flag
             destination = "/viewLED"
             checkResult.value = ""
-            if grove_led_circular_flag.value:
+            if True == checkTFvalue(grove_led_circular_flag.value):
                 (flag, val) = isNumRange(grove_led_circular_leds.value, 1, 24)
                 if not flag:
                     checkResult.value = "使用するLEDの数(1～24)を指定してください．"
@@ -3800,7 +3889,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("Grove LED circular"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -3845,24 +3934,26 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def checkPinNumber(destination):
-            if not grove_chainable_led_flag.value:
+            global grove_chainable_led_flag, grove_chainable_led_clk_pin, grove_chainable_led_data_pin
+            if False == checkTFvalue(grove_chainable_led_flag.value):
                 await page.push_route(destination)
-            checkResult.value = ""
-            (flag, val) = isPinNumber(grove_chainable_led_clk_pin.value)
-            if not flag:
-                checkResult.value = "Clockピン接続先にArduinoの端子番号(0～53)を指定してください．"
-                return
-            (flag, val) = isPinNumber(grove_chainable_led_data_pin.value)
-            if not flag:
-                checkResult.value = "Dataピン接続先にArduinoの端子番号(0～53)を指定してください．"
-                return
-            await page.push_route(destination)
+            else:
+                checkResult.value = ""
+                (flag, val) = isPinNumber(grove_chainable_led_clk_pin.value)
+                if not flag:
+                    checkResult.value = "Clockピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    return
+                (flag, val) = isPinNumber(grove_chainable_led_data_pin.value)
+                if not flag:
+                    checkResult.value = "Dataピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    return
+                await page.push_route(destination)
 
         async def toc_button_clicked(e):
-            global checkResult,grove_chainable_led_leds, grove_chainable_led_flag
+            global grove_chainable_led_leds, grove_chainable_led_flag
             destination = "/viewTOC"
             checkResult.value = ""
-            if grove_chainable_led_flag.value:
+            if True == checkTFvalue(grove_chainable_led_flag.value):
                 (flag, val) = isNumLarger(grove_chainable_led_leds.value, 1)
                 if not flag:
                     checkResult.value = "使用するLEDの数(1以上)を指定してください．"
@@ -3872,10 +3963,10 @@ def editWindow(page: ft.Page):
                 await page.push_route(destination)
 
         async def back_button_clicked(e):
-            global checkResult,grove_chainable_led_leds, grove_chainable_led_flag
+            global grove_chainable_led_leds, grove_chainable_led_flag
             destination = "/viewLED"
             checkResult.value = ""
-            if grove_chainable_led_flag.value:
+            if True == checkTFvalue(grove_chainable_led_flag.value):
                 (flag, val) = isNumLarger(grove_chainable_led_leds.value, 1)
                 if not flag:
                     checkResult.value = "使用するLEDの数(1以上)を指定してください．"
@@ -3894,7 +3985,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("Grove chainable RGB LED"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -3937,20 +4028,22 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def checkPinNumber(destination):
-            if not adafuit_neopixel_flag.value:
+            global adafuit_neopixel_flag, adafuit_neopixel_pin
+            if False == checkTFvalue(adafuit_neopixel_flag.value):
                 await page.push_route(destination)
-            checkResult.value = ""
-            (flag, val) = isPinNumber(adafuit_neopixel_pin.value)
-            if not flag:
-                checkResult.value = "ピン接続先にArduinoの端子番号(0～53)を指定してください．"
-                return
-            await page.push_route(destination)
+            else:
+                checkResult.value = ""
+                (flag, val) = isPinNumber(adafuit_neopixel_pin.value)
+                if not flag:
+                    checkResult.value = "ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    return
+                await page.push_route(destination)
 
         async def toc_button_clicked(e):
-            global checkResult,adafuit_neopixel_leds, adafuit_neopixel_flag
+            global adafuit_neopixel_leds, adafuit_neopixel_flag
             destination = "/viewTOC"
             checkResult.value = ""
-            if adafuit_neopixel_flag.value:
+            if True == checkTFvalue(adafuit_neopixel_flag.value):
                 (flag, val) = isNumLarger(adafuit_neopixel_leds.value, 1)
                 if not flag:
                     checkResult.value = "使用するLEDの数(1以上)を指定してください．"
@@ -3960,10 +4053,10 @@ def editWindow(page: ft.Page):
                 await page.push_route(destination)
 
         async def back_button_clicked(e):
-            global checkResult,adafuit_neopixel_leds, adafuit_neopixel_flag
+            global adafuit_neopixel_leds, adafuit_neopixel_flag
             destination = "/viewLED"
             checkResult.value = ""
-            if adafuit_neopixel_flag.value:
+            if True == checkTFvalue(adafuit_neopixel_flag.value):
                 (flag, val) = isNumLarger(adafuit_neopixel_leds.value, 1)
                 if not flag:
                     checkResult.value = "使用するLEDの数(1以上)を指定してください．"
@@ -3982,7 +4075,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("Adafruit NeoPixel"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -4024,8 +4117,10 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def checkPinNumber(destination):
-            if not osl12306_16_flag.value:
+            global osl12306_16_flag, osl12306_16_a1_pin, osl12306_16_a2_pin, osl12306_16_b_pin, osl12306_16_c_pin, osl12306_16_d1_pin, osl12306_16_d2_pin, osl12306_16_e_pin, osl12306_16_f_pin, osl12306_16_g1_pin, osl12306_16_g2_pin, osl12306_16_j_pin, osl12306_16_k_pin, osl12306_16_l_pin, osl12306_16_m_pin, osl12306_16_n_pin, osl12306_16_p_pin, osl12306_16_dp_pin, osl12306_16_digit_pin
+            if False == checkTFvalue(osl12306_16_flag.value):
                 await page.push_route(destination)
+                return
             checkResult.value = ""
             (flag, val) = isPinNumber(osl12306_16_a1_pin.value)
             if not flag:
@@ -4104,7 +4199,7 @@ def editWindow(page: ft.Page):
         async def toc_button_clicked(e):
             global osl12306_16_flag
             destination = "/viewTOC"
-            if osl12306_16_flag.value:
+            if True == checkTFvalue(osl12306_16_flag.value):
                 await checkPinNumber(destination)
             else:
                 await page.push_route(destination)
@@ -4112,7 +4207,7 @@ def editWindow(page: ft.Page):
         async def back_button_clicked(e):
             global osl12306_16_flag
             destination = "/viewLED"
-            if osl12306_16_flag.value:
+            if True == checkTFvalue(osl12306_16_flag.value):
                 await checkPinNumber(destination)
             else:
                 await page.push_route(destination)
@@ -4127,7 +4222,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("OSL12306-16 (16セグメント1桁LED)"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -4185,8 +4280,10 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def checkPinNumber(destination):
-            if not osl20541_flag.value:
+            global osl20541_flag, osl20541_a_pin, osl20541_b_pin, osl20541_c_pin, osl20541_d_pin, osl20541_e_pin, osl20541_f_pin, osl20541_g1_pin, osl20541_g2_pin, osl20541_h_pin, osl20541_j_pin, osl20541_k_pin, osl20541_l_pin, osl20541_m_pin, osl20541_n_pin, osl20541_dp_pin, osl20541_digit1_pin, osl20541_digit2_pin
+            if False == checkTFvalue(osl20541_flag.value):
                 page.push_route(destination)
+                return
             checkResult.value = ""
             (flag, val) = isPinNumber(osl20541_a_pin.value)
             if not flag:
@@ -4261,7 +4358,7 @@ def editWindow(page: ft.Page):
         async def toc_button_clicked(e):
             global osl20541_flag
             destination = "/viewTOC"
-            if osl20541_flag.value:
+            if True == checkTFvalue(osl20541_flag.value):
                 await checkPinNumber(destination)
             else:
                 page.push_route(destination)
@@ -4269,7 +4366,7 @@ def editWindow(page: ft.Page):
         async def back_button_clicked(e):
             global osl20541_flag
             destination = "/viewLED"
-            if osl20541_flag.value:
+            if True == checkTFvalue(osl20541_flag.value):
                 await checkPinNumber(destination)
             else:
                 page.push_route(destination)
@@ -4284,7 +4381,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("OSL20541 (2桁14セグメントLED)"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -4341,8 +4438,10 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def checkPinNumber(destination):
-            if not osl30561_flag.value:
+            global osl30561_flag, osl30561_a_pin, osl30561_b_pin, osl30561_c_pin, osl30561_d_pin, osl30561_e_pin, osl30561_f_pin, osl30561_g_pin, osl30561_dp_pin, osl30561_digit1_pin, osl30561_digit2_pin, osl30561_digit3_pin
+            if False == checkTFvalue(osl30561_flag.value):
                 page.push_route(destination)
+                return
             checkResult.value = ""
             (flag, val) = isPinNumber(osl30561_a_pin.value)
             if not flag:
@@ -4393,7 +4492,7 @@ def editWindow(page: ft.Page):
         async def toc_button_clicked(e):
             global osl30561_flag
             destination = "/viewTOC"
-            if osl30561_flag.value:
+            if True == checkTFvalue(osl30561_flag.value):
                 checkPinNumber(destination)
             else:
                 page.push_route(destination)
@@ -4401,7 +4500,7 @@ def editWindow(page: ft.Page):
         async def back_button_clicked(e):
             global osl30561_flag
             destination = "/viewLED"
-            if osl30561_flag.value:
+            if True == checkTFvalue(osl30561_flag.value):
                 checkPinNumber(destination)
             else:
                 page.push_route(destination)
@@ -4416,7 +4515,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("OSL30561 (3桁7セグメントLED)"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -4467,9 +4566,10 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def checkPinNumber(destination):
-            global grove_tm1637_flag, checkResult, grove_tm1637_clk_pin, grove_tm1637_data_pin
-            if not grove_tm1637_flag.value:
+            global grove_tm1637_flag, grove_tm1637_clk_pin, grove_tm1637_data_pin
+            if False == checkTFvalue(grove_tm1637_flag.value):
                 await page.push_route(destination)
+                return
             checkResult.value = ""
             (flag, val) = isPinNumber(grove_tm1637_clk_pin.value)
             if not flag:
@@ -4484,7 +4584,7 @@ def editWindow(page: ft.Page):
         async def toc_button_clicked(e):
             global grove_tm1637_flag
             destination = "/viewTOC"
-            if grove_tm1637_flag.value:
+            if True == checkTFvalue(grove_tm1637_flag.value):
                 checkPinNumber(destination)
             else:
                 await page.push_route(destination)
@@ -4492,7 +4592,7 @@ def editWindow(page: ft.Page):
         async def back_button_clicked(e):
             global grove_tm1637_flag
             destination = "/viewLED"
-            if grove_tm1637_flag.value:
+            if True == checkTFvalue(grove_tm1637_flag.value):
                 checkPinNumber(destination)
             else:
                 await page.push_route(destination)
@@ -4507,7 +4607,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("Grove - 4-Digit Display"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -4548,9 +4648,10 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def checkPinNumber(destination):
-            global dfr0090_flag, checkResult, dfr0090_latch_pin, dfr0090_clk_pin, dfr0090_data_pin
-            if not dfr0090_flag.value:
+            global dfr0090_flag, dfr0090_latch_pin, dfr0090_clk_pin, dfr0090_data_pin
+            if False == checkTFvalue(dfr0090_flag.value):
                 await page.push_route(destination)
+                return
             checkResult.value = ""
             (flag, val) = isPinNumber(dfr0090_latch_pin.value)
             if not flag:
@@ -4567,10 +4668,10 @@ def editWindow(page: ft.Page):
             await page.push_route(destination)
 
         async def toc_button_clicked(e):
-            global dfr0090_flag, checkResult, dfr0090_digits
+            global dfr0090_flag, dfr0090_digits
             destination = "/viewTOC"
             checkResult.value = ""
-            if dfr0090_flag.value:
+            if True == checkTFvalue(dfr0090_flag.value):
                 (flag, val) = isNumLarger(dfr0090_digits.value, 1)
                 if not flag:
                     checkResult.value = "使用する桁数(1以上)を指定してください．"
@@ -4580,10 +4681,10 @@ def editWindow(page: ft.Page):
                 await page.push_route(destination)
 
         async def back_button_clicked(e):
-            global dfr0090_flag, checkResult, dfr0090_digits
+            global dfr0090_flag, dfr0090_digits
             destination = "/viewLED"
             checkResult.value = ""
-            if dfr0090_flag.value:
+            if True == checkTFvalue(dfr0090_flag.value):
                 (flag, val) = isNumLarger(dfr0090_digits.value, 1)
                 if not flag:
                     checkResult.value = "使用する桁数(1以上)を指定してください．"
@@ -4602,7 +4703,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("DFRobot DFR0090 (8桁7セグメントLED)"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -4619,7 +4720,7 @@ def editWindow(page: ft.Page):
                         pageTitle,
                         dfr0090_flag,
                         ft.Divider(height=2, color="black"),
-                        ft.Text("使用する桁個数(1以上)", weight=ft.FontWeight.BOLD, size=20),
+                        ft.Text("使用する桁数(1以上)", weight=ft.FontWeight.BOLD, size=20),
                         dfr0090_digits,
                         ft.Text("各ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
                         dfr0090_latch_pin,
@@ -4646,9 +4747,10 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def checkPinNumber(destination):
-            global servo_flag, checkResult, servo_pin
-            if not servo_flag.value:
+            global servo_flag, servo_pin
+            if False == checkTFvalue(servo_flag.value):
                 await page.push_route(destination)
+                return
             checkResult.value = ""
             (flag, val) = isPinNumber(servo_pin.value)
             if not flag:
@@ -4659,7 +4761,7 @@ def editWindow(page: ft.Page):
         async def toc_button_clicked(e):
             global servo_flag
             destination = "/viewTOC"
-            if servo_flag.value:
+            if True == checkTFvalue(servo_flag.value):
                 await checkPinNumber(destination)
             else:
                 await page.push_route(destination)
@@ -4674,7 +4776,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("サーボ"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -4711,7 +4813,6 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def next_button_clicked(e):
-            global soundDeviceList
             selection = soundDeviceList.value
             if selection == '1':
                 await page.push_route("/viewSpeaker")
@@ -4732,7 +4833,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("音声デバイス選択"),
-            bgcolor=ft.Colors.GREEN,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -4776,9 +4877,10 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def checkPinNumber(destination):
-            global speaker_flag, checkResult, speaker_pin
-            if not speaker_flag.value:
+            global speaker_flag, speaker_pin
+            if False == checkTFvalue(speaker_flag.value):
                 await page.push_route(destination)
+                return
             checkResult.value = ""
             (flag, val) = isPinNumber(speaker_pin.value)
             if not flag:
@@ -4789,7 +4891,7 @@ def editWindow(page: ft.Page):
         async def toc_button_clicked(e):
             global speaker_flag
             destination = "/viewTOC"
-            if speaker_flag.value:
+            if True == checkTFvalue(speaker_flag.value):
                 await checkPinNumber(destination)
             else:
                 await page.push_route(destination)
@@ -4797,7 +4899,7 @@ def editWindow(page: ft.Page):
         async def save_button_clicked(e):
             global speaker_flag
             destination = "/viewSaveConfig"
-            if speaker_flag.value:
+            if True == checkTFvalue(speaker_flag.value):
                 await checkPinNumber(destination)
             else:
                 await page.push_route(destination)
@@ -4809,7 +4911,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("スピーカー"),
-            bgcolor=ft.Colors.GREEN,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -4846,9 +4948,10 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def checkPinNumber(destination):
-            global buzzer_flag, checkResult, buzzer_pin
-            if not buzzer_flag.value:
+            global buzzer_flag, buzzer_pin
+            if False == checkTFvalue(buzzer_flag.value):
                 await page.push_route(destination)
+                return
             checkResult.value = ""
             (flag, val) = isPinNumber(buzzer_pin.value)
             if not flag:
@@ -4859,7 +4962,7 @@ def editWindow(page: ft.Page):
         async def toc_button_clicked(e):
             global buzzer_flag
             destination = "/viewTOC"
-            if buzzer_flag.value:
+            if True == checkTFvalue(buzzer_flag.value):
                 await checkPinNumber(destination)
             else:
                 await page.push_route(destination)
@@ -4867,7 +4970,7 @@ def editWindow(page: ft.Page):
         async def save_button_clicked(e):
             global buzzer_flag
             destination = "/viewSaveConfig"
-            if buzzer_flag.value:
+            if True == checkTFvalue(buzzer_flag.value):
                 await checkPinNumber(destination)
             else:
                 await page.push_route(destination)
@@ -4879,7 +4982,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("ブザー"),
-            bgcolor=ft.Colors.GREEN,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -4928,7 +5031,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("MP3プレイヤー"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -4964,9 +5067,10 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def checkPinNumber(destination):
-            global pwm_flag, checkResult, pwm_pin
-            if not pwm_flag.value:
+            global pwm_flag, pwm_pin
+            if False == checkTFvalue(pwm_flag.value):
                 await page.push_route(destination)
+                return
             checkResult.value = ""
             (flag, val) = isPinNumber(pwm_pin.value)
             if not flag:
@@ -4977,7 +5081,7 @@ def editWindow(page: ft.Page):
         async def toc_button_clicked(e):
             global pwm_flag
             destination = "/viewTOC"
-            if pwm_flag.value:
+            if True == checkTFvalue(pwm_flag.value):
                 await checkPinNumber(destination)
             else:
                 await page.push_route(destination)
@@ -4985,7 +5089,7 @@ def editWindow(page: ft.Page):
         async def save_button_clicked(e):
             global pwm_flag
             destination = "/viewSaveConfig"
-            if pwm_flag.value:
+            if True == checkTFvalue(pwm_flag.value):
                 await checkPinNumber(destination)
             else:
                 await page.push_route(destination)
@@ -4997,7 +5101,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("単純PWMデバイス"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -5034,9 +5138,10 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def checkPinNumber(destination):
-            global switch_flag, checkResult, switch_pin
-            if not switch_flag.value:
+            global switch_flag, switch_pin
+            if False == checkTFvalue(switch_flag.value):
                 await page.push_route(destination)
+                return
             checkResult.value = ""
             (flag, val) = isPinNumber(switch_pin.value)
             if not flag:
@@ -5047,7 +5152,7 @@ def editWindow(page: ft.Page):
         async def toc_button_clicked(e):
             global switch_flag
             destination = "/viewTOC"
-            if switch_flag.value:
+            if True == checkTFvalue(switch_flag.value):
                 await checkPinNumber(destination)
             else:
                 await page.push_route(destination)
@@ -5055,7 +5160,7 @@ def editWindow(page: ft.Page):
         async def save_button_clicked(e):
             global switch_flag
             destination = "/viewSaveConfig"
-            if switch_flag.value:
+            if True == checkTFvalue(switch_flag.value):
                 await checkPinNumber(destination)
             else:
                 await page.push_route(destination)
@@ -5067,7 +5172,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("単純デジタル(On/Off)デバイス"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -5104,9 +5209,10 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         async def checkPinNumber(destination):
-            global ir_remote_flag, checkResult, ir_remote_pin
-            if not ir_remote_flag.value:
+            global ir_remote_flag, ir_remote_pin
+            if False == checkTFvalue(ir_remote_flag.value):
                 await page.push_route(destination)
+                return
             checkResult.value = ""
             (flag, val) = isPinNumber(ir_remote_pin.value)
             if not flag:
@@ -5117,7 +5223,7 @@ def editWindow(page: ft.Page):
         async def toc_button_clicked(e):
             global ir_remote_flag
             destination = "/viewTOC"
-            if ir_remote_flag.value:
+            if True == checkTFvalue(ir_remote_flag.value):
                 await checkPinNumber(destination)
             else:
                 await page.push_route(destination)
@@ -5125,7 +5231,7 @@ def editWindow(page: ft.Page):
         async def save_button_clicked(e):
             global ir_remote_flag
             destination = "/viewSaveConfig"
-            if ir_remote_flag.value:
+            if True == checkTFvalue(ir_remote_flag.value):
                 await checkPinNumber(destination)
             else:
                 await page.push_route(destination)
@@ -5137,7 +5243,7 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("赤外線リモコン(IR remote)"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
@@ -5200,9 +5306,10 @@ def editWindow(page: ft.Page):
             page.update()
 
         async def checkPinNumber_full(destination):
-            global graphic_display_flag, checkResult, graphic_display_cs_pin, graphic_display_rst_pin, graphic_display_dc_pin, graphic_display_mosi_pin, graphic_display_miso_pin, graphic_display_clk_pin
-            if not graphic_display_flag.value:
+            global graphic_display_flag, graphic_display_cs_pin, graphic_display_rst_pin, graphic_display_dc_pin, graphic_display_mosi_pin, graphic_display_miso_pin, graphic_display_clk_pin
+            if False == checkTFvalue(graphic_display_flag.value):
                 await page.push_route(destination)
+                return
             checkResult.value = ""
             (flag, val) = isPinNumber(graphic_display_cs_pin.value)
             if not flag:
@@ -5231,9 +5338,10 @@ def editWindow(page: ft.Page):
             await page.push_route(destination)
 
         async def checkPinNumber_half(destination):
-            global graphic_display_flag, checkResult, graphic_display_cs_pin, graphic_display_rst_pin, graphic_display_dc_pin
-            if not graphic_display_flag.value:
+            global graphic_display_flag, graphic_display_cs_pin, graphic_display_rst_pin, graphic_display_dc_pin
+            if False == checkTFvalue(graphic_display_flag.value):
                 await page.push_route(destination)
+                return
             checkResult.value = ""
             (flag, val) = isPinNumber(graphic_display_cs_pin.value)
             if not flag:
@@ -5252,23 +5360,29 @@ def editWindow(page: ft.Page):
         async def toc_button_clicked(e):
             global graphic_display_flag, graphic_display_type
             destination = "/viewTOC"
-            if not graphic_display_flag.value:
+            if False == checkTFvalue(graphic_display_flag.value):
                 await page.push_route(destination)
+                return
             if graphic_display_type.value == 1:
                 await page.push_route(destination)
+                return
             if graphic_display_type.value == 2:
                 await checkPinNumber_half(destination)
+                return
             await checkPinNumber_full(destination)
 
         async def save_button_clicked(e):
             global graphic_display_flag, graphic_display_type
             destination = "/viewSaveConfig"
-            if not graphic_display_flag.value:
+            if False == checkTFvalue(graphic_display_flag.value):
                 await page.push_route(destination)
+                return
             if graphic_display_type.value == 1:
                 await page.push_route(destination)
+                return
             if graphic_display_type.value == 2:
                 await checkPinNumber_half(destination)
+                return
             await checkPinNumber_full(destination)
 
         async def finish_button_clicked(e):
@@ -5278,11 +5392,12 @@ def editWindow(page: ft.Page):
         page.autoscroll = True
         pageTitle = ft.AppBar(
             title=ft.Text("グラフィックディスプレイ"),
-            bgcolor=ft.Colors.CYAN_ACCENT,
+            bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
         )
+        attention_message = ft.Text("グラフィックディスプレイの種類によって，接続先を指定する必要があるピンが異なります．詳しくはディスプレイの技術情報を参照してください．")
         checkResult = ft.Text()
         graphic_display_type.on_change = graphic_display_type_changed
         toc_button = ft.Button(content="目次", on_click=toc_button_clicked)
@@ -5296,6 +5411,8 @@ def editWindow(page: ft.Page):
                         graphic_display_flag,
                         ft.Divider(height=2, color="black"),
                         graphic_display_type,
+                        ft.Divider(height=2, color="black"),
+                        attention_message,
                         ft.Text("各ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
                         graphic_display_cs_pin,
                         graphic_display_rst_pin,
@@ -5348,7 +5465,7 @@ def editWindow(page: ft.Page):
         global output_file_name
         pageTitle = ft.AppBar(
                 title=ft.Text("仕様のファイルへの出力"),
-                bgcolor=ft.Colors.BLUE,
+                bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
                 actions=[
                     ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
                     
@@ -5540,15 +5657,6 @@ def editWindow(page: ft.Page):
     page.on_route_change = route_change
     asyncio.create_task(page.push_route("/viewTOP"))
 
-def helpWindow(page: ft.Page):
-    global helpPageName, help
-    page.title = "Help"
-    page.window_width = 800
-    page.window_height = 500
-    page.autoscroll = True
-    help_contents = ft.Markdown(help[helpPageName], selectable=True, extension_set=ft.MarkdownExtensionSet.GITHUB_WEB)
-    page.add(help_contents)
-
 def errorWindow(page: ft.Page):
     async def finish_button_clicked(e):
         await page.window.destroy()
@@ -5572,25 +5680,50 @@ def errorWindow(page: ft.Page):
     )
 
 
-def load_init_file():
-    global help_file, defaults_file, configuration, help, error
-    try:
-        with open(help_file, mode='r', encoding='utf-8') as f:
-            help = yaml.safe_load(f)
-    except Exception as e:
-        error = 'ヘルプファイルをロードできません．'
-        return error
+#def load_init_file():
+#    global help_file, defaults_file, configuration, help, error
+#    try:
+#        with open(help_file, mode='r', encoding='utf-8') as f:
+#            help = yaml.safe_load(f)
+#    except Exception as e:
+#        error = 'ヘルプファイルをロードできません．'
+#        return error
+#    try:
+#        with open(defaults_file, mode='r', encoding='utf-8') as f:
+#            configuration = yaml.safe_load(f)
+#    except Exception as e:
+#        error = '設定ファイルをロードできません．'
+#        return error
+#    loadMenuValue()
+#    return ''
+
+def init():
+    global defaults_file, configuration, error, HELP_FILES, HELP_DIRECTORY
+    # check help files.
+    pwd=os.getcwd()
+    pwd = pwd.replace('\\', '/')
+    pwd = pwd.replace(' ', '\\ ')
+    pwd = pwd + "/"
+    for file in HELP_FILES:
+        target_path = HELP_DIRECTORY + file
+        if not (os.path.isfile(pwd+target_path)):
+            error += "本プログラムのヘルプファィル「"
+            error += file
+            error += "」が「"
+            error += HELP_DIRECTORY
+            error += "」にありません．\n"
+    # load defaults value.
     try:
         with open(defaults_file, mode='r', encoding='utf-8') as f:
             configuration = yaml.safe_load(f)
     except Exception as e:
-        error = '設定ファイルをロードできません．'
+        error = f'設定ファイル({defaults_file})をロードできません．'
         return error
     loadMenuValue()
     return ''
 
 if __name__ == "__main__":
-    if "" == load_init_file():
+    if "" == init():
         thread = threading.Thread(target=documentServer, daemon=True) # 処理を割り当てる
         thread.start() # スレッドを起動する
         ft.run(editWindow)
