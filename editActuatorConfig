@@ -1,27 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 import flet as ft
+
 import os
-
 import yaml
-
-
 import webbrowser
 import http.server
 import socketserver
-
 import threading
 import asyncio
-
-
+import re
 
 config_file_name=""
 output_file_name=""
-
-# HELP
-#help_file="parts/Help/editActuatorConfig/help.yaml"
-#helpPageName = ''
 
 # Default Values
 defaults_file="parts/defaults/editActuatorConfig/editActuatorConfig.yaml"
@@ -454,8 +445,8 @@ simple_mono_led_type = ft.Dropdown(
     width=200,
     on_text_change=simple_mono_led_type_changed,
     options=[
-        ft.dropdown.Option(key=0, text="プルアップ型(電圧高でON)"),
-        ft.dropdown.Option(key=1, text="プルダウン型(電圧低でON)"),
+        ft.dropdown.Option(key=True, text="プルアップ型(電圧高でON)"),
+        ft.dropdown.Option(key=False, text="プルダウン型(電圧低でON)"),
     ],
 )
 
@@ -483,8 +474,8 @@ simple_color_led_type = ft.Dropdown(
     width=200,
     on_text_change=simple_color_led_type_changed,
     options=[
-        ft.dropdown.Option(key=0, text="プルアップ型(電圧高でON)"),
-        ft.dropdown.Option(key=1, text="プルダウン型(電圧低でON)"),
+        ft.dropdown.Option(key=True, text="プルアップ型(電圧高でON)"),
+        ft.dropdown.Option(key=False, text="プルダウン型(電圧低でON)"),
     ],
 )
 
@@ -516,8 +507,8 @@ grove_led_bar_direction = ft.Dropdown(
     width=200,
     on_text_change=grove_led_bar_direction_changed,
     options=[
-        ft.dropdown.Option(key=1, text="順方向"),
-        ft.dropdown.Option(key=2, text="逆方向"),
+        ft.dropdown.Option(key=0, text="順方向"),
+        ft.dropdown.Option(key=1, text="逆方向"),
     ],
 )
 
@@ -548,8 +539,8 @@ grove_led_circular_direction = ft.Dropdown(
     width=200,
     on_text_change=grove_led_circular_direction_changed,
     options=[
-        ft.dropdown.Option(key=1, text="順方向"),
-        ft.dropdown.Option(key=2, text="逆方向"),
+        ft.dropdown.Option(key=0, text="順方向"),
+        ft.dropdown.Option(key=1, text="逆方向"),
     ],
 )
 
@@ -618,8 +609,8 @@ osl12306_16_type = ft.Dropdown(
     width=200,
     on_text_change=osl12306_16_type_changed,
     options=[
-        ft.dropdown.Option(key=0, text="プルアップ型(電圧高でON)"),
-        ft.dropdown.Option(key=1, text="プルダウン型(電圧低でON)"),
+        ft.dropdown.Option(key=0, text="アノードコモン"),
+        ft.dropdown.Option(key=1, text="カソードコモン"),
     ],
 )
 
@@ -664,8 +655,8 @@ osl20541_type = ft.Dropdown(
     width=200,
     on_text_change=osl20541_type_changed,
     options=[
-        ft.dropdown.Option(key=0, text="プルアップ型(電圧高でON)"),
-        ft.dropdown.Option(key=1, text="プルダウン型(電圧低でON)"),
+        ft.dropdown.Option(key=0, text="アノードコモン"),
+        ft.dropdown.Option(key=1, text="カソードコモン"),
     ],
 )
 
@@ -709,8 +700,8 @@ osl30561_type = ft.Dropdown(
     width=200,
     on_text_change=osl30561_type_changed,
     options=[
-        ft.dropdown.Option(key=0, text="プルアップ型(電圧高でON)"),
-        ft.dropdown.Option(key=1, text="プルダウン型(電圧低でON)"),
+        ft.dropdown.Option(key=0, text="アノードコモン"),
+        ft.dropdown.Option(key=1, text="カソードコモン"),
     ],
 )
 
@@ -920,10 +911,18 @@ graphic_display_type = ft.Dropdown(
     width=200,
     options=[
         ft.dropdown.Option(key=0, text="GIGA Display Shield"),
-        ft.dropdown.Option(key=1, text="ILI9341 ハードウェアSPI接続"),
-        ft.dropdown.Option(key=2, text="ILI9341 ソフトウェアSPI接続"),
+        #ft.dropdown.Option(key=1, text="BODMER TFT ESPI"),
+        ft.dropdown.Option(key=2, text="ILI9341 ハードウェアSPI接続"),
+        ft.dropdown.Option(key=3, text="ILI9341 ソフトウェアSPI接続"),
     ],
 )
+
+#graphic_display_cs_pin = ft.TextField(label="CS",disabled=False) # configuration['graphic_display']['graphic_display_cs_pin']
+#graphic_display_rst_pin = ft.TextField(label="RST",disabled=False) # configuration['graphic_display']['graphic_display_rst_pin']
+#graphic_display_dc_pin = ft.TextField(label="DC",disabled=False) # configuration['graphic_display']['graphic_display_dc_pin']
+#graphic_display_mosi_pin = ft.TextField(label="MOSI",disabled=False) # configuration['graphic_display']['graphic_display_mosi_pin']
+#graphic_display_miso_pin = ft.TextField(label="MISO",disabled=False) # configuration['graphic_display']['graphic_display_miso_pin']
+#graphic_display_clk_pin = ft.TextField(label="Clock",disabled=False) # configuration['graphic_display']['graphic_display_clk_pin']
 
 graphic_display_cs_pin = ft.TextField(label="CS",disabled=True) # configuration['graphic_display']['graphic_display_cs_pin']
 graphic_display_rst_pin = ft.TextField(label="RST",disabled=True) # configuration['graphic_display']['graphic_display_rst_pin']
@@ -931,8 +930,6 @@ graphic_display_dc_pin = ft.TextField(label="DC",disabled=True) # configuration[
 graphic_display_mosi_pin = ft.TextField(label="MOSI",disabled=True) # configuration['graphic_display']['graphic_display_mosi_pin']
 graphic_display_miso_pin = ft.TextField(label="MISO",disabled=True) # configuration['graphic_display']['graphic_display_miso_pin']
 graphic_display_clk_pin = ft.TextField(label="Clock",disabled=True) # configuration['graphic_display']['graphic_display_clk_pin']
-
-
 
 # 設定ファイルから，メニューへ値のコピー
 def saveMenuValue():
@@ -1439,16 +1436,16 @@ def saveConfig(output_file_name):
     print('platform:', file=output_file)
     print('  network_hardware:', file=output_file)
     print('    network_type: %s # wifi , ethernet , none' % configuration['platform']['network_hardware']['network_type'], file=output_file)
-    print('    ethernet_chip_select: %s # イーサネットのチップセレクトピン番号' % configuration['platform']['network_hardware']['ethernet_chip_select'], file=output_file)
+    print('    ethernet_chip_select: \"%s\" # イーサネットのチップセレクトピン番号' % configuration['platform']['network_hardware']['ethernet_chip_select'], file=output_file)
     print('  rtc:', file=output_file)
     print('    rtc_type: %s # RTC8564NB , DS1307 , DS3231 , PCF8523 , RV8803 , RX8025 , RX8900 , none' % configuration['platform']['rtc']['rtc_type'], file=output_file)
-    print('    rtc_int_pin: %s # ピン番号' % configuration['platform']['rtc']['rtc_int_pin'], file=output_file)
+    #print('    rtc_int_pin: %s # ピン番号' % configuration['platform']['rtc']['rtc_int_pin'], file=output_file)
     print('  color_led:', file=output_file)
     if checkYamlVal(configuration['platform']['color_led']['use_led']):
         print('    use_led: true # true(使う) , false(使わない)', file=output_file)
     else:
         print('    use_led: false # true(使う) , false(使わない)', file=output_file)
-    print('    led_pin: %s # ピン番号' % configuration['platform']['color_led']['led_pin'], file=output_file)
+    print('    led_pin: \"%s\" # ピン番号' % configuration['platform']['color_led']['led_pin'], file=output_file)
     print('    led_duration: %s # 時間(単位:ミリ秒)' % configuration['platform']['color_led']['led_duration'], file=output_file)
     print('    led_short_duration: %s # 時間(単位:ミリ秒)' % configuration['platform']['color_led']['led_short_duration'], file=output_file)
     print('  sd:', file=output_file)
@@ -1456,10 +1453,14 @@ def saveConfig(output_file_name):
         print('    use_sd: true # true(使う) , false(使わない)', file=output_file)
     else:
         print('    use_sd: false # true(使う) , false(使わない)', file=output_file)
-    print('    sd_chip_select: %s # ピン番号' % configuration['platform']['sd']['sd_chip_select'], file=output_file)
+    print('    sd_chip_select: \"%s\" # ピン番号' % configuration['platform']['sd']['sd_chip_select'], file=output_file)
     print('  wdt:', file=output_file)
     print('    wdt_duration: %s # 時間(単位:ミリ秒)' % configuration['platform']['wdt']['wdt_duration'], file=output_file)
     print('    wdt_short_duration: %s # 時間(単位:ミリ秒)' % configuration['platform']['wdt']['wdt_short_duration'], file=output_file)
+    print('  advanced:', file=output_file)
+    print('    hardware_serial: \"%s\"' % configuration['platform']['advanced']['hardware_serial'], file=output_file)
+    print('    buffer_size: %s' % configuration['platform']['advanced']['buffer_size'], file=output_file)
+    print('    max_digit_of_nseg_led: %s' % configuration['platform']['advanced']['max_digit_of_nseg_led'], file=output_file)
     print('', file=output_file)
     print('common:', file=output_file)
     print('  serial:', file=output_file)
@@ -1546,6 +1547,7 @@ def saveConfig(output_file_name):
         print('  use_acm1602ni: true # true(使う) , false(使わない)' , file=output_file)
     else:
         print('  use_acm1602ni: false # true(使う) , false(使わない)' , file=output_file)
+    print('  acm1602ni_type: %s # 0(ACM1602NI), other (ACM2004)' % configuration['acm1602ni']['acm1602ni_type'], file=output_file)
     print('', file=output_file)
     print('# Liquid crystal library', file=output_file)
     print('liquid_crystal:', file=output_file)
@@ -1554,12 +1556,12 @@ def saveConfig(output_file_name):
     else:
         print('  use_liquid_crystal: false # true(使う) , false(使わない)' , file=output_file)
     print('  liquid_crystal_type: %s # 0(USE_SC1602BSLB), 1(USE_SC2004CSLB)' % configuration['liquid_crystal']['liquid_crystal_type'], file=output_file)
-    print('  liquid_crystal_rs_pin: \"D%s\" # LIQUID_CRYSTAL_PIN_RS' % configuration['liquid_crystal']['liquid_crystal_rs_pin'], file=output_file)
-    print('  liquid_crystal_es_pin: \"D%s\" # LIQUID_CRYSTAL_PIN_ES' % configuration['liquid_crystal']['liquid_crystal_es_pin'], file=output_file)
-    print('  liquid_crystal_d4_pin: \"D%s\" # LIQUID_CRYSTAL_PIN_D4' % configuration['liquid_crystal']['liquid_crystal_d4_pin'], file=output_file)
-    print('  liquid_crystal_d5_pin: \"D%s\" # LIQUID_CRYSTAL_PIN_D5' % configuration['liquid_crystal']['liquid_crystal_d5_pin'], file=output_file)
-    print('  liquid_crystal_d6_pin: \"D%s\" # LIQUID_CRYSTAL_PIN_D6' % configuration['liquid_crystal']['liquid_crystal_d6_pin'], file=output_file)
-    print('  liquid_crystal_d7_pin: \"D%s\" # LIQUID_CRYSTAL_PIN_D7' % configuration['liquid_crystal']['liquid_crystal_d7_pin'], file=output_file)
+    print('  liquid_crystal_rs_pin: \"%s\" # LIQUID_CRYSTAL_PIN_RS' % configuration['liquid_crystal']['liquid_crystal_rs_pin'], file=output_file)
+    print('  liquid_crystal_es_pin: \"%s\" # LIQUID_CRYSTAL_PIN_ES' % configuration['liquid_crystal']['liquid_crystal_es_pin'], file=output_file)
+    print('  liquid_crystal_d4_pin: \"%s\" # LIQUID_CRYSTAL_PIN_D4' % configuration['liquid_crystal']['liquid_crystal_d4_pin'], file=output_file)
+    print('  liquid_crystal_d5_pin: \"%s\" # LIQUID_CRYSTAL_PIN_D5' % configuration['liquid_crystal']['liquid_crystal_d5_pin'], file=output_file)
+    print('  liquid_crystal_d6_pin: \"%s\" # LIQUID_CRYSTAL_PIN_D6' % configuration['liquid_crystal']['liquid_crystal_d6_pin'], file=output_file)
+    print('  liquid_crystal_d7_pin: \"%s\" # LIQUID_CRYSTAL_PIN_D7' % configuration['liquid_crystal']['liquid_crystal_d7_pin'], file=output_file)
     print('', file=output_file)
     print('#', file=output_file)
     print('# LEDs', file=output_file)
@@ -1574,7 +1576,7 @@ def saveConfig(output_file_name):
         print('  simple_mono_led_type: true # GROVE_MONO_LED_PIN_TYPE  true(PULL_UP), false(PULL_DOWN)' , file=output_file)
     else:
         print('  simple_mono_led_type: false # GROVE_MONO_LED_PIN_TYPE  true(PULL_UP), false(PULL_DOWN)' , file=output_file)
-    print('  simple_mono_led_pin: \"D%s\" # GROVE_MONO_LED_PIN' % configuration['simple_mono_led']['simple_mono_led_pin'], file=output_file)
+    print('  simple_mono_led_pin: \"%s\" # GROVE_MONO_LED_PIN' % configuration['simple_mono_led']['simple_mono_led_pin'], file=output_file)
     print('# Anode/Cathod common RGB LED', file=output_file)
     print('simple_color_led:', file=output_file)
     if checkYamlVal(configuration['simple_color_led']['use_simple_color_led']):
@@ -1585,9 +1587,9 @@ def saveConfig(output_file_name):
         print('  simple_color_led_type: true # USE_SIMPLE_COLOR_LED_PIN_TYPE  true(PULL_UP), false(PULL_DOWN)' , file=output_file)
     else:
         print('  simple_color_led_type: false # USE_SIMPLE_COLOR_LED_PIN_TYPE  true(PULL_UP), false(PULL_DOWN)' , file=output_file)
-    print('  simple_color_led_red_pin: \"D%s\" # SIMPLE_COLOR_LED_RED_PIN' % configuration['simple_color_led']['simple_color_led_red_pin'], file=output_file)
-    print('  simple_color_led_green_pin: \"D%s\" # SIMPLE_COLOR_LED_GREEN_PIN' % configuration['simple_color_led']['simple_color_led_green_pin'], file=output_file)
-    print('  simple_color_led_blue_pin: \"D%s\" # SIMPLE_COLOR_LED_BLUE_PIN' % configuration['simple_color_led']['simple_color_led_blue_pin'], file=output_file)
+    print('  simple_color_led_red_pin: \"%s\" # SIMPLE_COLOR_LED_RED_PIN' % configuration['simple_color_led']['simple_color_led_red_pin'], file=output_file)
+    print('  simple_color_led_green_pin: \"%s\" # SIMPLE_COLOR_LED_GREEN_PIN' % configuration['simple_color_led']['simple_color_led_green_pin'], file=output_file)
+    print('  simple_color_led_blue_pin: \"%s\" # SIMPLE_COLOR_LED_BLUE_PIN' % configuration['simple_color_led']['simple_color_led_blue_pin'], file=output_file)
     print('# Grove LED bar', file=output_file)
     print('grove_led_bar:', file=output_file)
     if checkYamlVal(configuration['grove_led_bar']['use_grove_led_bar']):
@@ -1595,12 +1597,13 @@ def saveConfig(output_file_name):
     else:
         print('  use_grove_led_bar: false # true(使う) , false(使わない)' , file=output_file)
     print('  grove_led_bar_leds: %s # GROVE_LED_BAR_NUM_OF_LED' % configuration['grove_led_bar']['grove_led_bar_leds'], file=output_file)
-    if checkYamlVal(configuration['grove_led_bar']['grove_led_bar_direction']):
-        print('  grove_led_bar_direction: true # GROVE_LED_BAR_DIRECTION 0(forward) , 1(backward)' , file=output_file)
-    else:
-        print('  grove_led_bar_direction: false # GROVE_LED_BAR_DIRECTION 0(forward) , 1(backward)' , file=output_file)
-    print('  grove_led_bar_clk_pin: \"D%s\" # GROVE_LED_BAR_PIN_CLK' % configuration['grove_led_bar']['grove_led_bar_clk_pin'], file=output_file)
-    print('  grove_led_bar_data_pin: \"D%s\" # GROVE_LED_BAR_PIN_DATA' % configuration['grove_led_bar']['grove_led_bar_data_pin'], file=output_file)
+    print('  grove_led_bar_direction: %s # GROVE_LED_BAR_DIRECTION 0(forward) , 1(backward)' % configuration['grove_led_bar']['grove_led_bar_direction'] , file=output_file)
+    #if checkYamlVal(configuration['grove_led_bar']['grove_led_bar_direction']):
+    #    print('  grove_led_bar_direction: 0 # GROVE_LED_BAR_DIRECTION 0(forward) , 1(backward)' , file=output_file)
+    #else:
+    #    print('  grove_led_bar_direction: 1 # GROVE_LED_BAR_DIRECTION 0(forward) , 1(backward)' , file=output_file)
+    print('  grove_led_bar_clk_pin: \"%s\" # GROVE_LED_BAR_PIN_CLK' % configuration['grove_led_bar']['grove_led_bar_clk_pin'], file=output_file)
+    print('  grove_led_bar_data_pin: \"%s\" # GROVE_LED_BAR_PIN_DATA' % configuration['grove_led_bar']['grove_led_bar_data_pin'], file=output_file)
     print('# Grove LED circular', file=output_file)
     print('grove_led_circular:', file=output_file)
     if checkYamlVal(configuration['grove_led_circular']['use_grove_led_circular']):
@@ -1608,12 +1611,13 @@ def saveConfig(output_file_name):
     else:
         print('  use_grove_led_circular: false # true(使う) , false(使わない)' , file=output_file)
     print('  grove_led_circular_leds: %s # GROVE_LED_CIRCLE_NUM_OF_LED' % configuration['grove_led_circular']['grove_led_circular_leds'], file=output_file)
-    if checkYamlVal(configuration['grove_led_circular']['grove_led_circular_direction']):
-        print('  grove_led_circular_direction: true # GROVE_LED_CIRCLE_DIRECTION 0(forward) , 1(backward)' , file=output_file)
-    else:
-        print('  grove_led_circular_direction: false # GROVE_LED_CIRCLE_DIRECTION 0(forward) , 1(backward)' , file=output_file)
-    print('  grove_led_circular_clk_pin: \"D%s\" # GROVE_LED_CIRCLE_PIN_CLK' % configuration['grove_led_circular']['grove_led_circular_clk_pin'], file=output_file)
-    print('  grove_led_circular_data_pin: \"D%s\" # GROVE_LED_CIRCLE_PIN_DATA' % configuration['grove_led_circular']['grove_led_circular_data_pin'], file=output_file)
+    print('  grove_led_circular_direction: %s # GROVE_LED_CIRCLE_DIRECTION 0(forward) , 1(backward)' % configuration['grove_led_circular']['grove_led_circular_direction'] , file=output_file)
+    #if checkYamlVal(configuration['grove_led_circular']['grove_led_circular_direction']):
+    #    print('  grove_led_circular_direction: true # GROVE_LED_CIRCLE_DIRECTION 0(forward) , 1(backward)' , file=output_file)
+    #else:
+    #    print('  grove_led_circular_direction: false # GROVE_LED_CIRCLE_DIRECTION 0(forward) , 1(backward)' , file=output_file)
+    print('  grove_led_circular_clk_pin: \"%s\" # GROVE_LED_CIRCLE_PIN_CLK' % configuration['grove_led_circular']['grove_led_circular_clk_pin'], file=output_file)
+    print('  grove_led_circular_data_pin: \"%s\" # GROVE_LED_CIRCLE_PIN_DATA' % configuration['grove_led_circular']['grove_led_circular_data_pin'], file=output_file)
     print('# Grove chainable LED', file=output_file)
     print('grove_chainable_led:', file=output_file)
     if checkYamlVal(configuration['grove_chainable_led']['use_grove_chainable_led']):
@@ -1621,8 +1625,8 @@ def saveConfig(output_file_name):
     else:
         print('  use_grove_chainable_led: false # true(使う) , false(使わない)' , file=output_file)
     print('  grove_chainable_led_leds: %s # GROVE_CHAINABLE_LED_NUM_OF_LED' % configuration['grove_chainable_led']['grove_chainable_led_leds'], file=output_file)
-    print('  grove_chainable_led_clk_pin: \"D%s\" # GROVE_CHAINABLE_LED_PIN_CLK' % configuration['grove_chainable_led']['grove_chainable_led_clk_pin'], file=output_file)
-    print('  grove_chainable_led_data_pin: \"D%s\" # GROVE_CHAINABLE_LED_PIN_DATA' % configuration['grove_chainable_led']['grove_chainable_led_data_pin'], file=output_file)
+    print('  grove_chainable_led_clk_pin: \"%s\" # GROVE_CHAINABLE_LED_PIN_CLK' % configuration['grove_chainable_led']['grove_chainable_led_clk_pin'], file=output_file)
+    print('  grove_chainable_led_data_pin: \"%s\" # GROVE_CHAINABLE_LED_PIN_DATA' % configuration['grove_chainable_led']['grove_chainable_led_data_pin'], file=output_file)
     print('# Adafruit NeoPixel', file=output_file)
     print('adafuit_neopixel:', file=output_file)
     if checkYamlVal(configuration['adafuit_neopixel']['use_adafuit_neopixel']):
@@ -1630,7 +1634,7 @@ def saveConfig(output_file_name):
     else:
         print('  use_adafuit_neopixel: false # true(使う) , false(使わない)' , file=output_file)
     print('  adafuit_neopixel_leds: %s # LED_NEO_PIXEL_NUM_OF_LED' % configuration['adafuit_neopixel']['adafuit_neopixel_leds'], file=output_file)
-    print('  adafuit_neopixel_pin: \"D%s\" # LED_NEO_PIXEL_PIN' % configuration['adafuit_neopixel']['adafuit_neopixel_pin'], file=output_file)
+    print('  adafuit_neopixel_pin: \"%s\" # LED_NEO_PIXEL_PIN' % configuration['adafuit_neopixel']['adafuit_neopixel_pin'], file=output_file)
     print('', file=output_file)
     print('#', file=output_file)
     print('# N-segment LEDs', file=output_file)
@@ -1643,24 +1647,24 @@ def saveConfig(output_file_name):
         print('  use_osl12306_16: false # true(使う) , false(使わない)' , file=output_file)
     print('  osl12306_16_digits:        1 # OSL12306_16_NUM_OF_DIGITS' , file=output_file)
     print('  osl12306_16_type: %s # OSL12306_16_PIN_TYPE 0(ANODE_COMMON), 1(CATHOD_COMMON)' % configuration['osl12306_16']['osl12306_16_type'], file=output_file)
-    print('  osl12306_16_a1_pin: \"D%s\" # OSL12306_16_PIN_A1' % configuration['osl12306_16']['osl12306_16_a1_pin'], file=output_file)
-    print('  osl12306_16_a2_pin: \"D%s\" # OSL12306_16_PIN_A2' % configuration['osl12306_16']['osl12306_16_a2_pin'], file=output_file)
-    print('  osl12306_16_b_pin: \"D%s\" # OSL12306_16_PIN_B' % configuration['osl12306_16']['osl12306_16_b_pin'], file=output_file)
-    print('  osl12306_16_c_pin: \"D%s\" # OSL12306_16_PIN_C' % configuration['osl12306_16']['osl12306_16_c_pin'], file=output_file)
-    print('  osl12306_16_d1_pin: \"D%s\" # OSL12306_16_PIN_D1' % configuration['osl12306_16']['osl12306_16_d1_pin'], file=output_file)
-    print('  osl12306_16_d2_pin: \"D%s\" # OSL12306_16_PIN_D2' % configuration['osl12306_16']['osl12306_16_d2_pin'], file=output_file)
-    print('  osl12306_16_e_pin: \"D%s\" # OSL12306_16_PIN_E' % configuration['osl12306_16']['osl12306_16_e_pin'], file=output_file)
-    print('  osl12306_16_f_pin: \"D%s\" # OSL12306_16_PIN_F' % configuration['osl12306_16']['osl12306_16_f_pin'], file=output_file)
-    print('  osl12306_16_g1_pin: \"D%s\" # OSL12306_16_PIN_G1' % configuration['osl12306_16']['osl12306_16_g1_pin'], file=output_file)
-    print('  osl12306_16_g2_pin: \"D%s\" # OSL12306_16_PIN_G2' % configuration['osl12306_16']['osl12306_16_g2_pin'], file=output_file)
-    print('  osl12306_16_j_pin: \"D%s\" # OSL12306_16_PIN_J' % configuration['osl12306_16']['osl12306_16_j_pin'], file=output_file)
-    print('  osl12306_16_k_pin: \"D%s\" # OSL12306_16_PIN_K' % configuration['osl12306_16']['osl12306_16_k_pin'], file=output_file)
-    print('  osl12306_16_l_pin: \"D%s\" # OSL12306_16_PIN_L' % configuration['osl12306_16']['osl12306_16_l_pin'], file=output_file)
-    print('  osl12306_16_m_pin: \"D%s\" # OSL12306_16_PIN_M' % configuration['osl12306_16']['osl12306_16_m_pin'], file=output_file)
-    print('  osl12306_16_n_pin: \"D%s\" # OSL12306_16_PIN_N' % configuration['osl12306_16']['osl12306_16_n_pin'], file=output_file)
-    print('  osl12306_16_p_pin: \"D%s\" # OSL12306_16_PIN_P' % configuration['osl12306_16']['osl12306_16_p_pin'], file=output_file)
-    print('  osl12306_16_dp_pin: \"D%s\" # OSL12306_16_PIN_DP' % configuration['osl12306_16']['osl12306_16_dp_pin'], file=output_file)
-    print('  osl12306_16_digit_pin: \"D%s\" # OSL12306_16_PIN_DIGIT' % configuration['osl12306_16']['osl12306_16_digit_pin'], file=output_file)
+    print('  osl12306_16_a1_pin: \"%s\" # OSL12306_16_PIN_A1' % configuration['osl12306_16']['osl12306_16_a1_pin'], file=output_file)
+    print('  osl12306_16_a2_pin: \"%s\" # OSL12306_16_PIN_A2' % configuration['osl12306_16']['osl12306_16_a2_pin'], file=output_file)
+    print('  osl12306_16_b_pin: \"%s\" # OSL12306_16_PIN_B' % configuration['osl12306_16']['osl12306_16_b_pin'], file=output_file)
+    print('  osl12306_16_c_pin: \"%s\" # OSL12306_16_PIN_C' % configuration['osl12306_16']['osl12306_16_c_pin'], file=output_file)
+    print('  osl12306_16_d1_pin: \"%s\" # OSL12306_16_PIN_D1' % configuration['osl12306_16']['osl12306_16_d1_pin'], file=output_file)
+    print('  osl12306_16_d2_pin: \"%s\" # OSL12306_16_PIN_D2' % configuration['osl12306_16']['osl12306_16_d2_pin'], file=output_file)
+    print('  osl12306_16_e_pin: \"%s\" # OSL12306_16_PIN_E' % configuration['osl12306_16']['osl12306_16_e_pin'], file=output_file)
+    print('  osl12306_16_f_pin: \"%s\" # OSL12306_16_PIN_F' % configuration['osl12306_16']['osl12306_16_f_pin'], file=output_file)
+    print('  osl12306_16_g1_pin: \"%s\" # OSL12306_16_PIN_G1' % configuration['osl12306_16']['osl12306_16_g1_pin'], file=output_file)
+    print('  osl12306_16_g2_pin: \"%s\" # OSL12306_16_PIN_G2' % configuration['osl12306_16']['osl12306_16_g2_pin'], file=output_file)
+    print('  osl12306_16_j_pin: \"%s\" # OSL12306_16_PIN_J' % configuration['osl12306_16']['osl12306_16_j_pin'], file=output_file)
+    print('  osl12306_16_k_pin: \"%s\" # OSL12306_16_PIN_K' % configuration['osl12306_16']['osl12306_16_k_pin'], file=output_file)
+    print('  osl12306_16_l_pin: \"%s\" # OSL12306_16_PIN_L' % configuration['osl12306_16']['osl12306_16_l_pin'], file=output_file)
+    print('  osl12306_16_m_pin: \"%s\" # OSL12306_16_PIN_M' % configuration['osl12306_16']['osl12306_16_m_pin'], file=output_file)
+    print('  osl12306_16_n_pin: \"%s\" # OSL12306_16_PIN_N' % configuration['osl12306_16']['osl12306_16_n_pin'], file=output_file)
+    print('  osl12306_16_p_pin: \"%s\" # OSL12306_16_PIN_P' % configuration['osl12306_16']['osl12306_16_p_pin'], file=output_file)
+    print('  osl12306_16_dp_pin: \"%s\" # OSL12306_16_PIN_DP' % configuration['osl12306_16']['osl12306_16_dp_pin'], file=output_file)
+    print('  osl12306_16_digit_pin: \"%s\" # OSL12306_16_PIN_DIGIT' % configuration['osl12306_16']['osl12306_16_digit_pin'], file=output_file)
     print('# OSL20541 (2桁14セグメントLED)', file=output_file)
     print('osl20541:', file=output_file)
     if checkYamlVal(configuration['osl20541']['use_osl20541']):
@@ -1669,23 +1673,23 @@ def saveConfig(output_file_name):
         print('  use_osl20541: false # true(使う) , false(使わない)' , file=output_file)
     print('  osl20541_digits:         2 # OSL20541_NUM_OF_DIGITS' , file=output_file)
     print('  osl20541_type: %s # OSL20541_PIN_TYPE 0(ANODE_COMMON), 1(CATHOD_COMMON)' % configuration['osl20541']['osl20541_type'], file=output_file)
-    print('  osl20541_a_pin: \"D%s\" # OSL20541_PIN_A' % configuration['osl20541']['osl20541_a_pin'], file=output_file)
-    print('  osl20541_b_pin: \"D%s\" # OSL20541_PIN_B' % configuration['osl20541']['osl20541_b_pin'], file=output_file)
-    print('  osl20541_c_pin: \"D%s\" # OSL20541_PIN_C' % configuration['osl20541']['osl20541_c_pin'], file=output_file)
-    print('  osl20541_d_pin: \"D%s\" # OSL20541_PIN_D' % configuration['osl20541']['osl20541_d_pin'], file=output_file)
-    print('  osl20541_e_pin: \"D%s\" # OSL20541_PIN_E' % configuration['osl20541']['osl20541_e_pin'], file=output_file)
-    print('  osl20541_f_pin: \"D%s\" # OSL20541_PIN_F' % configuration['osl20541']['osl20541_f_pin'], file=output_file)
-    print('  osl20541_g1_pin: \"D%s\" # OSL20541_PIN_G1' % configuration['osl20541']['osl20541_g1_pin'], file=output_file)
-    print('  osl20541_g2_pin: \"D%s\" # OSL20541_PIN_G2' % configuration['osl20541']['osl20541_g2_pin'], file=output_file)
-    print('  osl20541_h_pin: \"D%s\" # OSL20541_PIN_H' % configuration['osl20541']['osl20541_h_pin'], file=output_file)
-    print('  osl20541_j_pin: \"D%s\" # OSL20541_PIN_J' % configuration['osl20541']['osl20541_j_pin'], file=output_file)
-    print('  osl20541_k_pin: \"D%s\" # OSL20541_PIN_K' % configuration['osl20541']['osl20541_k_pin'], file=output_file)
-    print('  osl20541_l_pin: \"D%s\" # OSL20541_PIN_L' % configuration['osl20541']['osl20541_l_pin'], file=output_file)
-    print('  osl20541_m_pin: \"D%s\" # OSL20541_PIN_M' % configuration['osl20541']['osl20541_m_pin'], file=output_file)
-    print('  osl20541_n_pin: \"D%s\" # OSL20541_PIN_N' % configuration['osl20541']['osl20541_n_pin'], file=output_file)
-    print('  osl20541_dp_pin: \"D%s\" # OSL20541_PIN_DP' % configuration['osl20541']['osl20541_dp_pin'], file=output_file)
-    print('  osl20541_digit1_pin: \"D%s\" # OSL20541_PIN_DIGIT_1' % configuration['osl20541']['osl20541_digit1_pin'], file=output_file)
-    print('  osl20541_digit2_pin: \"D%s\" # OSL20541_PIN_DIGIT_2' % configuration['osl20541']['osl20541_digit2_pin'], file=output_file)
+    print('  osl20541_a_pin: \"%s\" # OSL20541_PIN_A' % configuration['osl20541']['osl20541_a_pin'], file=output_file)
+    print('  osl20541_b_pin: \"%s\" # OSL20541_PIN_B' % configuration['osl20541']['osl20541_b_pin'], file=output_file)
+    print('  osl20541_c_pin: \"%s\" # OSL20541_PIN_C' % configuration['osl20541']['osl20541_c_pin'], file=output_file)
+    print('  osl20541_d_pin: \"%s\" # OSL20541_PIN_D' % configuration['osl20541']['osl20541_d_pin'], file=output_file)
+    print('  osl20541_e_pin: \"%s\" # OSL20541_PIN_E' % configuration['osl20541']['osl20541_e_pin'], file=output_file)
+    print('  osl20541_f_pin: \"%s\" # OSL20541_PIN_F' % configuration['osl20541']['osl20541_f_pin'], file=output_file)
+    print('  osl20541_g1_pin: \"%s\" # OSL20541_PIN_G1' % configuration['osl20541']['osl20541_g1_pin'], file=output_file)
+    print('  osl20541_g2_pin: \"%s\" # OSL20541_PIN_G2' % configuration['osl20541']['osl20541_g2_pin'], file=output_file)
+    print('  osl20541_h_pin: \"%s\" # OSL20541_PIN_H' % configuration['osl20541']['osl20541_h_pin'], file=output_file)
+    print('  osl20541_j_pin: \"%s\" # OSL20541_PIN_J' % configuration['osl20541']['osl20541_j_pin'], file=output_file)
+    print('  osl20541_k_pin: \"%s\" # OSL20541_PIN_K' % configuration['osl20541']['osl20541_k_pin'], file=output_file)
+    print('  osl20541_l_pin: \"%s\" # OSL20541_PIN_L' % configuration['osl20541']['osl20541_l_pin'], file=output_file)
+    print('  osl20541_m_pin: \"%s\" # OSL20541_PIN_M' % configuration['osl20541']['osl20541_m_pin'], file=output_file)
+    print('  osl20541_n_pin: \"%s\" # OSL20541_PIN_N' % configuration['osl20541']['osl20541_n_pin'], file=output_file)
+    print('  osl20541_dp_pin: \"%s\" # OSL20541_PIN_DP' % configuration['osl20541']['osl20541_dp_pin'], file=output_file)
+    print('  osl20541_digit1_pin: \"%s\" # OSL20541_PIN_DIGIT_1' % configuration['osl20541']['osl20541_digit1_pin'], file=output_file)
+    print('  osl20541_digit2_pin: \"%s\" # OSL20541_PIN_DIGIT_2' % configuration['osl20541']['osl20541_digit2_pin'], file=output_file)
     print('# OSL30561 (3桁7セグメントLED)', file=output_file)
     print('osl30561:', file=output_file)
     if checkYamlVal(configuration['osl30561']['use_osl30561']):
@@ -1694,25 +1698,25 @@ def saveConfig(output_file_name):
         print('  use_osl30561: false # true(使う) , false(使わない)' , file=output_file)
     print('  osl30561_digits:         3 # OSL30561_NUM_OF_DIGITS' , file=output_file)
     print('  osl30561_type: %s # OSL30561_PIN_TYPE 0(ANODE_COMMON), 1(CATHOD_COMMON)' % configuration['osl30561']['osl30561_type'], file=output_file)
-    print('  osl30561_a_pin: \"D%s\" # OSL30561_PIN_A' % configuration['osl30561']['osl30561_a_pin'], file=output_file)
-    print('  osl30561_b_pin: \"D%s\" # OSL30561_PIN_B' % configuration['osl30561']['osl30561_b_pin'], file=output_file)
-    print('  osl30561_c_pin: \"D%s\" # OSL30561_PIN_C' % configuration['osl30561']['osl30561_c_pin'], file=output_file)
-    print('  osl30561_d_pin: \"D%s\" # OSL30561_PIN_D' % configuration['osl30561']['osl30561_d_pin'], file=output_file)
-    print('  osl30561_e_pin: \"D%s\" # OSL30561_PIN_E' % configuration['osl30561']['osl30561_e_pin'], file=output_file)
-    print('  osl30561_f_pin: \"D%s\" # OSL30561_PIN_F' % configuration['osl30561']['osl30561_f_pin'], file=output_file)
-    print('  osl30561_g_pin: \"D%s\" # OSL30561_PIN_G' % configuration['osl30561']['osl30561_g_pin'], file=output_file)
-    print('  osl30561_dp_pin: \"D%s\" # OSL30561_PIN_DP' % configuration['osl30561']['osl30561_dp_pin'], file=output_file)
-    print('  osl30561_digit1_pin: \"D%s\" # OSL30561_PIN_DIGIT_1' % configuration['osl30561']['osl30561_digit1_pin'], file=output_file)
-    print('  osl30561_digit2_pin: \"D%s\" # OSL30561_PIN_DIGIT_2' % configuration['osl30561']['osl30561_digit2_pin'], file=output_file)
-    print('  osl30561_digit3_pin: \"D%s\" # OSL30561_PIN_DIGIT_3' % configuration['osl30561']['osl30561_digit3_pin'], file=output_file)
+    print('  osl30561_a_pin: \"%s\" # OSL30561_PIN_A' % configuration['osl30561']['osl30561_a_pin'], file=output_file)
+    print('  osl30561_b_pin: \"%s\" # OSL30561_PIN_B' % configuration['osl30561']['osl30561_b_pin'], file=output_file)
+    print('  osl30561_c_pin: \"%s\" # OSL30561_PIN_C' % configuration['osl30561']['osl30561_c_pin'], file=output_file)
+    print('  osl30561_d_pin: \"%s\" # OSL30561_PIN_D' % configuration['osl30561']['osl30561_d_pin'], file=output_file)
+    print('  osl30561_e_pin: \"%s\" # OSL30561_PIN_E' % configuration['osl30561']['osl30561_e_pin'], file=output_file)
+    print('  osl30561_f_pin: \"%s\" # OSL30561_PIN_F' % configuration['osl30561']['osl30561_f_pin'], file=output_file)
+    print('  osl30561_g_pin: \"%s\" # OSL30561_PIN_G' % configuration['osl30561']['osl30561_g_pin'], file=output_file)
+    print('  osl30561_dp_pin: \"%s\" # OSL30561_PIN_DP' % configuration['osl30561']['osl30561_dp_pin'], file=output_file)
+    print('  osl30561_digit1_pin: \"%s\" # OSL30561_PIN_DIGIT_1' % configuration['osl30561']['osl30561_digit1_pin'], file=output_file)
+    print('  osl30561_digit2_pin: \"%s\" # OSL30561_PIN_DIGIT_2' % configuration['osl30561']['osl30561_digit2_pin'], file=output_file)
+    print('  osl30561_digit3_pin: \"%s\" # OSL30561_PIN_DIGIT_3' % configuration['osl30561']['osl30561_digit3_pin'], file=output_file)
     print('# Grove - 4-Digit Display (TM1637)', file=output_file)
     print('grove_tm1637:', file=output_file)
     if checkYamlVal(configuration['grove_tm1637']['use_grove_tm1637']):
         print('  use_grove_tm1637: true # true(使う) , false(使わない)' , file=output_file)
     else:
         print('  use_grove_tm1637: false # true(使う) , false(使わない)' , file=output_file)
-    print('  grove_tm1637_clk_pin: \"D%s\" # GROVE_NSEG_LED_PIN_CLK' % configuration['grove_tm1637']['grove_tm1637_clk_pin'], file=output_file)
-    print('  grove_tm1637_data_pin: \"D%s\" # GROVE_NSEG_LED_PIN_DATA' % configuration['grove_tm1637']['grove_tm1637_data_pin'], file=output_file)
+    print('  grove_tm1637_clk_pin: \"%s\" # GROVE_NSEG_LED_PIN_CLK' % configuration['grove_tm1637']['grove_tm1637_clk_pin'], file=output_file)
+    print('  grove_tm1637_data_pin: \"%s\" # GROVE_NSEG_LED_PIN_DATA' % configuration['grove_tm1637']['grove_tm1637_data_pin'], file=output_file)
     print('# DFRobot DFR0090 (8桁7セグメントLED)', file=output_file)
     print('dfr0090:', file=output_file)
     if checkYamlVal(configuration['dfr0090']['use_dfr0090']):
@@ -1720,9 +1724,9 @@ def saveConfig(output_file_name):
     else:
         print('  use_dfr0090: false # true(使う) , false(使わない)' , file=output_file)
     print('  dfr0090_digits: %s # DFR0090_NUM_OF_DIGITS' % configuration['dfr0090']['dfr0090_digits'], file=output_file)
-    print('  dfr0090_latch_pin: \"D%s\" # DFR0090_LATCH_PIN' % configuration['dfr0090']['dfr0090_latch_pin'], file=output_file)
-    print('  dfr0090_clk_pin: \"D%s\" # DFR0090_CLOCK_PIN' % configuration['dfr0090']['dfr0090_clk_pin'], file=output_file)
-    print('  dfr0090_data_pin: \"D%s\" # DFR0090_DATA_PIN' % configuration['dfr0090']['dfr0090_data_pin'], file=output_file)
+    print('  dfr0090_latch_pin: \"%s\" # DFR0090_LATCH_PIN' % configuration['dfr0090']['dfr0090_latch_pin'], file=output_file)
+    print('  dfr0090_clk_pin: \"%s\" # DFR0090_CLOCK_PIN' % configuration['dfr0090']['dfr0090_clk_pin'], file=output_file)
+    print('  dfr0090_data_pin: \"%s\" # DFR0090_DATA_PIN' % configuration['dfr0090']['dfr0090_data_pin'], file=output_file)
     print('', file=output_file)
     print('#', file=output_file)
     print('# サーボ', file=output_file)
@@ -1732,7 +1736,7 @@ def saveConfig(output_file_name):
         print('  use_servo: true # true(使う) , false(使わない)' , file=output_file)
     else:
         print('  use_servo: false # true(使う) , false(使わない)' , file=output_file)
-    print('  servo_pin: \"D%s\" # SERVO_PIN' % configuration['servo']['servo_pin'], file=output_file)
+    print('  servo_pin: \"%s\" # SERVO_PIN' % configuration['servo']['servo_pin'], file=output_file)
     print('', file=output_file)
     print('#', file=output_file)
     print('# 音声デバイス', file=output_file)
@@ -1743,21 +1747,21 @@ def saveConfig(output_file_name):
         print('  use_speaker: true # true(使う) , false(使わない)' , file=output_file)
     else:
         print('  use_speaker: false # true(使う) , false(使わない)' , file=output_file)
-    print('  speaker_pin: \"D%s\" # SPEAKER_PIN' % configuration['speaker']['servo_pin'], file=output_file)
+    print('  speaker_pin: \"%s\" # SPEAKER_PIN' % configuration['speaker']['speaker_pin'], file=output_file)
     print('# ブザー', file=output_file)
     print('buzzer:', file=output_file)
     if checkYamlVal(configuration['buzzer']['use_buzzer']):
         print('  use_buzzer: true # true(使う) , false(使わない)' , file=output_file)
     else:
         print('  use_buzzer: false # true(使う) , false(使わない)' , file=output_file)
-    print('  buzzer_pin: \"D%s\" # BUZZER_PIN' % configuration['buzzer']['buzzer_pin'], file=output_file)
+    print('  buzzer_pin: \"%s\" # BUZZER_PIN' % configuration['buzzer']['buzzer_pin'], file=output_file)
     print('# MP3 player', file=output_file)
     print('mp3_player:', file=output_file)
     if checkYamlVal(configuration['mp3_player']['use_mp3_player']):
         print('  use_mp3_player: true # true(使う) , false(使わない)' , file=output_file)
     else:
         print('  use_mp3_player: false # true(使う) , false(使わない)' , file=output_file)
-    print('  mp3_player_type: \"D%s\" # 0(Grove MP3 v2.0 / __USE_KT403A_PLAYER__ ), 1(Grove MP3 v3.0 / __USE_WT2003S_PLAYER__ ), 2(Grove MP3 v4.0 / __USE_WT2605C_PLAYER__ ), 3(DFPlayer mini MP3プレイヤーー / __USE_DF_ROBOT_DF_PLAYER_MINI__)' % configuration['mp3_player']['mp3_player_type'], file=output_file)
+    print('  mp3_player_type: %s # 0(Grove MP3 v2.0 / __USE_KT403A_PLAYER__ ), 1(Grove MP3 v3.0 / __USE_WT2003S_PLAYER__ ), 2(Grove MP3 v4.0 / __USE_WT2605C_PLAYER__ ), 3(DFPlayer mini MP3プレイヤーー / __USE_DF_ROBOT_DF_PLAYER_MINI__)' % configuration['mp3_player']['mp3_player_type'], file=output_file)
     print('', file=output_file)
     print('#', file=output_file)
     print('# simple PWM device', file=output_file)
@@ -1767,7 +1771,7 @@ def saveConfig(output_file_name):
         print('  use_pwm: true # true(使う) , false(使わない)' , file=output_file)
     else:
         print('  use_pwm: false # true(使う) , false(使わない)' , file=output_file)
-    print('  pwm_pin: \"D%s\" # PWM_PIN' % configuration['pwm']['pwm_pin'], file=output_file)
+    print('  pwm_pin: \"%s\" # PWM_PIN' % configuration['pwm']['pwm_pin'], file=output_file)
     print('', file=output_file)
     print('#', file=output_file)
     print('# simple digital(ON/OFF) device (like switch)', file=output_file)
@@ -1777,7 +1781,7 @@ def saveConfig(output_file_name):
         print('  use_switch: true # true(使う) , false(使わない)' , file=output_file)
     else:
         print('  use_switch: false # true(使う) , false(使わない)' , file=output_file)
-    print('  switch_pin: \"D%s\" # SWITCH_PIN' % configuration['switch']['switch_pin'], file=output_file)
+    print('  switch_pin: \"%s\" # SWITCH_PIN' % configuration['switch']['switch_pin'], file=output_file)
     print('', file=output_file)
     print('#', file=output_file)
     print('# IR LED remote control device', file=output_file)
@@ -1787,7 +1791,7 @@ def saveConfig(output_file_name):
         print('  use_ir_remote: true # true(使う) , false(使わない)' , file=output_file)
     else:
         print('  use_ir_remote: false # true(使う) , false(使わない)' , file=output_file)
-    print('  ir_remote_pin: \"D%s\" # IR_PIN' % configuration['ir_remote']['ir_remote_pin'], file=output_file)
+    print('  ir_remote_pin: \"%s\" # IR_PIN' % configuration['ir_remote']['ir_remote_pin'], file=output_file)
     print('', file=output_file)
     print('#', file=output_file)
     print('# Graphic display', file=output_file)
@@ -1797,13 +1801,13 @@ def saveConfig(output_file_name):
         print('  use_graphic_display: true # true(使う) , false(使わない)' , file=output_file)
     else:
         print('  use_graphic_display: false # true(使う) , false(使わない)' , file=output_file)
-    print('  graphic_display_type: \"D%s\" # 0(USE_GIGA_DISPLAY_GFX) , 1(USE_BODMER_TFT_ESPI) , 2(USE_ADAFRUIT_GFX & TFT_ILI9341_TYPE_1), 3(USE_ADAFRUIT_GFX & TFT_ILI9341_TYPE_2)' % configuration['graphic_display']['graphic_display_type'], file=output_file)
-    print('  graphic_display_cs_pin: \"D%s\" # TFT_ILI9341_PIN_CS' % configuration['graphic_display']['graphic_display_cs_pin'], file=output_file)
-    print('  graphic_display_rst_pin: \"D%s\" # TFT_ILI9341_PIN_RST' % configuration['graphic_display']['graphic_display_rst_pin'], file=output_file)
-    print('  graphic_display_dc_pin: \"D%s\" # TFT_ILI9341_PIN_DC' % configuration['graphic_display']['graphic_display_dc_pin'], file=output_file)
-    print('  graphic_display_mosi_pin: \"D%s\" # TFT_ILI9341_PIN_MOSI' % configuration['graphic_display']['graphic_display_mosi_pin'], file=output_file)
-    print('  graphic_display_miso_pin: \"D%s\" # TFT_ILI9341_PIN_MISO' % configuration['graphic_display']['graphic_display_miso_pin'], file=output_file)
-    print('  graphic_display_clk_pin: \"D%s\" # TFT_ILI9341_PIN_CLK' % configuration['graphic_display']['graphic_display_clk_pin'], file=output_file)
+    print('  graphic_display_type: %s # 0(USE_GIGA_DISPLAY_GFX) , 1(USE_BODMER_TFT_ESPI) , 2(USE_ADAFRUIT_GFX & TFT_ILI9341_TYPE_1), 3(USE_ADAFRUIT_GFX & TFT_ILI9341_TYPE_2)' % configuration['graphic_display']['graphic_display_type'], file=output_file)
+    print('  graphic_display_cs_pin: \"%s\" # TFT_ILI9341_PIN_CS' % configuration['graphic_display']['graphic_display_cs_pin'], file=output_file)
+    print('  graphic_display_rst_pin: \"%s\" # TFT_ILI9341_PIN_RST' % configuration['graphic_display']['graphic_display_rst_pin'], file=output_file)
+    print('  graphic_display_dc_pin: \"%s\" # TFT_ILI9341_PIN_DC' % configuration['graphic_display']['graphic_display_dc_pin'], file=output_file)
+    print('  graphic_display_mosi_pin: \"%s\" # TFT_ILI9341_PIN_MOSI' % configuration['graphic_display']['graphic_display_mosi_pin'], file=output_file)
+    print('  graphic_display_miso_pin: \"%s\" # TFT_ILI9341_PIN_MISO' % configuration['graphic_display']['graphic_display_miso_pin'], file=output_file)
+    print('  graphic_display_clk_pin: \"%s\" # TFT_ILI9341_PIN_CLK' % configuration['graphic_display']['graphic_display_clk_pin'], file=output_file)
     print('', file=output_file)
     return "Success"
 
@@ -1815,6 +1819,8 @@ def checkYamlVal(val):
 
 # 入力欄の数字確認 isInteger(x) : asciiの数字であることを確認
 def isInteger(x):
+    if isinstance(x,int):
+        return (True, x)
     if isinstance(x,str) and x.isascii() and x.isdecimal():
         return (True, int(x))
     return (False, -1)
@@ -1828,14 +1834,29 @@ def isNumRange(x, min,max):
         return (False, val)
     return (True, val)
 
+# 数字(文字列)が数字の特定の値の範囲に収まっているか否かを判定
+def strIsNumRange(x, min, max):
+    #print(x)
+    #x = ''.join(x.split()) # 空白を削除
+    return isNumRange(x, min, max)
 
-# ピン番号確認 isPinNumber(x) : 範囲は0から53
-def isPinNumber(x):
-    return isNumRange(x, 0, 53)
-
+# ピン番号確認 isPinNumber(x) : Dxxの形式でxxの値の範囲は0から53
+def isPinNumber(str):
+    #print(str)
+    str = ''.join(str.split()) # 空白を削除
+    pattern = r'D(\d+)' # Dで始まり、続いて数字が1つ以上あるパターン
+    result = re.match(pattern, str)
+    #print(result.group(1))
+    if result:
+        num_str = result.group(1) # 数字の部分を抽出
+        #print(num_str)
+        return isNumRange(num_str, 0, 53)
+    else:
+        return (False, -1)
 
 # 入力欄の数字の範囲確認(minのみ) isNumLarger(x,min) : x≧min
 def isNumLarger(x, min):
+    #print(x)
     (flag,val) = isInteger(x)
     if not flag:
         return (False, val)
@@ -1886,6 +1907,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewTOP", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         start_message,
@@ -1952,6 +1975,8 @@ def editWindow(page: ft.Page):
         return ft.View(route = "/viewLoadConfig", controls = [
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         config_select_subtitle,
@@ -2039,6 +2064,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewTOC", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         pageSubTitle,
@@ -2107,6 +2134,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewPlatformNetwork", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         network_type,
@@ -2159,6 +2188,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewPlatformEthernet", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         chipSelectTitle,
@@ -2217,6 +2248,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewPlatformWiFi", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         wifi_ssid,
@@ -2267,6 +2300,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewPlatformRTC", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         rtc_type,
@@ -2320,6 +2355,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewPlatformLED", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         led_flag,
@@ -2369,6 +2406,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewPlatformLedSetting", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         led_pin,
@@ -2425,6 +2464,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewPlatformStorage", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         attention_message,
@@ -2475,6 +2516,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewPlatformStorageSetting", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         sd_chip_select_pin,
@@ -2529,6 +2572,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewSerial", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         attention_message,
@@ -2583,6 +2628,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewLog", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         logfile_flag,
@@ -2637,6 +2684,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewSerialLog", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         serial_log_flag,
@@ -2691,6 +2740,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewLogSetting", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         attention_message,
@@ -2743,6 +2794,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewLogFile", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         attention_message,
@@ -2798,6 +2851,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewDHCP", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         dhcp_flag,
@@ -2851,6 +2906,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewStaticIP", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         attention_message,
@@ -2916,6 +2973,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewNetworkService", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         attention_message,
@@ -2984,6 +3043,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewMQTT", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         mqttBasicTitle,
@@ -3040,6 +3101,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewMQTTauth", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         mqtt_user,
@@ -3090,6 +3153,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewNTP", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         ntp_flag,
@@ -3146,6 +3211,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewWatchDog", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         attention_message,
@@ -3197,6 +3264,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewWatchDogSetting", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         wdt_duration,
@@ -3260,6 +3329,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewCharacterDisplay", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         characterDisplayList,
@@ -3309,6 +3380,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewGroveLcd_RGB_Backlight", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         grove_lcd_flag,
@@ -3359,6 +3432,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewACM1602", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         acm1602ni_flag,
@@ -3374,8 +3449,6 @@ def editWindow(page: ft.Page):
             )   
         ])
 
-
-
     def createViewLiquidCrystalLibrary(): # Liquid Crystal Library LCD (SC1602/SC2004)
         def icon_clicked(e):
             global PORT, url_header
@@ -3390,27 +3463,27 @@ def editWindow(page: ft.Page):
                 checkResult.value = ""
                 (flag, val) = isPinNumber(liquid_crystal_rs_pin.value)
                 if not flag:
-                    checkResult.value = "RSピン接続先にArduinoの端子番号(0～53)を指定してください．\n"
+                    checkResult.value = "RSピン接続先にArduinoの端子番号(D0～D53)を指定してください．\n"
                     return
                 (flag, val) = isPinNumber(liquid_crystal_es_pin.value)
                 if not flag:
-                    checkResult.value = checkResult.value + "ESピン接続先にArduinoの端子番号(0～53)を指定してください．\n"
+                    checkResult.value = checkResult.value + "ESピン接続先にArduinoの端子番号(D0～D53)を指定してください．\n"
                     return
                 (flag, val) = isPinNumber(liquid_crystal_d4_pin.value)
                 if not flag:
-                    checkResult.value = checkResult.value + "D4ピン接続先にArduinoの端子番号(0～53)を指定してください．\n"
+                    checkResult.value = checkResult.value + "D4ピン接続先にArduinoの端子番号(D0～D53)を指定してください．\n"
                     return
                 (flag, val) = isPinNumber(liquid_crystal_d5_pin.value)
                 if not flag:
-                    checkResult.value = checkResult.value + "D5ピン接続先にArduinoの端子番号(0～53)を指定してください．\n"
+                    checkResult.value = checkResult.value + "D5ピン接続先にArduinoの端子番号(D0～D53)を指定してください．\n"
                     return
                 (flag, val) = isPinNumber(liquid_crystal_d6_pin.value)
                 if not flag:
-                    checkResult.value = checkResult.value + "D6ピン接続先にArduinoの端子番号(0～53)を指定してください．\n"
+                    checkResult.value = checkResult.value + "D6ピン接続先にArduinoの端子番号(D0～D53)を指定してください．\n"
                     return
                 (flag, val) = isPinNumber(liquid_crystal_d7_pin.value)
                 if not flag:
-                    checkResult.value = checkResult.value + "D7ピン接続先にArduinoの端子番号(0～53)を指定してください．\n"
+                    checkResult.value = checkResult.value + "D7ピン接続先にArduinoの端子番号(D0～D53)を指定してください．\n"
                     return
                 await page.push_route(destination)
 
@@ -3451,12 +3524,14 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewLiquidCrystalLibrary", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         liquid_crystal_flag,
                         ft.Divider(height=2, color="black"),
                         liquid_crystal_type,
-                        ft.Text("各ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
+                        ft.Text("各ピンの接続先端子番号指定(D0～D53)", weight=ft.FontWeight.BOLD, size=20),
                         liquid_crystal_rs_pin,
                         liquid_crystal_es_pin,
                         liquid_crystal_d4_pin,
@@ -3550,6 +3625,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewLED", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         ledList,
@@ -3579,7 +3656,7 @@ def editWindow(page: ft.Page):
                 checkResult.value = ""
                 (flag, val) = isPinNumber(simple_mono_led_pin.value)
                 if not flag:
-                    checkResult.value = "RSピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    checkResult.value = "RSピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                     return
                 await page.push_route(destination)
 
@@ -3623,13 +3700,15 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewMonoLED", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         attention_message,
                         simple_mono_led_flag,
                         ft.Divider(height=2, color="black"),
                         simple_mono_led_type,
-                        ft.Text("ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
+                        ft.Text("ピンの接続先端子番号指定(D0～D53)", weight=ft.FontWeight.BOLD, size=20),
                         simple_mono_led_pin,
                         checkResult,
                         ft.Divider(height=2, color="black"),
@@ -3659,15 +3738,15 @@ def editWindow(page: ft.Page):
                 checkResult.value = ""
                 (flag, val) = isPinNumber(simple_color_led_red_pin.value)
                 if not flag:
-                    checkResult.value = "Rピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    checkResult.value = "Rピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                     return
                 (flag, val) = isPinNumber(simple_color_led_green_pin.value)
                 if not flag:
-                    checkResult.value = "Gピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    checkResult.value = "Gピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                     return
                 (flag, val) = isPinNumber(simple_color_led_blue_pin.value)
                 if not flag:
-                    checkResult.value = "Bピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    checkResult.value = "Bピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                     return
                 await page.push_route(destination)
 
@@ -3711,13 +3790,15 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewAKcommonLED", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         attention_message,
                         simple_color_led_flag,
                         ft.Divider(height=2, color="black"),
                         simple_color_led_type,
-                        ft.Text("各ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
+                        ft.Text("各ピンの接続先端子番号指定(D0～D53)", weight=ft.FontWeight.BOLD, size=20),
                         simple_color_led_red_pin,
                         simple_color_led_green_pin,
                         simple_color_led_blue_pin,
@@ -3749,11 +3830,11 @@ def editWindow(page: ft.Page):
                 checkResult.value = ""
                 (flag, val) = isPinNumber(grove_led_bar_clk_pin.value)
                 if not flag:
-                    checkResult.value = "Clockピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    checkResult.value = "Clockピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                     return
                 (flag, val) = isPinNumber(grove_led_bar_data_pin.value)
                 if not flag:
-                    checkResult.value = "Dataピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    checkResult.value = "Dataピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                     return
                 await page.push_route(destination)
 
@@ -3762,7 +3843,7 @@ def editWindow(page: ft.Page):
             destination = "/viewTOC"
             checkResult.value = ""
             if True == checkTFvalue(grove_led_bar_flag.value):
-                (flag, val) = isNumRange(grove_led_bar_leds.value, 1, 10)
+                (flag, val) = strIsNumRange(grove_led_bar_leds.value, 1, 10)
                 if not flag:
                     checkResult.value = "使用するLEDの数(1～10)を指定してください．"
                     return
@@ -3775,7 +3856,7 @@ def editWindow(page: ft.Page):
             destination = "/viewLED"
             checkResult.value = ""
             if True == checkTFvalue(grove_led_bar_flag.value):
-                (flag, val) = isNumRange(grove_led_bar_leds.value, 1, 10)
+                (flag, val) = strIsNumRange(grove_led_bar_leds.value, 1, 10)
                 if not flag:
                     checkResult.value = "使用するLEDの数(1～10)を指定してください．"
                     return
@@ -3798,6 +3879,7 @@ def editWindow(page: ft.Page):
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
         )
+        attention_message = ft.Text("注 : 端子番号の指定には条件があるため，ヘルプ(右上の「?」をクリック)を参照の上，入力してください．", color=ft.Colors.RED)
         checkResult = ft.Text()
         toc_button = ft.Button(content="目次", on_click=toc_button_clicked)
         back_button = ft.Button(content="戻る", on_click=back_button_clicked)
@@ -3806,17 +3888,23 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewGroveLedBar", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         grove_led_bar_flag,
                         ft.Divider(height=2, color="black"),
                         ft.Text("使用するLED個数(1～10)", weight=ft.FontWeight.BOLD, size=20),
                         grove_led_bar_leds,
+                        ft.Divider(height=2, color="black"),
                         ft.Text("点灯する方向", weight=ft.FontWeight.BOLD, size=20),
                         grove_led_bar_direction,
-                        ft.Text("各ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
+                        ft.Divider(height=2, color="black"),
+                        ft.Text("各ピンの接続先端子番号指定(D0～D53)", weight=ft.FontWeight.BOLD, size=20),
                         grove_led_bar_clk_pin,
                         grove_led_bar_data_pin,
+                        attention_message,
+                        ft.Divider(height=2, color="black"),
                         checkResult,
                         ft.Divider(height=2, color="black"),
                         ft.Row(
@@ -3845,11 +3933,11 @@ def editWindow(page: ft.Page):
                 checkResult.value = ""
                 (flag, val) = isPinNumber(grove_led_circular_clk_pin.value)
                 if not flag:
-                    checkResult.value = "Clockピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    checkResult.value = "Clockピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                     return
                 (flag, val) = isPinNumber(grove_led_circular_data_pin.value)
                 if not flag:
-                    checkResult.value = "Dataピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    checkResult.value = "Dataピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                     return
                 await page.push_route(destination)
 
@@ -3858,7 +3946,7 @@ def editWindow(page: ft.Page):
             destination = "/viewTOC"
             checkResult.value = ""
             if True == checkTFvalue(grove_led_circular_flag.value):
-                (flag, val) = isNumRange(grove_led_circular_leds.value, 1, 24)
+                (flag, val) = strIsNumRange(grove_led_circular_leds.value, 1, 24)
                 if not flag:
                     checkResult.value = "使用するLEDの数(1～24)を指定してください．"
                     return
@@ -3871,7 +3959,7 @@ def editWindow(page: ft.Page):
             destination = "/viewLED"
             checkResult.value = ""
             if True == checkTFvalue(grove_led_circular_flag.value):
-                (flag, val) = isNumRange(grove_led_circular_leds.value, 1, 24)
+                (flag, val) = strIsNumRange(grove_led_circular_leds.value, 1, 24)
                 if not flag:
                     checkResult.value = "使用するLEDの数(1～24)を指定してください．"
                     return
@@ -3894,6 +3982,7 @@ def editWindow(page: ft.Page):
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
         )
+        attention_message = ft.Text("注 : 端子番号の指定には条件があるため，ヘルプ(右上の「?」をクリック)を参照の上，入力してください．", color=ft.Colors.RED)
         checkResult = ft.Text()
         toc_button = ft.Button(content="目次", on_click=toc_button_clicked)
         back_button = ft.Button(content="戻る", on_click=back_button_clicked)
@@ -3902,17 +3991,23 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewGroveLedCircular", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         grove_led_circular_flag,
                         ft.Divider(height=2, color="black"),
                         ft.Text("使用するLED個数(1～24)", weight=ft.FontWeight.BOLD, size=20),
                         grove_led_circular_leds,
+                        ft.Divider(height=2, color="black"),
                         ft.Text("点灯する方向", weight=ft.FontWeight.BOLD, size=20),
                         grove_led_circular_direction,
-                        ft.Text("各ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
+                        ft.Divider(height=2, color="black"),
+                        ft.Text("各ピンの接続先端子番号指定(D0～D53)", weight=ft.FontWeight.BOLD, size=20),
                         grove_led_circular_clk_pin,
                         grove_led_circular_data_pin,
+                        attention_message,
+                        ft.Divider(height=2, color="black"),
                         checkResult,
                         ft.Divider(height=2, color="black"),
                         ft.Row(
@@ -3941,11 +4036,11 @@ def editWindow(page: ft.Page):
                 checkResult.value = ""
                 (flag, val) = isPinNumber(grove_chainable_led_clk_pin.value)
                 if not flag:
-                    checkResult.value = "Clockピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    checkResult.value = "Clockピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                     return
                 (flag, val) = isPinNumber(grove_chainable_led_data_pin.value)
                 if not flag:
-                    checkResult.value = "Dataピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    checkResult.value = "Dataピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                     return
                 await page.push_route(destination)
 
@@ -3990,6 +4085,7 @@ def editWindow(page: ft.Page):
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
         )
+        attention_message = ft.Text("注 : 端子番号の指定には条件があるため，ヘルプ(右上の「?」をクリック)を参照の上，入力してください．", color=ft.Colors.RED)
         checkResult = ft.Text()
         toc_button = ft.Button(content="目次", on_click=toc_button_clicked)
         back_button = ft.Button(content="戻る", on_click=back_button_clicked)
@@ -3998,15 +4094,20 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewGroveChainableLED", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         grove_chainable_led_flag,
                         ft.Divider(height=2, color="black"),
                         ft.Text("使用するLED個数(1以上)", weight=ft.FontWeight.BOLD, size=20),
                         grove_chainable_led_leds,
-                        ft.Text("各ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
+                        ft.Divider(height=2, color="black"),
+                        ft.Text("各ピンの接続先端子番号指定(D0～D53)", weight=ft.FontWeight.BOLD, size=20),
                         grove_chainable_led_clk_pin,
                         grove_chainable_led_data_pin,
+                        attention_message,
+                        ft.Divider(height=2, color="black"),
                         checkResult,
                         ft.Divider(height=2, color="black"),
                         ft.Row(
@@ -4035,7 +4136,7 @@ def editWindow(page: ft.Page):
                 checkResult.value = ""
                 (flag, val) = isPinNumber(adafuit_neopixel_pin.value)
                 if not flag:
-                    checkResult.value = "ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                    checkResult.value = "ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                     return
                 await page.push_route(destination)
 
@@ -4088,13 +4189,15 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewAdafruitNeoPixel", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         adafuit_neopixel_flag,
                         ft.Divider(height=2, color="black"),
                         ft.Text("使用するLED個数(1以上)", weight=ft.FontWeight.BOLD, size=20),
                         adafuit_neopixel_leds,
-                        ft.Text("ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
+                        ft.Text("ピンの接続先端子番号指定(D0～D53)", weight=ft.FontWeight.BOLD, size=20),
                         adafuit_neopixel_pin,
                         checkResult,
                         ft.Divider(height=2, color="black"),
@@ -4124,75 +4227,75 @@ def editWindow(page: ft.Page):
             checkResult.value = ""
             (flag, val) = isPinNumber(osl12306_16_a1_pin.value)
             if not flag:
-                checkResult.value = "A1ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "A1ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl12306_16_a2_pin.value)
             if not flag:
-                checkResult.value = "A2ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "A2ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl12306_16_b_pin.value)
             if not flag:
-                checkResult.value = "Bピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Bピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl12306_16_c_pin.value)
             if not flag:
-                checkResult.value = "Cピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Cピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl12306_16_d1_pin.value)
             if not flag:
-                checkResult.value = "D1ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "D1ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl12306_16_d2_pin.value)
             if not flag:
-                checkResult.value = "D2ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "D2ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl12306_16_e_pin.value)
             if not flag:
-                checkResult.value = "Eピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Eピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl12306_16_f_pin.value)
             if not flag:
-                checkResult.value = "Fピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Fピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl12306_16_g1_pin.value)
             if not flag:
-                checkResult.value = "G1ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "G1ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl12306_16_g2_pin.value)
             if not flag:
-                checkResult.value = "G2ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "G2ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl12306_16_j_pin.value)
             if not flag:
-                checkResult.value = "Jピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Jピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl12306_16_k_pin.value)
             if not flag:
-                checkResult.value = "Kピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Kピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl12306_16_l_pin.value)
             if not flag:
-                checkResult.value = "Lピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Lピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl12306_16_m_pin.value)
             if not flag:
-                checkResult.value = "Mピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Mピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl12306_16_n_pin.value)
             if not flag:
-                checkResult.value = "Nピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Nピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl12306_16_p_pin.value)
             if not flag:
-                checkResult.value = "Pピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Pピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl12306_16_dp_pin.value)
             if not flag:
-                checkResult.value = "DPピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "DPピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl12306_16_digit_pin.value)
             if not flag:
-                checkResult.value = "桁表示(digit)ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "桁表示(digit)ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             await page.push_route(destination)
 
@@ -4235,12 +4338,14 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewOSL12306_16", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         osl12306_16_flag,
                         ft.Divider(height=2, color="black"),
                         osl12306_16_type,
-                        ft.Text("各ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
+                        ft.Text("各ピンの接続先端子番号指定(D0～D53)", weight=ft.FontWeight.BOLD, size=20),
                         osl12306_16_a1_pin,
                         osl12306_16_a2_pin,
                         osl12306_16_b_pin,
@@ -4282,78 +4387,78 @@ def editWindow(page: ft.Page):
         async def checkPinNumber(destination):
             global osl20541_flag, osl20541_a_pin, osl20541_b_pin, osl20541_c_pin, osl20541_d_pin, osl20541_e_pin, osl20541_f_pin, osl20541_g1_pin, osl20541_g2_pin, osl20541_h_pin, osl20541_j_pin, osl20541_k_pin, osl20541_l_pin, osl20541_m_pin, osl20541_n_pin, osl20541_dp_pin, osl20541_digit1_pin, osl20541_digit2_pin
             if False == checkTFvalue(osl20541_flag.value):
-                page.push_route(destination)
+                await page.push_route(destination)
                 return
             checkResult.value = ""
             (flag, val) = isPinNumber(osl20541_a_pin.value)
             if not flag:
-                checkResult.value = "Aピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Aピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl20541_b_pin.value)
             if not flag:
-                checkResult.value = "Bピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Bピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl20541_c_pin.value)
             if not flag:
-                checkResult.value = "Cピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Cピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl20541_d_pin.value)
             if not flag:
-                checkResult.value = "Dピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Dピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl20541_e_pin.value)
             if not flag:
-                checkResult.value = "Eピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Eピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl20541_f_pin.value)
             if not flag:
-                checkResult.value = "Fピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Fピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl20541_g1_pin.value)
             if not flag:
-                checkResult.value = "G1ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "G1ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl20541_g2_pin.value)
             if not flag:
-                checkResult.value = "G2ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "G2ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl20541_h_pin.value)
             if not flag:
-                checkResult.value = "Hピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Hピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl20541_j_pin.value)
             if not flag:
-                checkResult.value = "Jピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Jピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl20541_k_pin.value)
             if not flag:
-                checkResult.value = "Kピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Kピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl20541_l_pin.value)
             if not flag:
-                checkResult.value = "Lピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Lピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl20541_m_pin.value)
             if not flag:
-                checkResult.value = "Mピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Mピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl20541_n_pin.value)
             if not flag:
-                checkResult.value = "Nピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Nピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl20541_dp_pin.value)
             if not flag:
-                checkResult.value = "DPピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "DPピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl20541_digit1_pin.value)
             if not flag:
-                checkResult.value = "1桁目表示(digit1)ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "1桁目表示(digit1)ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl20541_digit2_pin.value)
             if not flag:
-                checkResult.value = "2桁目表示(digit2)ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "2桁目表示(digit2)ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
-            page.push_route(destination)
+            await page.push_route(destination)
 
         async def toc_button_clicked(e):
             global osl20541_flag
@@ -4361,7 +4466,7 @@ def editWindow(page: ft.Page):
             if True == checkTFvalue(osl20541_flag.value):
                 await checkPinNumber(destination)
             else:
-                page.push_route(destination)
+                await page.push_route(destination)
 
         async def back_button_clicked(e):
             global osl20541_flag
@@ -4369,7 +4474,7 @@ def editWindow(page: ft.Page):
             if True == checkTFvalue(osl20541_flag.value):
                 await checkPinNumber(destination)
             else:
-                page.push_route(destination)
+                await page.push_route(destination)
 
         async def save_button_clicked(e):
             await page.push_route("/viewSaveConfig")
@@ -4394,12 +4499,14 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewOSL20541", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         osl20541_flag,
                         ft.Divider(height=2, color="black"),
                         osl20541_type,
-                        ft.Text("各ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
+                        ft.Text("各ピンの接続先端子番号指定(D0～D53)", weight=ft.FontWeight.BOLD, size=20),
                         osl20541_a_pin,
                         osl20541_b_pin,
                         osl20541_c_pin,
@@ -4440,71 +4547,71 @@ def editWindow(page: ft.Page):
         async def checkPinNumber(destination):
             global osl30561_flag, osl30561_a_pin, osl30561_b_pin, osl30561_c_pin, osl30561_d_pin, osl30561_e_pin, osl30561_f_pin, osl30561_g_pin, osl30561_dp_pin, osl30561_digit1_pin, osl30561_digit2_pin, osl30561_digit3_pin
             if False == checkTFvalue(osl30561_flag.value):
-                page.push_route(destination)
+                await page.push_route(destination)
                 return
             checkResult.value = ""
             (flag, val) = isPinNumber(osl30561_a_pin.value)
             if not flag:
-                checkResult.value = "Aピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Aピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl30561_b_pin.value)
             if not flag:
-                checkResult.value = "Bピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Bピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl30561_c_pin.value)
             if not flag:
-                checkResult.value = "Cピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Cピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl30561_d_pin.value)
             if not flag:
-                checkResult.value = "Dピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Dピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl30561_e_pin.value)
             if not flag:
-                checkResult.value = "Eピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Eピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl30561_f_pin.value)
             if not flag:
-                checkResult.value = "Fピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Fピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl30561_g_pin.value)
             if not flag:
-                checkResult.value = "Gピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Gピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl30561_dp_pin.value)
             if not flag:
-                checkResult.value = "DPピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "DPピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl30561_digit1_pin.value)
             if not flag:
-                checkResult.value = "1桁目表示(digit1)ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "1桁目表示(digit1)ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl30561_digit2_pin.value)
             if not flag:
-                checkResult.value = "2桁目表示(digit2)ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "2桁目表示(digit2)ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(osl30561_digit3_pin.value)
             if not flag:
-                checkResult.value = "3桁目表示(digit3)ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "3桁目表示(digit3)ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
-            page.push_route(destination)
+            await page.push_route(destination)
 
         async def toc_button_clicked(e):
             global osl30561_flag
             destination = "/viewTOC"
             if True == checkTFvalue(osl30561_flag.value):
-                checkPinNumber(destination)
+                await checkPinNumber(destination)
             else:
-                page.push_route(destination)
+                await page.push_route(destination)
 
         async def back_button_clicked(e):
             global osl30561_flag
             destination = "/viewLED"
             if True == checkTFvalue(osl30561_flag.value):
-                checkPinNumber(destination)
+                await checkPinNumber(destination)
             else:
-                page.push_route(destination)
-    
+                await page.push_route(destination)
+
         async def save_button_clicked(e):
             await page.push_route("/viewSaveConfig")
 
@@ -4528,12 +4635,14 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewOSL30561", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         osl30561_flag,
                         ft.Divider(height=2, color="black"),
                         osl30561_type,
-                        ft.Text("各ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
+                        ft.Text("各ピンの接続先端子番号指定(D0～D53)", weight=ft.FontWeight.BOLD, size=20),
                         osl30561_a_pin,
                         osl30561_b_pin,
                         osl30561_c_pin,
@@ -4573,11 +4682,11 @@ def editWindow(page: ft.Page):
             checkResult.value = ""
             (flag, val) = isPinNumber(grove_tm1637_clk_pin.value)
             if not flag:
-                checkResult.value = "Clockピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Clockピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(grove_tm1637_data_pin.value)
             if not flag:
-                checkResult.value = "Dataピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Dataピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             await page.push_route(destination)
 
@@ -4585,7 +4694,7 @@ def editWindow(page: ft.Page):
             global grove_tm1637_flag
             destination = "/viewTOC"
             if True == checkTFvalue(grove_tm1637_flag.value):
-                checkPinNumber(destination)
+                await checkPinNumber(destination)
             else:
                 await page.push_route(destination)
 
@@ -4593,7 +4702,7 @@ def editWindow(page: ft.Page):
             global grove_tm1637_flag
             destination = "/viewLED"
             if True == checkTFvalue(grove_tm1637_flag.value):
-                checkPinNumber(destination)
+                await checkPinNumber(destination)
             else:
                 await page.push_route(destination)
     
@@ -4612,6 +4721,7 @@ def editWindow(page: ft.Page):
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
         )
+        attention_message = ft.Text("注 : 端子番号の指定には条件があるため，ヘルプ(右上の「?」をクリック)を参照の上，入力してください．", color=ft.Colors.RED)
         checkResult = ft.Text()
         toc_button = ft.Button(content="目次", on_click=toc_button_clicked)
         back_button = ft.Button(content="戻る", on_click=back_button_clicked)
@@ -4620,13 +4730,17 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewGrove4DigitDisplay", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         grove_tm1637_flag,
                         ft.Divider(height=2, color="black"),
-                        ft.Text("各ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
+                        ft.Text("各ピンの接続先端子番号指定(D0～D53)", weight=ft.FontWeight.BOLD, size=20),
                         grove_tm1637_clk_pin,
                         grove_tm1637_data_pin,
+                        attention_message,
+                        ft.Divider(height=2, color="black"),
                         checkResult,
                         ft.Divider(height=2, color="black"),
                         ft.Row(
@@ -4655,15 +4769,15 @@ def editWindow(page: ft.Page):
             checkResult.value = ""
             (flag, val) = isPinNumber(dfr0090_latch_pin.value)
             if not flag:
-                checkResult.value = "Latchピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Latchピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(dfr0090_clk_pin.value)
             if not flag:
-                checkResult.value = "Clockピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Clockピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(dfr0090_data_pin.value)
             if not flag:
-                checkResult.value = "Dataピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Dataピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             await page.push_route(destination)
 
@@ -4716,13 +4830,15 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewDFRobotDFR0090", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         dfr0090_flag,
                         ft.Divider(height=2, color="black"),
                         ft.Text("使用する桁数(1以上)", weight=ft.FontWeight.BOLD, size=20),
                         dfr0090_digits,
-                        ft.Text("各ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
+                        ft.Text("各ピンの接続先端子番号指定(D0～D53)", weight=ft.FontWeight.BOLD, size=20),
                         dfr0090_latch_pin,
                         dfr0090_clk_pin,
                         dfr0090_data_pin,
@@ -4754,7 +4870,7 @@ def editWindow(page: ft.Page):
             checkResult.value = ""
             (flag, val) = isPinNumber(servo_pin.value)
             if not flag:
-                checkResult.value = "ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             await page.push_route(destination)
 
@@ -4788,11 +4904,13 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewServo", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         servo_flag,
                         ft.Divider(height=2, color="black"),
-                        ft.Text("ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
+                        ft.Text("ピンの接続先端子番号指定(D0～D53)", weight=ft.FontWeight.BOLD, size=20),
                         servo_pin,
                         checkResult,
                         ft.Divider(height=2, color="black"),
@@ -4854,6 +4972,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewSoundDevice", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         soundDeviceList,
@@ -4884,7 +5004,7 @@ def editWindow(page: ft.Page):
             checkResult.value = ""
             (flag, val) = isPinNumber(speaker_pin.value)
             if not flag:
-                checkResult.value = "ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             await page.push_route(destination)
 
@@ -4923,11 +5043,13 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewSpeaker", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         speaker_flag,
                         ft.Divider(height=2, color="black"),
-                        ft.Text("ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
+                        ft.Text("ピンの接続先端子番号指定(D0～D53)", weight=ft.FontWeight.BOLD, size=20),
                         speaker_pin,
                         checkResult,
                         ft.Divider(height=2, color="black"),
@@ -4955,7 +5077,7 @@ def editWindow(page: ft.Page):
             checkResult.value = ""
             (flag, val) = isPinNumber(buzzer_pin.value)
             if not flag:
-                checkResult.value = "ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             await page.push_route(destination)
 
@@ -4994,11 +5116,13 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewBuzzer", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         buzzer_flag,
                         ft.Divider(height=2, color="black"),
-                        ft.Text("ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
+                        ft.Text("ピンの接続先端子番号指定(D0～D53)", weight=ft.FontWeight.BOLD, size=20),
                         buzzer_pin,
                         checkResult,
                         ft.Divider(height=2, color="black"),
@@ -5043,6 +5167,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewMP3Player", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         mp3_player_flag,
@@ -5074,7 +5200,7 @@ def editWindow(page: ft.Page):
             checkResult.value = ""
             (flag, val) = isPinNumber(pwm_pin.value)
             if not flag:
-                checkResult.value = "ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             await page.push_route(destination)
 
@@ -5113,11 +5239,13 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewSimplePWM", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         pwm_flag,
                         ft.Divider(height=2, color="black"),
-                        ft.Text("ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
+                        ft.Text("ピンの接続先端子番号指定(D0～D53)", weight=ft.FontWeight.BOLD, size=20),
                         pwm_pin,
                         checkResult,
                         ft.Divider(height=2, color="black"),
@@ -5145,7 +5273,7 @@ def editWindow(page: ft.Page):
             checkResult.value = ""
             (flag, val) = isPinNumber(switch_pin.value)
             if not flag:
-                checkResult.value = "ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             await page.push_route(destination)
 
@@ -5184,11 +5312,13 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewSimpleDigital", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         switch_flag,
                         ft.Divider(height=2, color="black"),
-                        ft.Text("ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
+                        ft.Text("ピンの接続先端子番号指定(D0～D53)", weight=ft.FontWeight.BOLD, size=20),
                         switch_pin,
                         checkResult,
                         ft.Divider(height=2, color="black"),
@@ -5216,7 +5346,7 @@ def editWindow(page: ft.Page):
             checkResult.value = ""
             (flag, val) = isPinNumber(ir_remote_pin.value)
             if not flag:
-                checkResult.value = "ピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "ピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             await page.push_route(destination)
 
@@ -5255,11 +5385,13 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewIrRemoteController", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         ir_remote_flag,
                         ft.Divider(height=2, color="black"),
-                        ft.Text("ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
+                        ft.Text("ピンの接続先端子番号指定(D0～D53)", weight=ft.FontWeight.BOLD, size=20),
                         ir_remote_pin,
                         checkResult,
                         ft.Divider(height=2, color="black"),
@@ -5281,22 +5413,23 @@ def editWindow(page: ft.Page):
 
         def graphic_display_type_changed(e):
             global graphic_display_type, graphic_display_cs_pin, graphic_display_rst_pin, graphic_display_dc_pin, graphic_display_mosi_pin, graphic_display_miso_pin, graphic_display_clk_pin
+            #print(graphic_display_type.value)
             configuration['graphic_display']['graphic_display_type'] = graphic_display_type.value
-            if graphic_display_type.value ==0:
+            if graphic_display_type.value =='0':
                 graphic_display_cs_pin.disabled=True
                 graphic_display_rst_pin.disabled=True
                 graphic_display_dc_pin.disabled=True
                 graphic_display_mosi_pin.disabled=True
                 graphic_display_miso_pin.disabled=True
                 graphic_display_clk_pin.disabled=True
-            if graphic_display_type.value ==1:
+            if graphic_display_type.value =='1':
                 graphic_display_cs_pin.disabled=False
                 graphic_display_rst_pin.disabled=False
                 graphic_display_dc_pin.disabled=False
                 graphic_display_mosi_pin.disabled=True
                 graphic_display_miso_pin.disabled=True
                 graphic_display_clk_pin.disabled=True
-            if graphic_display_type.value ==1:
+            if graphic_display_type.value =='2':
                 graphic_display_cs_pin.disabled=False
                 graphic_display_rst_pin.disabled=False
                 graphic_display_dc_pin.disabled=False
@@ -5313,27 +5446,27 @@ def editWindow(page: ft.Page):
             checkResult.value = ""
             (flag, val) = isPinNumber(graphic_display_cs_pin.value)
             if not flag:
-                checkResult.value = "チップセレクトピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "チップセレクトピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(graphic_display_rst_pin.value)
             if not flag:
-                checkResult.value = "リセットピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "リセットピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(graphic_display_dc_pin.value)
             if not flag:
-                checkResult.value = "DCピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "DCピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(graphic_display_mosi_pin.value)
             if not flag:
-                checkResult.value = "MOSIピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "MOSIピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(graphic_display_miso_pin.value)
             if not flag:
-                checkResult.value = "MISOピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "MISOピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(graphic_display_clk_pin.value)
             if not flag:
-                checkResult.value = "Clockピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "Clockピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             await page.push_route(destination)
 
@@ -5345,15 +5478,15 @@ def editWindow(page: ft.Page):
             checkResult.value = ""
             (flag, val) = isPinNumber(graphic_display_cs_pin.value)
             if not flag:
-                checkResult.value = "チップセレクトピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "チップセレクトピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(graphic_display_rst_pin.value)
             if not flag:
-                checkResult.value = "リセットピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "リセットピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             (flag, val) = isPinNumber(graphic_display_dc_pin.value)
             if not flag:
-                checkResult.value = "DCピン接続先にArduinoの端子番号(0～53)を指定してください．"
+                checkResult.value = "DCピン接続先にArduinoの端子番号(D0～D53)を指定してください．"
                 return
             await page.push_route(destination)
 
@@ -5399,13 +5532,15 @@ def editWindow(page: ft.Page):
         )
         attention_message = ft.Text("グラフィックディスプレイの種類によって，接続先を指定する必要があるピンが異なります．詳しくはディスプレイの技術情報を参照してください．")
         checkResult = ft.Text()
-        graphic_display_type.on_change = graphic_display_type_changed
+        graphic_display_type.on_select = graphic_display_type_changed
         toc_button = ft.Button(content="目次", on_click=toc_button_clicked)
         save_button = ft.Button(content="保存", on_click=save_button_clicked)
         finish_button = ft.Button(content="閉じる", on_click=finish_button_clicked)
         return ft.View(route="/viewGraphicDisplay", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         graphic_display_flag,
@@ -5413,7 +5548,7 @@ def editWindow(page: ft.Page):
                         graphic_display_type,
                         ft.Divider(height=2, color="black"),
                         attention_message,
-                        ft.Text("各ピンの接続先端子番号指定(0～53)", weight=ft.FontWeight.BOLD, size=20),
+                        ft.Text("各ピンの接続先端子番号指定(D0～D53)", weight=ft.FontWeight.BOLD, size=20),
                         graphic_display_cs_pin,
                         graphic_display_rst_pin,
                         graphic_display_dc_pin,
@@ -5439,7 +5574,7 @@ def editWindow(page: ft.Page):
             webbrowser.open(url)
 
         def save_button_clicked(e):
-            global output_file_name, warning_message
+            global output_file_name #, warning_message
             if (output_file_name=="") or (output_file_name=="Canceled."):
                 warning_message.value = "Please select output file."
                 warning_message.update()
@@ -5455,7 +5590,7 @@ def editWindow(page: ft.Page):
 
         async def pick_output_file_dialog(e: ft.Event[ft.Button]):
             global output_file_name#, selected_output_file
-            output_file_name = await ft.FilePicker().pick_files(allow_multiple=False)
+            output_file_name = await ft.FilePicker().save_file()
             if output_file_name == "":
                 selected_output_file.value = "キャンセルされました．"
             else:
@@ -5485,6 +5620,8 @@ def editWindow(page: ft.Page):
         return ft.View(route="/viewSaveConfig", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
                         ft.Text("出力ファイル", weight=ft.FontWeight.BOLD, size=20),
@@ -5655,6 +5792,8 @@ def editWindow(page: ft.Page):
 
     page.title = "アクチュエータ端末仕様定義"
     page.on_route_change = route_change
+    page.window.height = 600
+    page.autoscroll = True
     asyncio.create_task(page.push_route("/viewTOP"))
 
 def errorWindow(page: ft.Page):
@@ -5662,13 +5801,15 @@ def errorWindow(page: ft.Page):
         await page.window.destroy()
     global error
     page.title = "Error"
-    page.window_width = 400
-    page.window_height = 500
+    page.window.width = 400
+    page.window.height = 500
     page.autoscroll = True
     finish_button = ft.Button(content="終了", on_click=finish_button_clicked)
     page.add(
         ft.SafeArea(
             content=ft.Column(
+                height=550,
+                scroll=ft.ScrollMode.ALWAYS,
                 controls=[
                     ft.AppBar(title=ft.Text("重大なエラー"), bgcolor=ft.Colors.RED),
                     ft.Text(error),

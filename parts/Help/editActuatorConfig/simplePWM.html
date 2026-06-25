@@ -6,19 +6,36 @@
 </head>
 <body>
   <h1>単純PWMデバイス</h1>
-<pre>
+<p>
 端子電圧のアナログ制御で動作が変化するようなデバイス(例:LED)．
-</pre>
+</p>
 
 
 
-<pre>
+<p>
 ここで入力するのは，以下の2項目である．
-</pre>
+</p>
 <ul>
 <li>このデバイスを使うか否か</li>
-<li>制御端子を接続するPWM制御可能なArduinoのピン番号("D12"のような形式)</li>
+<li>このデバイスを接続するPWM制御可能なArduinoのピン番号("D12"のような形式)</li>
 </ul>
+
+
+<h2>ArduinoのPWM対応端子について</h2>
+<p>下図はUno R4のデジタル端子のpinoutです．デジタル端子2番(D2)と3番(D3)を比較すると，3番は「～D3」と記載されている．このように，「～」が端子名(D+数字)の前についている端子はPWM機能に対応している．</p>
+<img src="images/PWM_example.png" alt="Uno R4のデジタル端子側のpinout切り抜き"  height="450px">
+
+
+<h2>主要な機種のpinout</h2>
+<h3>Giga R1 WiFi</h3>
+<img src="images/Giga_R1_WiFi_pinout.png" alt="Giga R1 WiFi pinout"  height="1000px">
+
+<h3>Uno R4 WiFi</h3>
+<img src="images/Uno_R4_WiFi_pinout.png" alt="Uno R4 WiFi pinout"  height="1000px">
+
+<h3>Nano ESP32</h3>
+<img src="images/Nano_ESP32_pinout.png" alt="Uno R4 WiFi pinout"  height="1000px">
+
 
 </body>
 </html>

@@ -1,15 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import flet as ft
+
 import http.server
 import socketserver
-
 import threading
-
-import flet as ft
 import asyncio
-
 import webbrowser
-
 import yaml
 import os
 
@@ -46,7 +43,6 @@ selected_actuator = {
     'category' : 'characterDisplay'
 }
 
-
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=HELP_DIRECTORY, **kwargs)
@@ -69,15 +65,13 @@ def mainWindow(page: ft.Page):
             global PORT, url_header
             url = url_header + str(PORT) + "/About.html"
             webbrowser.open(url)
+
         async def finish_button_clicked(e):
             await page.window.destroy()
+
         async def next_button_clicked(e):
             await page.push_route("/viewArduino")
-        lastView="/viewTop"
-        page.title = "このアプリについて"
-        #page.window_width = 400
-        #page.window_height = 500
-        page.autoscroll = True
+
         pageTitleBar = ft.AppBar(
             title=ft.Text("このアプリについて"),
             bgcolor=ft.Colors.YELLOW,
@@ -101,6 +95,8 @@ def mainWindow(page: ft.Page):
         return ft.View(route="/viewTop", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitleBar,
                         about_title,
@@ -128,8 +124,10 @@ def mainWindow(page: ft.Page):
             global PORT, url_header
             url = url_header + str(PORT) + "/ArduinoSelection.html"
             webbrowser.open(url)
+
         async def finish_button_clicked(e):
             await page.window.destroy()
+
         async def next_button_clicked(e):
             global selected_arduino, voltage_check
             selected_arduino['name'] = arduino_menu.value
@@ -140,12 +138,7 @@ def mainWindow(page: ft.Page):
             voltage_check = voltage_CheckBox.value
             await page.push_route("/viewActuatorCategory")
 
-        global lastView, arduino_info, selected_arduino, voltage_check
-        lastView="/createViewArduino"
-        page.title = "Arduino機種選択"
-        #page.window_width = 400
-        #page.window_height = 500
-        page.autoscroll = True
+        global arduino_info, selected_arduino, voltage_check
         pageTitleBar = ft.AppBar(
             title=ft.Text("Arduino機種選択"),
             bgcolor=ft.Colors.YELLOW,
@@ -167,6 +160,8 @@ def mainWindow(page: ft.Page):
         return ft.View(route="/viewArduino", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitleBar,
                         arduino_selection_message,
@@ -186,20 +181,19 @@ def mainWindow(page: ft.Page):
             global PORT, url_header
             url = url_header + str(PORT) + "/ActuatorCategory.html"
             webbrowser.open(url)
+
         async def finish_button_clicked(e):
             await page.window.destroy()
+
         async def next_button_clicked(e):
             global selected_actuator
             selected_actuator['category'] = category_menu.value
             await page.push_route("/viewActuatorDevice")
+
         async def back_button_clicked(e):
             await page.push_route("/viewArduino")
-        global lastView, actuator_info, selected_arduino, voltage_check
-        lastView="/viewActuatorCategory"
-        page.title = "アクチュエータ種類選択"
-        #page.window_width = 400
-        #page.window_height = 500
-        page.autoscroll = True
+
+        global actuator_info, selected_arduino, voltage_check
         pageTitleBar = ft.AppBar(
             title=ft.Text("アクチュエータ種類選択"),
             bgcolor=ft.Colors.YELLOW,
@@ -227,6 +221,8 @@ def mainWindow(page: ft.Page):
         return ft.View(route="/viewActuatorCategory", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitleBar,
                         ft.Text('選択済み項目', weight=ft.FontWeight.BOLD, size=20),
@@ -249,19 +245,17 @@ def mainWindow(page: ft.Page):
     def createViewActuatorDevice():
         def icon_clicked(e):
             global PORT, url_header, actuator_info, selected_actuator
-            url = url_header + str(PORT) + '/' + actuator_info['category'][selected_actuator['category']]['helpFile']
+            url = url_header + str(PORT) + actuator_info['category'][selected_actuator['category']]['helpFile']
             webbrowser.open(url)
 
         async def finish_button_clicked(e):
             await page.window.destroy()
+
         async def back_button_clicked(e):
             await page.push_route("/viewArduino")
-        global lastView, arduino_info, selected_arduino, voltage_check, actuator_info, selected_actuator
-        lastView="/viewActuatorDevice"
+
+        global arduino_info, selected_arduino, voltage_check, actuator_info, selected_actuator
         page.title = actuator_info['category'][selected_actuator['category']]['title']
-        #page.window_width = 400
-        #page.window_height = 500
-        page.autoscroll = True
         pageTitleBar = ft.AppBar(
             title=ft.Text(actuator_info['category'][selected_actuator['category']]['title']),
             bgcolor=ft.Colors.YELLOW,
@@ -277,6 +271,7 @@ def mainWindow(page: ft.Page):
         else:
             voltage_check_message = ft.Text('選択されたArduinoの電圧と一致しないものも含めすべてのアクチュエータを表示')
         device_table_header = ft.Text('利用可能なアクチュエータデバイス', weight=ft.FontWeight.BOLD, size=20)
+        device_table_attention = ft.Text('PWM端子への接続が必要なデバイスは赤字で表記されます．', color=ft.Colors.RED)
         device_table_rows =[]
         actuator_device_table = ft.DataTable(
             columns=[
@@ -286,23 +281,30 @@ def mainWindow(page: ft.Page):
             ],
             rows = device_table_rows
         )
-        controlArray=[pageTitleBar, arduino_name, arduino_voltage, category_name, voltage_check_message, ft.Divider(height=2, color="black"), device_table_header]
+        controlArray=[pageTitleBar, arduino_name, arduino_voltage, category_name, voltage_check_message, ft.Divider(height=2, color="black"), device_table_header, device_table_attention]
         possibleDevice=0
+        textColor=ft.Colors.BLACK
         for deviceSymbol in actuator_info[selected_actuator['category']]['deviceList']:
+            if actuator_info[selected_actuator['category']][deviceSymbol]['pwm'] == True:
+                textColor=ft.Colors.RED
+            else:
+                textColor=ft.Colors.BLACK
             if actuator_info[selected_actuator['category']][deviceSymbol]['stock'] == False:
                 continue
             deviceName = actuator_info[selected_actuator['category']][deviceSymbol]['name']
-            appendText_name = ft.Text(deviceName)
+            appendText_name = ft.Text(deviceName, color=textColor)
             if actuator_info[selected_actuator['category']][deviceSymbol]['connecter']['spi'] > 0:
                 deviceConnection = 'SPI接続'
             elif actuator_info[selected_actuator['category']][deviceSymbol]['connecter']['i2c'] > 0:
                 deviceConnection = 'I2C接続'
+            elif actuator_info[selected_actuator['category']][deviceSymbol]['connecter']['serial'] > 0:
+                deviceConnection = 'シリアル接続'
             elif actuator_info[selected_actuator['category']][deviceSymbol]['connecter']['digital'] > 0:
                 deviceConnection = 'デジタル端子' + str(actuator_info[selected_actuator['category']][deviceSymbol]['connecter']['digital']) + '個'
             else:
                 deviceConnection = '不明'
-            appendText_connection = ft.Text(deviceConnection)
-            appendText_description = ft.Text(actuator_info[selected_actuator['category']][deviceSymbol]['description'])
+            appendText_connection = ft.Text(deviceConnection, color=textColor)
+            appendText_description = ft.Text(actuator_info[selected_actuator['category']][deviceSymbol]['description'], color=textColor)
             voltageCheck = actuator_info[selected_actuator['category']][deviceSymbol]['voltage'][selected_arduino['voltage']]
             archCheck = actuator_info[selected_actuator['category']][deviceSymbol]['architecture'][selected_arduino['name']]
             if (voltageCheck and archCheck):
@@ -321,13 +323,14 @@ def mainWindow(page: ft.Page):
         return ft.View(route="/viewActuatorDevice", controls=[
             ft.SafeArea(
                 content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
                     controls=controlArray,
                 ),
             )
         ])
 
     def route_change(handler):
-        global configuration, lastView
         page.views.clear()
         if page.route == "/viewTop":
             page.views.append(createViewTop())
@@ -337,27 +340,26 @@ def mainWindow(page: ft.Page):
             page.views.append(createViewCategory())
         if page.route == "/viewActuatorDevice":
            page.views.append(createViewActuatorDevice())
-        #if page.route == "/viewError":
-        #    page.views.append(createViewError())
         page.update()
     page.on_route_change = route_change
+    page.window.height = 600
+    page.autoscroll = True
     asyncio.create_task(page.push_route("/viewTop"))
-    #asyncio.create_task(page.push_route("/viewArduino"))
-
-
 
 def errorWindow(page: ft.Page):
     async def finish_button_clicked(e):
         await page.window.destroy()
     global error
     page.title = "エラー"
-    #page.window_width = 400
-    #page.window_height = 500
+    page.window.width = 400
+    page.window.height = 600
     page.autoscroll = True
     finish_button = ft.Button(content="終了", on_click=finish_button_clicked)
     page.add(
         ft.SafeArea(
             content=ft.Column(
+                height=550,
+                scroll=ft.ScrollMode.ALWAYS,
                 controls=[
                     ft.AppBar(title=ft.Text("重大なエラー"), bgcolor=ft.Colors.RED),
                     ft.Text(error),

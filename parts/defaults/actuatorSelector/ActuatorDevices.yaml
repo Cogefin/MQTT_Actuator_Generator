@@ -15,39 +15,39 @@ category:
     - graphic_display
   characterDisplay:
     name: "キャラクタディスプレイ"
-    helpFile: "ActuatorCharacterDisplay.html"
+    helpFile: "/ActuatorCharacterDisplay.html"
     title: "キャラクタディスプレイリスト"
   led:
     name: "LED"
-    helpFile: "ActuatorLED.html"
+    helpFile: "/ActuatorLED.html"
     title: "LEDリスト"
   nseg_led:
     name: "NセグメントLED"
-    helpFile: "ActuatorNSegLED.html"
+    helpFile: "/ActuatorNSegLED.html"
     title: "NセグメントLEDリスト"
   servo:
     name: "サーボ"
-    helpFile: "ActuatorServo.html"
+    helpFile: "/ActuatorServo.html"
     title: "サーボリスト"
   soundDevice:
     name: "音声出力デバイス"
-    helpFile: "ActuatorSound.html"
+    helpFile: "/ActuatorSound.html"
     title: "音声出力デバイスリスト"
   pwm:
     name: "単純PWMデバイス"
-    helpFile: "ActuatorSimplePWM.html"
+    helpFile: "/ActuatorSimplePWM.html"
     title: "単純PWMデバイスリスト"
   switch:
     name: "単純デジタル(ON/OFF)デバイス"
-    helpFile: "ActuatorSimpleDigital.html"
+    helpFile: "/ActuatorSimpleDigital.html"
     title: "単純デジタル(ON/OFF)デバイスリスト"
   ir_remote_controller:
     name: "赤外線リモコン"
-    helpFile: "ActuatorIrRemote.html"
+    helpFile: "/ActuatorIrRemote.html"
     title: "赤外線リモコンリスト"
   graphic_display:
     name: "グラフィックディスプレイ"
-    helpFile: "ActuatorGraphicDisplay.html"
+    helpFile: "/ActuatorGraphicDisplay.html"
     title: "グラフィックディスプレイリスト"
 
 #
@@ -69,16 +69,18 @@ characterDisplay:
     - sc2004cslb
   # Grove LCD RGBバックライト
   grove_lcd:
-    name: "Grove LCD RGBバックライト"
+    name: "Grove LCD RGBバックライトv5"
     group: grove_lcd
     stock: true
     voltage:
-      3V3: false
+      3V3: true
       5V : true
     connecter:
       spi: 0
       i2c: 1
+      serial: 0
       digital: 0
+    pwm: false
     description: "16x2文字表示 フルカラーバックライト付き"
     architecture:
       UnoR4: false
@@ -86,7 +88,7 @@ characterDisplay:
       M0Pro: false
       MKRZero: false
       Nano33IoT: false
-      NanoESP32: false
+      NanoESP32: true
   # ACM1602NI (秋月電子)
   acm1602ni:
     name: "ACM1602NI (秋月電子)"
@@ -98,7 +100,9 @@ characterDisplay:
     connecter:
       spi: 0
       i2c: 1
+      serial: 0
       digital: 0
+    pwm: false
     description: "16x2文字表示"
     architecture:
       UnoR4: false
@@ -118,7 +122,9 @@ characterDisplay:
     connecter:
       spi: 0
       i2c: 1
+      serial: 0
       digital: 0
+    pwm: false
     description: "20x4文字表示"
     architecture:
       UnoR4: false
@@ -138,7 +144,9 @@ characterDisplay:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 6
+    pwm: false
     description: "16x2文字表示"
     architecture:
       UnoR4: false
@@ -158,7 +166,9 @@ characterDisplay:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 6
+    pwm: false
     description: "16x2文字表示"
     architecture:
       UnoR4: false
@@ -178,7 +188,9 @@ characterDisplay:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 6
+    pwm: false
     description: "20x4文字表示"
     architecture:
       UnoR4: false
@@ -219,7 +231,9 @@ led:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 1
+    pwm: true
     description: "明るさを制御する場合はPWM制御可能な端子への接続が必須"
     architecture:
       UnoR4: true
@@ -239,8 +253,10 @@ led:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 3
-    description: "全てPWM制御可能な端子への接続が必須"
+    pwm: true
+    description: "全てのコネクタをPWM制御可能な端子へ接続する事が必須"
     architecture:
       UnoR4: true
       GigaR1: true
@@ -259,7 +275,9 @@ led:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 2
+    pwm: false
     description: "独自プロトコルで制御する棒状モノクロLED(10個)"
     architecture:
       UnoR4: true
@@ -279,7 +297,9 @@ led:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 2
+    pwm: false
     description: "独自プロトコルで制御する環状モノクロLED(24個)"
     architecture:
       UnoR4: true
@@ -290,7 +310,7 @@ led:
       NanoESP32: true
   # Grove chainable LED
   grove_chainable_led:
-    name: "Grove chainable LED"
+    name: "Grove chainable RGB LED"
     group: grove_chainable_led
     stock: true
     voltage:
@@ -299,7 +319,9 @@ led:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 2
+    pwm: false
     description: "独自プロトコルで制御するフルカラーLED(連結可能)"
     architecture:
       UnoR4: true
@@ -319,7 +341,9 @@ led:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 1
+    pwm: false
     description: "マイコン(WS2813)内蔵LEDで構成され，独自プロトコルで制御するフルカラーLED"
     architecture:
       UnoR4: true
@@ -358,7 +382,9 @@ nseg_led:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 18
+    pwm: false
     description: "16セグメントLED (秋月電子)．Gigaでは暗すぎるため，実用性はほぼない．"
     architecture:
       UnoR4: false
@@ -378,7 +404,9 @@ nseg_led:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 17
+    pwm: false
     description: "2桁14セグメントLED (秋月電子)"
     architecture:
       UnoR4: false
@@ -398,7 +426,9 @@ nseg_led:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 11
+    pwm: false
     description: "3桁7セグメントLED(秋月電子)"
     architecture:
       UnoR4: false
@@ -418,7 +448,9 @@ nseg_led:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 2
+    pwm: false
     description: "時計型の7セグメントLED"
     architecture:
       UnoR4: true
@@ -438,7 +470,9 @@ nseg_led:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 3
+    pwm: false
     description: "8桁 7セグメント 3-Wire LED Module．MKRファミリおよびNano33IoTでは，外部電源による給電が必須"
     architecture:
       UnoR4: true
@@ -469,7 +503,9 @@ servo:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 1
+    pwm: false
     description: "サーボモーター"
     architecture:
       UnoR4: true
@@ -504,7 +540,9 @@ soundDevice:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 1
+    pwm: false
     description: ""
     architecture:
       UnoR4: true
@@ -524,7 +562,9 @@ soundDevice:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 1
+    pwm: false
     description: ""
     architecture:
       UnoR4: true
@@ -544,7 +584,9 @@ soundDevice:
     connecter:
       spi: 0
       i2c: 0
-      digital: 1
+      serial: 1
+      digital: 0
+    pwm: false
     description: ""
     architecture:
       UnoR4: true
@@ -564,7 +606,9 @@ soundDevice:
     connecter:
       spi: 0
       i2c: 0
-      digital: 1
+      serial: 1
+      digital: 0
+    pwm: false
     description: ""
     architecture:
       UnoR4: true
@@ -586,7 +630,7 @@ pwm:
     - grove_mono_led
   # モノクロLED
   grove_mono_led:
-    name: "Grove モノクロ LED"
+    name: "Grove モノクロ LED等(PMW代替)"
     group: simple_pwm
     stock: true
     voltage:
@@ -595,10 +639,12 @@ pwm:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 1
-    description: ""
+    pwm: true
+    description: "PWM制御可能な端子に接続する事が必須"
     architecture:
-      UnoR4: true
+      UnoR4: false
       GigaR1: true
       M0Pro: true
       MKRZero: true
@@ -620,14 +666,16 @@ switch:
   grove_mono_led:
     name: "Grove モノクロ LED"
     group: simple_digital
-    stock: true
+    stock: false
     voltage:
       3V3: true
       5V : true
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 1
+    pwm: false
     description: ""
     architecture:
       UnoR4: true
@@ -647,7 +695,9 @@ switch:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 1
+    pwm: false
     description: ""
     architecture:
       UnoR4: true
@@ -677,7 +727,9 @@ ir_remote_controller:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 1
+    pwm: false
     description: "赤外線リモコンの送信機として使えるデバイス"
     architecture:
       UnoR4: true
@@ -710,7 +762,9 @@ graphic_display:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 0
+    pwm: false
     description: "GigaWifi専用デバイスで，専用端子に接続して使用"
     architecture:
       UnoR4: false
@@ -720,15 +774,17 @@ graphic_display:
       Nano33IoT: false
       NanoESP32: false
   ili9341_type_1:
-    name: "ILI9341コントローラ搭載ディスプレイ(ハードウェアSPI接続)"
+    name: "ILI9341コントローラ搭載ディスプレイtype1(ハードウェアSPI接続)"
     stock: true
     voltage:
       3V3: true
       5V : false
     connecter:
-      spi: 0
+      spi: 1
       i2c: 0
+      serial: 0
       digital: 3
+    pwm: false
     description: ""
     architecture:
       UnoR4: false
@@ -738,7 +794,7 @@ graphic_display:
       Nano33IoT: false
       NanoESP32: false
   ili9341_type_2:
-    name: "ILI9341コントローラ搭載ディスプレイ(ソフトウェアSPI接続)"
+    name: "ILI9341コントローラ搭載ディスプレイtype2(ソフトウェアSPI接続)"
     stock: true
     voltage:
       3V3: true
@@ -746,7 +802,9 @@ graphic_display:
     connecter:
       spi: 0
       i2c: 0
+      serial: 0
       digital: 6
+    pwm: false
     description: ""
     architecture:
       UnoR4: false

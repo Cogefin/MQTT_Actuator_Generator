@@ -6,23 +6,45 @@
 </head>
 <body>
   <h1>アノード/カソードコモンフルカラーLED</h1>
-<pre>
+<p>
 このLEDはRGB3つのLEDを1つのパッケージに入れた形のLEDであるため，赤用，青用，緑用の
 3つのピンをArduinoのPWM対応端子に接続して利用するものです．
 このようなLEDを作成する際に使うLEDの例に
 <a href="https://akizukidenshi.com/catalog/g/g112167/">5mm砲弾型フルカラーLED アノードコモン OSTAMA5B31A</a>
 があります．
-</pre>
+</p>
 
 
-<pre>
-ここで入力するのは，以下の3項目である．
-</pre>
+
+<p>
+ここで入力するのは，以下の5項目である．
+</p>
 <ul>
 <li>このLEDを使うか否か</li>
 <li>このLEDを点灯するために，Arduino端子の電圧を高にするタイプか，低にするタイプのいずれであるか</li>
-<li>このLEDを接続するArduinoのピン番号("D12"のような形式)</li>
+<li>この赤端子を接続するPWM制御可能なArduinoのピン番号("D12"のような形式)</li>
+<li>この青端子を接続するPWM制御可能なArduinoのピン番号("D13"のような形式)</li>
+<li>この緑端子を接続するPWM制御可能なArduinoのピン番号("D14"のような形式)</li>
 </ul>
+
+<p>
+このデバイスは制御にPWM機能を利用するため，Arduino側もPWM機能に対応した端子に接続する必要がある．
+</p>
+
+<h2>ArduinoのPWM対応端子について</h2>
+<p>下図はUno R4のデジタル端子のpinoutです．デジタル端子2番(D2)と3番(D3)を比較すると，3番は「～D3」と記載されている．このように，「～」が端子名(D+数字)の前についている端子はPWM機能に対応している．</p>
+<img src="images/PWM_example.png" alt="Uno R4のデジタル端子側のpinout切り抜き"  height="450px">
+
+
+<h2>主要な機種のpinout</h2>
+<h3>Giga R1 WiFi</h3>
+<img src="images/Giga_R1_WiFi_pinout.png" alt="Giga R1 WiFi pinout"  height="1000px">
+
+<h3>Uno R4 WiFi</h3>
+<img src="images/Uno_R4_WiFi_pinout.png" alt="Uno R4 WiFi pinout"  height="1000px">
+
+<h3>Nano ESP32</h3>
+<img src="images/Nano_ESP32_pinout.png" alt="Uno R4 WiFi pinout"  height="1000px">
 
 </body>
 </html>

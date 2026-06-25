@@ -7,20 +7,53 @@
 <body>
   <h1>Grove - 4-Digit Display</h1>
 
-<pre>
+<p>
 このLEDは制御用IC付きのデジタル時計型のLEDであり，発売元から
 <a href="https://wiki.seeedstudio.com/ja/Grove-4-Digit_Display/">技術情報</a>が取得できる．
-</pre>
+</p>
 
 
-<pre>
+<p>
 ここで入力するのは，以下の3項目である．
-</pre>
+</p>
 <ul>
 <li>このLEDを使うか否か</li>
 <li>クロック端子を接続するArduinoのピン番号("D12"のような形式)</li>
 <li>データ端子を接続するArduinoのピン番号("D13"のような形式)</li>
 </ul>
+
+<h2>ピン番号指定時の注意事項</h2>
+<p>
+このデバイスをGrove専用ケーブル(図1)を用いて，Grove用シールド(図2～4)に接続する場合，
+データ端子のピン番号は「クロック端子のピン番号+1」にする必要がある．
+</p>
+
+<p>
+  ただし，MKRシリーズ用のシールドで，1つのコネクタに2つのピンが配線されているのは，D5,D6のみ(図4の左下コネクタ)なので，注意が必要．
+</p>
+
+<figure>
+<img src="images/Grove_Cable.png" alt="Grove専用ケーブル" width="120" height="100">
+<figcaption>図1 : Grove専用ケーブル</figcaption>
+</figure>
+
+
+<figure>
+<img src="images/Brove_Base_Shield.jpg" alt="Brove Base Shield" width="120" height="100">
+<figcaption>図2 : Grove Base Shield (Uno, Giga等用)</figcaption>
+</figure>
+
+<figure>
+<img src="images/Grove_Nano_Shield.png" alt="Brove Base Shield" width="120" height="100">
+<figcaption>図3 : Grove Nano Shield (Nanoシリーズ用)</figcaption>
+</figure>
+
+<figure>
+<img src="images/MKR_shield.png" alt="Brove Base Shield" width="120" height="100">
+<figcaption>図4 : Arduino MKR Connector Carrier (MKRシリーズ用)</figcaption>
+</figure>
+
+
 
 
 

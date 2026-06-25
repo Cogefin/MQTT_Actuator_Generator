@@ -18,6 +18,7 @@ platform:
   advanced:
     hardware_serial: "Serial"
     buffer_size: 512
+    max_digit_of_nseg_led: 8
 
 common:
   serial:
@@ -50,8 +51,8 @@ network:
     mqtt_auth: false # true(使う) , false(使わない)
     mqtt_user: "foo" # ユーザ名(文字列)
     mqtt_pass: "bar" # パスワード(文字列)
-    mqtt_topic: "arduino/UnoR4_WiFi" # MQTTトピック (文字列)
-    mqtt_server: "192.168.1.254" # mqttサーバIPアドレス
+    mqtt_topic: "arduino/actuator" # MQTTトピック (文字列)
+    mqtt_server: "10.1.1.254" # mqttサーバIPアドレス
     mqtt_port: 1883 # mqttポート番号
 
 safety:
@@ -72,6 +73,7 @@ grove_lcd:
 # USE_ACM1602NI
 acm1602ni:
   use_acm1602ni: false # true(使う) , false(使わない)
+  acm1602ni_type: 0 # 0(ACM1602NI), other (ACM2004)
 
 #
 # Liquid crystal library
@@ -133,7 +135,7 @@ grove_led_circular:
 # GROVE_CHAINABLE_LED
 grove_chainable_led:
   use_grove_chainable_led:      false # true(使う) , false(使わない)
-  grove_chainable_led_leds:         3 # GROVE_CHAINABLE_LED_NUM_OF_LED
+  grove_chainable_led_leds:         1 # GROVE_CHAINABLE_LED_NUM_OF_LED
   grove_chainable_led_clk_pin:   "D2" # GROVE_CHAINABLE_LED_PIN_CLK
   grove_chainable_led_data_pin : "D3" # GROVE_CHAINABLE_LED_PIN_DATA
 

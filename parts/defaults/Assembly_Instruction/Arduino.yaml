@@ -1,0 +1,48 @@
+
+#
+# Arduino機種情報
+#
+Arduino:
+  deviceList:
+    - UnoR4
+    - GigaR1
+    - M0Pro
+    - MKRZero
+    - Nano33IoT
+    - NanoESP32
+  UnoR4:
+    name: "Arduino Uno R4 minima/WiFi"
+    voltage:
+      3V3: false
+      5V : true
+    shield_type: 0 # 0 : Base Shield, 1 : Nano Shield, 2: MKR コネクタキャリアボード, 3: Megaシールド
+  GigaR1:
+    name: "Arduino Giga R1 WiFi"
+    voltage:
+      3V3: true
+      5V : false
+    shield_type: 0 # 0 : Base Shield, 1 : Nano Shield, 2: MKR コネクタキャリアボード, 3: Megaシールド
+  M0Pro:
+    name: "Arduino M0 Pro"
+    voltage:
+      3V3: true
+      5V : false
+    shield_type: 0 # 0 : Base Shield, 1 : Nano Shield, 2: MKR コネクタキャリアボード, 3: Megaシールド
+  MKRZero:
+    name: "Arduino MKR Zero/MKR WiFi 1010"
+    voltage:
+      3V3: true
+      5V : false
+    shield_type: 2 # 0 : Base Shield, 1 : Nano Shield, 2: MKR コネクタキャリアボード, 3: Megaシールド
+  Nano33IoT:
+    name: "Arduino Nano 33 IoT"
+    voltage:
+      3V3: true
+      5V : false
+    shield_type: 1 # 0 : Base Shield, 1 : Nano Shield, 2: MKR コネクタキャリアボード, 3: Megaシールド
+  NanoESP32:
+    name: "Arduino Nano ESP32"
+    voltage:
+      3V3: true
+      5V : false
+    shield_type: 1 # 0 : Base Shield, 1 : Nano Shield, 2: MKR コネクタキャリアボード, 3: Megaシールド

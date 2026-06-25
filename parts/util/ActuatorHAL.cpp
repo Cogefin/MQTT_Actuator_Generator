@@ -768,6 +768,7 @@ bool controlIRDA(JsonDocument doc) {
       //deviceTable[id].ir_sender->sendLG(address, comm, repeats);
       break;
     }
+    /*
     case IRDA_COMMAND_LG_2: {
       uint8_t address = doc["param"][0]["address"];
       uint16_t comm = doc["param"][0]["command"];
@@ -776,6 +777,7 @@ bool controlIRDA(JsonDocument doc) {
       //deviceTable[id].ir_sender->sendLG(address, comm, repeats);
       break;
     }
+    */
     case IRDA_COMMAND_LEGO: {
       uint8_t channel = doc["param"][0]["channel"];
       uint8_t comm = doc["param"][0]["command"];

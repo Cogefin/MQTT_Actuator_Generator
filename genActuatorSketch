@@ -1,26 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 import flet as ft
 
 import asyncio
 import yaml
-import sys
 import shutil
 import os
-
-#import http.server
-#import socketserver
-
-#import threading
-
-#import webbrowser
-
 
 source_file_name=""
 output_directory_path=""
 help_file="parts/Help/genActuatorSketch/help.yaml"
-#help_file="C:/Users/phil_/OneDrive/ドキュメント/開発/arduino/Cogefin/MQTT_Actuator_Generator/parts/Help/genActuatorSketch/help.yaml"
 
 error = ""
 
@@ -38,30 +27,6 @@ watchdog_source = util_dir + 'watchdog.cpp'
 driver_dir = util_dir + 'src'
 
 num_of_actuators=0
-
-## HELP page information
-#url_header = "http://localhost:"
-#LOCAL_HOST_IP = "127.0.0.1"
-
-## IP configuration for help
-#PORT_RANGE=100
-#PORT_LOWER_LIMIT = 8000
-
-#class Handler(http.server.SimpleHTTPRequestHandler):
-#    def __init__(self, *args, **kwargs):
-#        super().__init__(*args, directory=HELP_DIRECTORY, **kwargs)
-
-#def documentServer():
-#    global PORT
-#    flag=True
-#    PORT=PORT_LOWER_LIMIT
-#    while flag:
-#        try:
-#            with socketserver.TCPServer((LOCAL_HOST_IP, PORT), Handler) as httpd:
-#                flag=False
-#                httpd.serve_forever()
-#        except Exception as e:
-#            PORT+=1
 
 def copySketch():
     global output_directory_path, output_dir, sketch_name, sketch_source
@@ -650,8 +615,8 @@ def errorWindow(page: ft.Page):
         await page.window.destroy()
     global error
     page.title = "エラー"
-    page.window_width = 400
-    page.window_height = 500
+    page.window.width = 400
+    page.window.height = 500
     page.autoscroll = True
     finish_button = ft.Button(content="閉じる", on_click=finish_button_clicked)
     page.add(
@@ -677,9 +642,6 @@ def fileWindow(page: ft.Page):
         global lastView
         lastView = "/viewError"
         page.title = "スケッチ生成失敗"
-        page.window_width = 800
-        page.window_height = 500
-        page.autoscroll = True
         pageTitleBar = ft.AppBar(
             title=ft.Text("スケッチ生成失敗"),
             bgcolor=ft.Colors.YELLOW,
@@ -705,9 +667,6 @@ def fileWindow(page: ft.Page):
             #asyncio.create_task(page.push_route("/viewMain"))
             asyncio.create_task(page.push_route(lastView))
         page.title = "IoTアクチュエータスケッチ生成ヘルプ"
-        page.window_width = 800
-        page.window_height = 500
-        page.autoscroll = True
         help_contents = ft.Markdown(help['top'], selectable=True, extension_set=ft.MarkdownExtensionSet.GITHUB_WEB)
         pageTitleBar = ft.AppBar(
             title=ft.Text("スケッチ生成ヘルプ"),
@@ -769,8 +728,6 @@ def fileWindow(page: ft.Page):
         global lastView
         lastView="/viewMain"
         page.title = "IoTアクチュエータスケッチ生成"
-        page.window_width = 400
-        page.window_height = 500
         selected_input_file = ft.Text()
         selected_output_file = ft.Text()
         exec_button = ft.Button(content="スケッチ生成", on_click=exec_button_clicked)
@@ -825,6 +782,9 @@ def fileWindow(page: ft.Page):
             page.views.append(createViewError())
         page.update()
     page.on_route_change = route_change
+    page.window.width = 800
+    page.window.height = 500
+    page.autoscroll = True
     asyncio.create_task(page.push_route("/viewMain"))
 
 def platform(platform):
@@ -1451,8 +1411,6 @@ def checkApplicationEnvironment():
 
 if __name__ == "__main__":
     if "" == checkApplicationEnvironment():
-        #thread = threading.Thread(target=documentServer, daemon=True) # 処理を割り当てる
-        #thread.start() # スレッドを起動する
         ft.run(fileWindow)
     else:
         ft.run(errorWindow)

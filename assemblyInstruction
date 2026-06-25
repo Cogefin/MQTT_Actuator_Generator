@@ -1,0 +1,1802 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+import flet as ft
+
+import asyncio
+import yaml
+import os
+
+import http.server
+import socketserver
+import threading
+import asyncio
+import webbrowser
+import yaml
+
+
+image_dir='parts/Assembly_Instruction/images/'
+
+# device definition file
+CONFIG_FILE_DIR = "parts/defaults/Assembly_Instruction/"
+CONFIG_FILES = [
+    "Arduino.yaml" ,
+    "ActuatorDevices.yaml"
+]
+
+# Help file
+HELP_DIRECTORY = "parts/Help/Assembly_Instruction/"
+HELP_FILES = [
+    "About.html",
+    "BuildInstruction.html"
+]
+
+# HELP page information
+url_header = "http://localhost:"
+LOCAL_HOST_IP = "127.0.0.1"
+
+# IP configuration for help
+PORT_RANGE=100
+PORT_LOWER_LIMIT = 8000
+
+# 初期値
+selected_arduino = {
+    'name' : 'UnoR4',
+    'shield_type' : '0'
+}
+
+# デバイスイメージファイル
+device_image = {
+    'grove_lcd' : 'Grove_LCD.jpg',
+    'acm1602ni' : 'acm1602ni.jpg',
+    'sc1602bslb' : 'SC1602BSLB.jpg',
+    'grove_led' : 'Grove_LED.webp',
+    'simple_color_led' : 'simple_color_led.jpg',
+    'Grove_LED_bar' : 'Grove_LED_bar.jpg',
+    'grove_led_circular' : 'grove_led_circular.webp',
+    'grove_chainable_led' : 'grove_chainable_led.jpg',
+    'grove_led_stick' : 'grove_led_stick.jpg',
+    'OSL12306_16' : 'OSL12306_16.jpg',
+    'OSL20541' : 'OSL20541.jpg',
+    'OSL30561' : 'OSL30561.jpg',
+    'grove_4_digit_LED' : 'grove_4_digit_LED.jpg',
+    'dfr0090' : 'dfr0090.jpg',
+    'grove_servo' : 'grove_servo.jpg',
+    'grove_speaker' : 'grove_speaker.jpg',
+    'grove_buzzer' : 'grove_buzzer.jpg',
+    'grove_mp3' : 'grove_mp3.jpg',
+    'grove_relay' : 'grove_relay.jpg',
+    'grove_ir_emitter' : 'grove_ir_emitter.jpg',
+    'giga_display' : 'giga_display.jpg',
+    'ILI9341' : 'ILI9341.jpg'
+}
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=HELP_DIRECTORY, **kwargs)
+
+def documentServer():
+    global PORT
+    flag=True
+    PORT=PORT_LOWER_LIMIT
+    while flag:
+        try:
+            with socketserver.TCPServer(("", PORT), Handler) as httpd:
+                flag=False
+                httpd.serve_forever()
+        except Exception as e:
+            PORT+=1
+
+def checkConfiguration():
+    global configuration
+    checkResult = ''
+    if not ('platform' in configuration):
+        checkResult += '仕様ファイルに「platform」の定義がありません．\n'
+    else:
+        if not ('network_hardware' in configuration['platform']):
+            checkResult += '仕様ファイルの「platform」セクション中に「network_hardware」の定義がありません．\n'
+        else:
+            if not ('network_type' in configuration['platform']['network_hardware']):
+                checkResult += '仕様ファイルの「platform」セクションの「network_hardware」中に「network_type」の定義がありません．\n'
+            if not ('ethernet_chip_select' in configuration['platform']['network_hardware']):
+                checkResult += '仕様ファイルの「platform」セクションの「network_hardware」中に「ethernet_chip_select」の定義がありません．\n'
+        if not ('rtc' in configuration['platform']):
+            checkResult += '仕様ファイルの「platform」セクション中に「rtc」の定義がありません．\n'
+        else:
+            if not ('rtc_type' in configuration['platform']['rtc']):
+                checkResult += '仕様ファイルの「platform」セクションの「rtc」中に「rtc_type」の定義がありません．\n'
+        if not ('color_led' in configuration['platform']):
+            checkResult += '仕様ファイルの「platform」セクション中に「color_led」の定義がありません．\n'
+        else:
+            if not ('use_led' in configuration['platform']['color_led']):
+                checkResult += '仕様ファイルの「platform」セクションの「color_led」中に「use_led」の定義がありません．\n'
+            if not ('led_pin' in configuration['platform']['color_led']):
+                checkResult += '仕様ファイルの「platform」セクションの「color_led」中に「led_pin」の定義がありません．\n'
+            if not ('led_duration' in configuration['platform']['color_led']):
+                checkResult += '仕様ファイルの「platform」セクションの「color_led」中に「led_duration」の定義がありません．\n'
+            if not ('led_short_duration' in configuration['platform']['color_led']):
+                checkResult += '仕様ファイルの「platform」セクションの「color_led」中に「led_short_duration」の定義がありません．\n'
+        if not ('sd' in configuration['platform']):
+            checkResult += '仕様ファイルの「platform」セクション中に「sd」の定義がありません．\n'
+        else:
+            if not ('use_sd' in configuration['platform']['sd']):
+                checkResult += '仕様ファイルの「platform」セクションの「sd」中に「use_sd」の定義がありません．\n'
+            if not ('sd_chip_select' in configuration['platform']['sd']):
+                checkResult += '仕様ファイルの「platform」セクションの「sd」中に「sd_chip_select」の定義がありません．\n'
+        if not ('wdt' in configuration['platform']):
+            checkResult += '仕様ファイルの「platform」セクション中に「wdt」の定義がありません．\n'
+        else:
+            if not ('wdt_duration' in configuration['platform']['wdt']):
+                checkResult += '仕様ファイルの「platform」セクションの「wdt」中に「wdt_duration」の定義がありません．\n'
+            if not ('wdt_short_duration' in configuration['platform']['wdt']):
+                checkResult += '仕様ファイルの「platform」セクションの「wdt」中に「wdt_short_duration」の定義がありません．\n'
+        if not ('advanced' in configuration['platform']):
+            checkResult += '仕様ファイルの「platform」セクション中に「advanced」の定義がありません．\n'
+        else:
+            if not ('hardware_serial' in configuration['platform']['advanced']):
+                checkResult += '仕様ファイルの「platform」セクションの「advanced」中に「hardware_serial」の定義がありません．\n'
+            if not ('buffer_size' in configuration['platform']['advanced']):
+                checkResult += '仕様ファイルの「platform」セクションの「advanced」中に「buffer_size」の定義がありません．\n'
+            if not ('max_digit_of_nseg_led' in configuration['platform']['advanced']):
+                checkResult += '仕様ファイルの「platform」セクションの「advanced」中に「max_digit_of_nseg_led」の定義がありません．\n'
+    if not ('common' in configuration):
+        checkResult += '仕様ファイルに「common」の定義がありません．\n'
+    else:
+        if not ('serial' in configuration['common']):
+            checkResult += '仕様ファイルの「common」セクション中に「serial」の定義がありません．\n'
+        else:
+            if not ('speed' in configuration['common']['serial']):
+                checkResult += '仕様ファイルの「common」セクションの「serial」中に「speed」の定義がありません．\n'
+        if not ('log' in configuration['common']):
+            checkResult += '仕様ファイルの「common」セクション中に「log」の定義がありません．\n'
+        else:
+            if not ('host_name' in configuration['common']['log']):
+                checkResult += '仕様ファイルの「common」セクションの「log」中に「host_name」の定義がありません．\n'
+            if not ('app_name' in configuration['common']['log']):
+                checkResult += '仕様ファイルの「common」セクションの「log」中に「app_name」の定義がありません．\n'
+            if not ('use_logfile' in configuration['common']['log']):
+                checkResult += '仕様ファイルの「common」セクションの「log」中に「use_logfile」の定義がありません．\n'
+            if not ('use_serial_log' in configuration['common']['log']):
+                checkResult += '仕様ファイルの「common」セクションの「log」中に「use_serial_log」の定義がありません．\n'
+            if not ('logfile_name_hdr' in configuration['common']['log']):
+                checkResult += '仕様ファイルの「common」セクションの「log」中に「logfile_name_hdr」の定義がありません．\n'
+            if not ('logfile_size_max' in configuration['common']['log']):
+                checkResult += '仕様ファイルの「common」セクションの「log」中に「logfile_size_max」の定義がありません．\n'
+            if not ('log_rotate' in configuration['common']['log']):
+                checkResult += '仕様ファイルの「common」セクションの「log」中に「log_rotate」の定義がありません．\n'
+        if not ('clock' in configuration['common']):
+            checkResult += '仕様ファイルの「common」セクション中に「clock」の定義がありません．\n'
+        else:
+            if not ('use_ntp' in configuration['common']['clock']):
+                checkResult += '仕様ファイルの「common」セクションの「clock」中に「use_ntp」の定義がありません．\n'
+            if not ('update_rtc_by_ntp' in configuration['common']['clock']):
+                checkResult += '仕様ファイルの「common」セクションの「clock」中に「update_rtc_by_ntp」の定義がありません．\n'
+    if not ('network' in configuration):
+        checkResult += '仕様ファイルに「network」の定義がありません．\n'
+    else:
+        if not ('wifi' in configuration['network']):
+            checkResult += '仕様ファイルの「network」セクション中に「wifi」の定義がありません．\n'
+        else:
+            if not ('ssid' in configuration['network']['wifi']):
+                checkResult += '仕様ファイルの「network」セクションの「wifi」中に「ssid」の定義がありません．\n'
+            if not ('wifi_pass' in configuration['network']['wifi']):
+                checkResult += '仕様ファイルの「network」セクションの「wifi」中に「wifi_pass」の定義がありません．\n'
+        if not ('ethernet' in configuration['network']):
+            checkResult += '仕様ファイルの「network」セクション中に「ethernet」の定義がありません．\n'
+        else:
+            if not ('mac_addr' in configuration['network']['ethernet']):
+                checkResult += '仕様ファイルの「network」セクションの「ethernet」中に「mac_addr」の定義がありません．\n'
+        if not ('ip' in configuration['network']):
+            checkResult += '仕様ファイルの「」セクション中に「ip」の定義がありません．\n'
+        else:
+            if not ('use_dhcp' in configuration['network']['ip']):
+                checkResult += '仕様ファイルの「network」セクションの「ip」中に「use_dhcp」の定義がありません．\n'
+            if not ('ip_addr' in configuration['network']['ip']):
+                checkResult += '仕様ファイルの「network」セクションの「ip」中に「ip_addr」の定義がありません．\n'
+            if not ('dns_server' in configuration['network']['ip']):
+                checkResult += '仕様ファイルの「network」セクションの「ip」中に「dns_server」の定義がありません．\n'
+            if not ('gateway' in configuration['network']['ip']):
+                checkResult += '仕様ファイルの「network」セクションの「ip」中に「gateway」の定義がありません．\n'
+            if not ('netmask' in configuration['network']['ip']):
+                checkResult += '仕様ファイルの「network」セクションの「ip」中に「netmask」の定義がありません．\n'
+        if not ('mqtt' in configuration['network']):
+            checkResult += '仕様ファイルの「network」セクション中に「mqtt」の定義がありません．\n'
+        else:
+            if not ('mqtt_auth' in configuration['network']['mqtt']):
+                checkResult += '仕様ファイルの「network」セクションの「mqtt」中に「mqtt_auth」の定義がありません．\n'
+            if not ('mqtt_user' in configuration['network']['mqtt']):
+                checkResult += '仕様ファイルの「network」セクションの「mqtt」中に「mqtt_user」の定義がありません．\n'
+            if not ('mqtt_pass' in configuration['network']['mqtt']):
+                checkResult += '仕様ファイルの「network」セクションの「mqtt」中に「mqtt_pass」の定義がありません．\n'
+            if not ('mqtt_topic' in configuration['network']['mqtt']):
+                checkResult += '仕様ファイルの「network」セクションの「mqtt」中に「mqtt_topic」の定義がありません．\n'
+            if not ('mqtt_server' in configuration['network']['mqtt']):
+                checkResult += '仕様ファイルの「network」セクションの「mqtt」中に「mqtt_server」の定義がありません．\n'
+            if not ('mqtt_port' in configuration['network']['mqtt']):
+                checkResult += '仕様ファイルの「network」セクションの「mqtt」中に「mqtt_port」の定義がありません．\n'
+    if not ('safety' in configuration):
+        checkResult += '仕様ファイルに「safety」の定義がありません．\n'
+    else:
+        if not ('use_wdt' in configuration['safety']):
+            checkResult += '仕様ファイルの「safety」セクション中に「use_wdt」の定義がありません．\n'
+    if not ('grove_lcd' in configuration):
+        checkResult += '仕様ファイルに「grove_lcd」の定義がありません．\n'
+    else:
+        if not ('use_grove_lcd' in configuration['grove_lcd']):
+            checkResult += '仕様ファイルの「grove_lcd」セクション中に「use_grove_lcd」の定義がありません．\n'
+    if not ('acm1602ni' in configuration):
+        checkResult += '仕様ファイルに「acm1602ni」の定義がありません．\n'
+    else:
+        if not ('use_acm1602ni' in configuration['acm1602ni']):
+            checkResult += '仕様ファイルの「acm1602ni」セクション中に「use_acm1602ni」の定義がありません．\n'
+        if not ('acm1602ni_type' in configuration['acm1602ni']):
+            checkResult += '仕様ファイルの「acm1602ni」セクション中に「acm1602ni_type」の定義がありません．\n'
+    if not ('liquid_crystal' in configuration):
+        checkResult += '仕様ファイルに「liquid_crystal」の定義がありません．\n'
+    else:
+        if not ('use_liquid_crystal' in configuration['liquid_crystal']):
+            checkResult += '仕様ファイルの「liquid_crystal」セクション中に「use_liquid_crystal」の定義がありません．\n'
+        if not ('liquid_crystal_type' in configuration['liquid_crystal']):
+            checkResult += '仕様ファイルの「liquid_crystal」セクション中に「liquid_crystal_type」の定義がありません．\n'
+        if not ('liquid_crystal_rs_pin' in configuration['liquid_crystal']):
+            checkResult += '仕様ファイルの「liquid_crystal」セクション中に「liquid_crystal_rs_pin」の定義がありません．\n'
+        if not ('liquid_crystal_es_pin' in configuration['liquid_crystal']):
+            checkResult += '仕様ファイルの「liquid_crystal」セクション中に「liquid_crystal_es_pin」の定義がありません．\n'
+        if not ('liquid_crystal_d4_pin' in configuration['liquid_crystal']):
+            checkResult += '仕様ファイルの「liquid_crystal」セクション中に「liquid_crystal_d4_pin」の定義がありません．\n'
+        if not ('liquid_crystal_d5_pin' in configuration['liquid_crystal']):
+            checkResult += '仕様ファイルの「liquid_crystal」セクション中に「liquid_crystal_d5_pin」の定義がありません．\n'
+        if not ('liquid_crystal_d6_pin' in configuration['liquid_crystal']):
+            checkResult += '仕様ファイルの「liquid_crystal」セクション中に「liquid_crystal_d6_pin」の定義がありません．\n'
+        if not ('liquid_crystal_d7_pin' in configuration['liquid_crystal']):
+            checkResult += '仕様ファイルの「liquid_crystal」セクション中に「liquid_crystal_d7_pin」の定義がありません．\n'
+    if not ('simple_mono_led' in configuration):
+        checkResult += '仕様ファイルに「simple_mono_led」の定義がありません．\n'
+    else:
+        if not ('use_simple_mono_led' in configuration['simple_mono_led']):
+            checkResult += '仕様ファイルの「simple_mono_led」セクション中に「use_simple_mono_led」の定義がありません．\n'
+        if not ('simple_mono_led_type' in configuration['simple_mono_led']):
+            checkResult += '仕様ファイルの「simple_mono_led」セクション中に「simple_mono_led_type」の定義がありません．\n'
+        if not ('simple_mono_led_pin' in configuration['simple_mono_led']):
+            checkResult += '仕様ファイルの「simple_mono_led」セクション中に「simple_mono_led_pin」の定義がありません．\n'
+    if not ('simple_color_led' in configuration):
+        checkResult += '仕様ファイルに「simple_color_led」の定義がありません．\n'
+    else:
+        if not ('use_simple_color_led' in configuration['simple_color_led']):
+            checkResult += '仕様ファイルの「simple_color_led」セクション中に「use_simple_color_led」の定義がありません．\n'
+        if not ('simple_color_led_type' in configuration['simple_color_led']):
+            checkResult += '仕様ファイルの「simple_color_led」セクション中に「simple_color_led_type」の定義がありません．\n'
+        if not ('simple_color_led_red_pin' in configuration['simple_color_led']):
+            checkResult += '仕様ファイルの「simple_color_led」セクション中に「simple_color_led_red_pin」の定義がありません．\n'
+        if not ('simple_color_led_green_pin' in configuration['simple_color_led']):
+            checkResult += '仕様ファイルの「simple_color_led」セクション中に「simple_color_led_green_pin」の定義がありません．\n'
+        if not ('simple_color_led_blue_pin' in configuration['simple_color_led']):
+            checkResult += '仕様ファイルの「simple_color_led」セクション中に「simple_color_led_blue_pin」の定義がありません．\n'
+    if not ('grove_led_bar' in configuration):
+        checkResult += '仕様ファイルに「grove_led_bar」の定義がありません．\n'
+    else:
+        if not ('use_grove_led_bar' in configuration['grove_led_bar']):
+            checkResult += '仕様ファイルの「grove_led_bar」セクション中に「use_grove_led_bar」の定義がありません．\n'
+        if not ('grove_led_bar_leds' in configuration['grove_led_bar']):
+            checkResult += '仕様ファイルの「grove_led_bar」セクション中に「grove_led_bar_leds」の定義がありません．\n'
+        if not ('grove_led_bar_direction' in configuration['grove_led_bar']):
+            checkResult += '仕様ファイルの「grove_led_bar」セクション中に「grove_led_bar_direction」の定義がありません．\n'
+        if not ('grove_led_bar_clk_pin' in configuration['grove_led_bar']):
+            checkResult += '仕様ファイルの「grove_led_bar」セクション中に「grove_led_bar_clk_pin」の定義がありません．\n'
+        if not ('grove_led_bar_data_pin' in configuration['grove_led_bar']):
+            checkResult += '仕様ファイルの「grove_led_bar」セクション中に「grove_led_bar_data_pin」の定義がありません．\n'
+    if not ('grove_led_circular' in configuration):
+        checkResult += '仕様ファイルに「grove_led_circular」の定義がありません．\n'
+    else:
+        if not ('use_grove_led_circular' in configuration['grove_led_circular']):
+            checkResult += '仕様ファイルの「grove_led_circular」セクション中に「use_grove_led_circular」の定義がありません．\n'
+        if not ('grove_led_circular_leds' in configuration['grove_led_circular']):
+            checkResult += '仕様ファイルの「grove_led_circular」セクション中に「grove_led_circular_leds」の定義がありません．\n'
+        if not ('grove_led_circular_direction' in configuration['grove_led_circular']):
+            checkResult += '仕様ファイルの「grove_led_circular」セクション中に「grove_led_circular_direction」の定義がありません．\n'
+        if not ('grove_led_circular_clk_pin' in configuration['grove_led_circular']):
+            checkResult += '仕様ファイルの「grove_led_circular」セクション中に「grove_led_circular_clk_pin」の定義がありません．\n'
+        if not ('grove_led_circular_data_pin' in configuration['grove_led_circular']):
+            checkResult += '仕様ファイルの「grove_led_circular」セクション中に「grove_led_circular_data_pin」の定義がありません．\n'
+    if not ('grove_chainable_led' in configuration):
+        checkResult += '仕様ファイルに「grove_chainable_led」の定義がありません．\n'
+    else:
+        if not ('use_grove_chainable_led' in configuration['grove_chainable_led']):
+            checkResult += '仕様ファイルの「grove_chainable_led」セクション中に「use_grove_chainable_led」の定義がありません．\n'
+        if not ('grove_chainable_led_leds' in configuration['grove_chainable_led']):
+            checkResult += '仕様ファイルの「grove_chainable_led」セクション中に「grove_chainable_led_leds」の定義がありません．\n'
+        if not ('grove_chainable_led_clk_pin' in configuration['grove_chainable_led']):
+            checkResult += '仕様ファイルの「grove_chainable_led」セクション中に「grove_chainable_led_clk_pin」の定義がありません．\n'
+        if not ('grove_chainable_led_data_pin' in configuration['grove_chainable_led']):
+            checkResult += '仕様ファイルの「grove_chainable_led」セクション中に「grove_chainable_led_data_pin」の定義がありません．\n'
+    if not ('adafuit_neopixel' in configuration):
+        checkResult += '仕様ファイルに「adafuit_neopixel」の定義がありません．\n'
+    else:
+        if not ('use_adafuit_neopixel' in configuration['adafuit_neopixel']):
+            checkResult += '仕様ファイルの「adafuit_neopixel」セクション中に「use_adafuit_neopixel」の定義がありません．\n'
+        if not ('adafuit_neopixel_leds' in configuration['adafuit_neopixel']):
+            checkResult += '仕様ファイルの「adafuit_neopixel」セクション中に「adafuit_neopixel_leds」の定義がありません．\n'
+        if not ('adafuit_neopixel_pin' in configuration['adafuit_neopixel']):
+            checkResult += '仕様ファイルの「adafuit_neopixel」セクション中に「adafuit_neopixel_pin」の定義がありません．\n'
+    if not ('osl12306_16' in configuration):
+        checkResult += '仕様ファイルに「osl12306_16」の定義がありません．\n'
+    else:
+        if not ('use_osl12306_16' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「use_osl12306_16」の定義がありません．\n'
+        if not ('osl12306_16_digits' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_digits」の定義がありません．\n'
+        if not ('osl12306_16_type' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_type」の定義がありません．\n'
+        if not ('osl12306_16_a1_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_a1_pin」の定義がありません．\n'
+        if not ('osl12306_16_a2_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_a2_pin」の定義がありません．\n'
+        if not ('osl12306_16_b_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_b_pin」の定義がありません．\n'
+        if not ('osl12306_16_c_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_c_pin」の定義がありません．\n'
+        if not ('osl12306_16_d1_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_d1_pin」の定義がありません．\n'
+        if not ('osl12306_16_d2_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_d2_pin」の定義がありません．\n'
+        if not ('osl12306_16_e_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_e_pin」の定義がありません．\n'
+        if not ('osl12306_16_f_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_f_pin」の定義がありません．\n'
+        if not ('osl12306_16_g1_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_g1_pin」の定義がありません．\n'
+        if not ('osl12306_16_g2_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_g2_pin」の定義がありません．\n'
+        if not ('osl12306_16_j_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_j_pin」の定義がありません．\n'
+        if not ('osl12306_16_k_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_k_pin」の定義がありません．\n'
+        if not ('osl12306_16_l_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_l_pin」の定義がありません．\n'
+        if not ('osl12306_16_m_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_m_pin」の定義がありません．\n'
+        if not ('osl12306_16_n_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_n_pin」の定義がありません．\n'
+        if not ('osl12306_16_p_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_p_pin」の定義がありません．\n'
+        if not ('osl12306_16_dp_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_dp_pin」の定義がありません．\n'
+        if not ('osl12306_16_digit_pin' in configuration['osl12306_16']):
+            checkResult += '仕様ファイルの「osl12306_16」セクション中に「osl12306_16_digit_pin」の定義がありません．\n'
+    if not ('osl20541' in configuration):
+        checkResult += '仕様ファイルに「osl20541」の定義がありません．\n'
+    else:
+        if not ('use_osl20541' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「use_osl20541」の定義がありません．\n'
+        if not ('osl20541_digits' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_digits」の定義がありません．\n'
+        if not ('osl20541_type' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_type」の定義がありません．\n'
+        if not ('osl20541_a_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_a_pin」の定義がありません．\n'
+        if not ('osl20541_b_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_b_pin」の定義がありません．\n'
+        if not ('osl20541_c_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_c_pin」の定義がありません．\n'
+        if not ('osl20541_d_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_d_pin」の定義がありません．\n'
+        if not ('osl20541_e_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_e_pin」の定義がありません．\n'
+        if not ('osl20541_f_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_f_pin」の定義がありません．\n'
+        if not ('osl20541_g1_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_g1_pin」の定義がありません．\n'
+        if not ('osl20541_g2_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_g2_pin」の定義がありません．\n'
+        if not ('osl20541_h_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_h_pin」の定義がありません．\n'
+        if not ('osl20541_j_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_j_pin」の定義がありません．\n'
+        if not ('osl20541_k_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_k_pin」の定義がありません．\n'
+        if not ('osl20541_l_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_l_pin」の定義がありません．\n'
+        if not ('osl20541_m_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_m_pin」の定義がありません．\n'
+        if not ('osl20541_n_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_n_pin」の定義がありません．\n'
+        if not ('osl20541_dp_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_dp_pin」の定義がありません．\n'
+        if not ('osl20541_digit1_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_digit1_pin」の定義がありません．\n'
+        if not ('osl20541_digit2_pin' in configuration['osl20541']):
+            checkResult += '仕様ファイルの「osl20541」セクション中に「osl20541_digit2_pin」の定義がありません．\n'
+    if not ('osl30561' in configuration):
+        checkResult += '仕様ファイルに「osl30561」の定義がありません．\n'
+    else:
+        if not ('use_osl30561' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「use_osl30561」の定義がありません．\n'
+        if not ('osl30561_digits' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_digits」の定義がありません．\n'
+        if not ('osl30561_type' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_type」の定義がありません．\n'
+        if not ('osl30561_a_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_a_pin」の定義がありません．\n'
+        if not ('osl30561_b_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_b_pin」の定義がありません．\n'
+        if not ('osl30561_c_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_c_pin」の定義がありません．\n'
+        if not ('osl30561_d_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_d_pin」の定義がありません．\n'
+        if not ('osl30561_e_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_e_pin」の定義がありません．\n'
+        if not ('osl30561_f_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_f_pin」の定義がありません．\n'
+        if not ('osl30561_g_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_g_pin」の定義がありません．\n'
+        if not ('osl30561_dp_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_dp_pin」の定義がありません．\n'
+        if not ('osl30561_digit1_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_digit1_pin」の定義がありません．\n'
+        if not ('osl30561_digit2_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_digit2_pin」の定義がありません．\n'
+        if not ('osl30561_digit3_pin' in configuration['osl30561']):
+            checkResult += '仕様ファイルの「osl30561」セクション中に「osl30561_digit3_pin」の定義がありません．\n'
+    if not ('grove_tm1637' in configuration):
+        checkResult += '仕様ファイルに「grove_tm1637」の定義がありません．\n'
+    else:
+        if not ('use_grove_tm1637' in configuration['grove_tm1637']):
+            checkResult += '仕様ファイルの「grove_tm1637」セクション中に「use_grove_tm1637」の定義がありません．\n'
+        if not ('grove_tm1637_clk_pin' in configuration['grove_tm1637']):
+            checkResult += '仕様ファイルの「grove_tm1637」セクション中に「grove_tm1637_clk_pin」の定義がありません．\n'
+        if not ('grove_tm1637_data_pin' in configuration['grove_tm1637']):
+            checkResult += '仕様ファイルの「grove_tm1637」セクション中に「grove_tm1637_data_pin」の定義がありません．\n'
+    if not ('dfr0090' in configuration):
+        checkResult += '仕様ファイルに「dfr0090」の定義がありません．\n'
+    else:
+        if not ('use_dfr0090' in configuration['dfr0090']):
+            checkResult += '仕様ファイルの「dfr0090」セクション中に「use_dfr0090」の定義がありません．\n'
+        if not ('dfr0090_digits' in configuration['dfr0090']):
+            checkResult += '仕様ファイルの「dfr0090」セクション中に「dfr0090_digits」の定義がありません．\n'
+        if not ('dfr0090_latch_pin' in configuration['dfr0090']):
+            checkResult += '仕様ファイルの「dfr0090」セクション中に「dfr0090_latch_pin」の定義がありません．\n'
+        if not ('dfr0090_clk_pin' in configuration['dfr0090']):
+            checkResult += '仕様ファイルの「dfr0090」セクション中に「dfr0090_clk_pin」の定義がありません．\n'
+        if not ('dfr0090_data_pin' in configuration['dfr0090']):
+            checkResult += '仕様ファイルの「dfr0090」セクション中に「dfr0090_data_pin」の定義がありません．\n'
+    if not ('servo' in configuration):
+        checkResult += '仕様ファイルに「servo」の定義がありません．\n'
+    else:
+        if not ('use_servo' in configuration['servo']):
+            checkResult += '仕様ファイルの「servo」セクション中に「use_servo」の定義がありません．\n'
+        if not ('servo_pin' in configuration['servo']):
+            checkResult += '仕様ファイルの「servo」セクション中に「servo_pin」の定義がありません．\n'
+    if not ('speaker' in configuration):
+        checkResult += '仕様ファイルに「speaker」の定義がありません．\n'
+    else:
+        if not ('use_speaker' in configuration['speaker']):
+            checkResult += '仕様ファイルの「speaker」セクション中に「use_speaker」の定義がありません．\n'
+        if not ('speaker_pin' in configuration['speaker']):
+            checkResult += '仕様ファイルの「speaker」セクション中に「speaker_pin」の定義がありません．\n'
+    if not ('buzzer' in configuration):
+        checkResult += '仕様ファイルに「buzzer」の定義がありません．\n'
+    else:
+        if not ('use_buzzer' in configuration['buzzer']):
+            checkResult += '仕様ファイルの「buzzer」セクション中に「use_buzzer」の定義がありません．\n'
+        if not ('buzzer_pin' in configuration['buzzer']):
+            checkResult += '仕様ファイルの「buzzer」セクション中に「buzzer_pin」の定義がありません．\n'
+    if not ('pwm' in configuration):
+        checkResult += '仕様ファイルに「pwm」の定義がありません．\n'
+    else:
+        if not ('use_pwm' in configuration['pwm']):
+            checkResult += '仕様ファイルの「pwm」セクション中に「use_pwm」の定義がありません．\n'
+        if not ('pwm_pin' in configuration['pwm']):
+            checkResult += '仕様ファイルの「pwm」セクション中に「pwm_pin」の定義がありません．\n'
+    if not ('switch' in configuration):
+        checkResult += '仕様ファイルに「switch」の定義がありません．\n'
+    else:
+        if not ('use_switch' in configuration['switch']):
+            checkResult += '仕様ファイルの「switch」セクション中に「use_switch」の定義がありません．\n'
+        if not ('switch_pin' in configuration['switch']):
+            checkResult += '仕様ファイルの「switch」セクション中に「switch_pin」の定義がありません．\n'
+    if not ('ir_remote' in configuration):
+        checkResult += '仕様ファイルに「ir_remote」の定義がありません．\n'
+    else:
+        if not ('use_ir_remote' in configuration['ir_remote']):
+            checkResult += '仕様ファイルの「ir_remote」セクション中に「use_ir_remote」の定義がありません．\n'
+        if not ('ir_remote_pin' in configuration['ir_remote']):
+            checkResult += '仕様ファイルの「ir_remote」セクション中に「ir_remote_pin」の定義がありません．\n'
+    if not ('mp3_player' in configuration):
+        checkResult += '仕様ファイルに「mp3_player」の定義がありません．\n'
+    else:
+        if not ('use_mp3_player' in configuration['mp3_player']):
+            checkResult += '仕様ファイルの「mp3_player」セクション中に「use_mp3_player」の定義がありません．\n'
+        if not ('mp3_player_type' in configuration['mp3_player']):
+            checkResult += '仕様ファイルの「mp3_player」セクション中に「mp3_player_type」の定義がありません．\n'
+    if not ('graphic_display' in configuration):
+        checkResult += '仕様ファイルに「graphic_display」の定義がありません．\n'
+    else:
+        if not ('use_graphic_display' in configuration['graphic_display']):
+            checkResult += '仕様ファイルの「graphic_display」セクション中に「use_graphic_display」の定義がありません．\n'
+        if not ('graphic_display_type' in configuration['graphic_display']):
+            checkResult += '仕様ファイルの「graphic_display」セクション中に「graphic_display_type」の定義がありません．\n'
+        if not ('graphic_display_cs_pin' in configuration['graphic_display']):
+            checkResult += '仕様ファイルの「graphic_display」セクション中に「graphic_display_cs_pin」の定義がありません．\n'
+        if not ('graphic_display_rst_pin' in configuration['graphic_display']):
+            checkResult += '仕様ファイルの「graphic_display」セクション中に「graphic_display_rst_pin」の定義がありません．\n'
+        if not ('graphic_display_dc_pin' in configuration['graphic_display']):
+            checkResult += '仕様ファイルの「graphic_display」セクション中に「graphic_display_dc_pin」の定義がありません．\n'
+        if not ('graphic_display_mosi_pin' in configuration['graphic_display']):
+            checkResult += '仕様ファイルの「graphic_display」セクション中に「graphic_display_mosi_pin」の定義がありません．\n'
+        if not ('graphic_display_miso_pin' in configuration['graphic_display']):
+            checkResult += '仕様ファイルの「graphic_display」セクション中に「graphic_display_miso_pin」の定義がありません．\n'
+        if not ('graphic_display_clk_pin' in configuration['graphic_display']):
+            checkResult += '仕様ファイルの「graphic_display」セクション中に「graphic_display_clk_pin」の定義がありません．\n'
+    return checkResult
+
+def isEffectivePinForShield(pin):
+    global selected_arduino
+    if selected_arduino['shield_type']==0: # Baseシールド
+        if (1<pin) and (pin<9):
+            return True
+        return False
+    elif selected_arduino['shield_type']==1: # Nanoシールド
+        if (2==pin) or (4==pin) or (6==pin):
+            return True
+        return False
+    return False
+
+def pinNumber(pinStr):
+    if (pinStr=="D0") or (pinStr=="0"):
+        return 0
+    elif (pinStr=="D1") or (pinStr=="1"):
+        return 1
+    elif (pinStr=="D2") or (pinStr=="2"):
+        return 2
+    elif (pinStr=="D3") or (pinStr=="3"):
+        return 3
+    elif (pinStr=="D4") or (pinStr=="4"):
+        return 4
+    elif (pinStr=="D5") or (pinStr=="5"):
+        return 5
+    elif (pinStr=="D6") or (pinStr=="6"):
+        return 6
+    elif (pinStr=="D7") or (pinStr=="7"):
+        return 7
+    elif (pinStr=="D8") or (pinStr=="8"):
+        return 8
+    elif (pinStr=="D9") or (pinStr=="9"):
+        return 9
+    elif (pinStr=="D10") or (pinStr=="10"):
+        return 10
+    elif (pinStr=="D11") or (pinStr=="11"):
+        return 11
+    elif (pinStr=="D12") or (pinStr=="12"):
+        return 12
+    elif (pinStr=="D13") or (pinStr=="13"):
+        return 13
+    elif (pinStr=="D14") or (pinStr=="14"):
+        return 14
+    elif (pinStr=="D15") or (pinStr=="15"):
+        return 15
+    elif (pinStr=="D16") or (pinStr=="16"):
+        return 16
+    elif (pinStr=="D17") or (pinStr=="17"):
+        return 17
+    elif (pinStr=="D18") or (pinStr=="18"):
+        return 18
+    elif (pinStr=="D19") or (pinStr=="19"):
+        return 19
+    elif (pinStr=="D20") or (pinStr=="20"):
+        return 20
+    elif (pinStr=="D21") or (pinStr=="21"):
+        return 21
+    elif (pinStr=="D22") or (pinStr=="22"):
+        return 22
+    elif (pinStr=="D23") or (pinStr=="23"):
+        return 23
+    elif (pinStr=="D24") or (pinStr=="24"):
+        return 24
+    elif (pinStr=="D25") or (pinStr=="25"):
+        return 25
+    elif (pinStr=="D26") or (pinStr=="26"):
+        return 26
+    elif (pinStr=="D27") or (pinStr=="27"):
+        return 27
+    elif (pinStr=="D28") or (pinStr=="28"):
+        return 28
+    elif (pinStr=="D29") or (pinStr=="29"):
+        return 29
+    elif (pinStr=="D30") or (pinStr=="30"):
+        return 30
+    elif (pinStr=="D31") or (pinStr=="31"):
+        return 31
+    elif (pinStr=="D32") or (pinStr=="32"):
+        return 32
+    elif (pinStr=="D33") or (pinStr=="33"):
+        return 33
+    elif (pinStr=="D34") or (pinStr=="34"):
+        return 34
+    elif (pinStr=="D35") or (pinStr=="35"):
+        return 35
+    elif (pinStr=="D36") or (pinStr=="36"):
+        return 36
+    elif (pinStr=="D37") or (pinStr=="37"):
+        return 37
+    elif (pinStr=="D38") or (pinStr=="38"):
+        return 38
+    elif (pinStr=="D39") or (pinStr=="39"):
+        return 39
+    elif (pinStr=="D40") or (pinStr=="40"):
+        return 40
+    elif (pinStr=="D41") or (pinStr=="41"):
+        return 41
+    elif (pinStr=="D42") or (pinStr=="42"):
+        return 42
+    elif (pinStr=="D43") or (pinStr=="43"):
+        return 43
+    elif (pinStr=="D44") or (pinStr=="44"):
+        return 44
+    elif (pinStr=="D45") or (pinStr=="45"):
+        return 45
+    elif (pinStr=="D46") or (pinStr=="46"):
+        return 46
+    elif (pinStr=="D47") or (pinStr=="47"):
+        return 47
+    elif (pinStr=="D48") or (pinStr=="48"):
+        return 48
+    elif (pinStr=="D49") or (pinStr=="49"):
+        return 49
+    elif (pinStr=="D50") or (pinStr=="50"):
+        return 50
+    elif (pinStr=="D51") or (pinStr=="51"):
+        return 51
+    elif (pinStr=="D52") or (pinStr=="52"):
+        return 52
+    elif (pinStr=="D53") or (pinStr=="53"):
+        return 53
+    else:
+        return -1
+
+def getActuatorGroupList():
+    global actuator_info
+    return actuator_info['group']['groupList']
+
+def predefineActuatorGroupNeedsDeviceSelection():
+    global actuator_info
+    for i in getActuatorGroupList():
+        if len(actuator_info['group'][i]['device']) > 1:
+            actuator_info['group'][i]['needs_device_selection']=True
+        else:
+            actuator_info['group'][i]['needs_device_selection']=False
+
+def getActuatorCategoryList():
+    global actuator_info
+    return actuator_info['category']['key']
+
+def predefineActuatorDeviceConnectionType():
+    global actuator_info
+    for i in (getActuatorCategoryList()):
+        for j in (actuator_info[i]['deviceList']):
+            # type 整数 : 0 - spi, 1 - i2c, 2 - シリアル, 3 - groveコネクタ1個, 4 - その他
+            if int(actuator_info[i][j]['connecter']['spi'])>0:
+                actuator_info[i][j]['connecter']['type']=0
+            elif int(actuator_info[i][j]['connecter']['i2c'])>0:
+                actuator_info[i][j]['connecter']['type']=1
+            elif int(actuator_info[i][j]['connecter']['serial'])>0:
+                actuator_info[i][j]['connecter']['type']=2
+            elif (int(actuator_info[i][j]['connecter']['digital'])==1) or (int(actuator_info[i][j]['connecter']['digital'])==2):
+                actuator_info[i][j]['connecter']['type']=3
+            else:
+                actuator_info[i][j]['connecter']['type']=4
+
+def checkTFvalue(value):
+    if value == "True" or value == "true" or value == True:
+        return True
+    else:
+        return False
+
+def exec_command():
+    global source_file_name, configuration, error
+    try:
+        with open(source_file_name, mode='r', encoding='utf-8') as f:
+            configuration = yaml.safe_load(f)
+    except Exception as e:
+        error = 'yamlファイルのロードに失敗しました．'
+        return error
+    checkResult = checkConfiguration()
+    if '' != checkResult:
+        error = checkResult
+        return error
+    return ''
+
+def errorWindow(page: ft.Page):
+    async def finish_button_clicked(e):
+        await page.window.destroy()
+    global error
+    page.title = "エラー"
+    page.window.width = 400
+    page.window.height = 500
+    page.autoscroll = True
+    finish_button = ft.Button(content="閉じる", on_click=finish_button_clicked)
+    page.window.height = 500
+    page.add(
+        ft.SafeArea(
+            content=ft.Column(
+                height=550,
+                scroll=ft.ScrollMode.ALWAYS,
+                controls=[
+                    ft.AppBar(title=ft.Text("重大なエラー"), bgcolor=ft.Colors.RED),
+                    ft.Text(error),
+                    ft.Divider(height=2, color="black"),
+                    finish_button,
+                ],
+            )
+        )
+    )
+
+def fileWindow(page: ft.Page):
+    def createViewError():
+        global error
+        def close_button_clicked(e):
+            asyncio.create_task(page.push_route("/viewMain"))
+
+        page.title = "スケッチ生成失敗"
+        pageTitleBar = ft.AppBar(
+            title=ft.Text("スケッチ生成失敗"),
+            bgcolor=ft.Colors.YELLOW,
+            actions=[]
+        )
+        close_button = ft.Button(content="閉じる", on_click=close_button_clicked)
+        page.window.height = 500
+        return ft.View(route="/viewError", controls=[
+            ft.SafeArea(
+                content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
+                    controls=[
+                        pageTitleBar,
+                        close_button,
+                        ft.Text(error),
+                    ],
+                ),
+            )   
+        ])
+
+    def createViewAssemblyInstruction():
+        def icon_clicked(e):
+            global PORT, url_header
+            url = url_header + str(PORT) + "/BuildInstruction.html"
+            webbrowser.open(url)
+
+        async def back_button_clicked(e):
+            asyncio.create_task(page.push_route("/viewMain"))
+
+        global PORT, selected_arduino, configuration
+        pageTitleBar = ft.AppBar(
+            title=ft.Text("アクチュエータ取り付け情報"),
+            bgcolor=ft.Colors.BLUE,
+            actions=[
+                ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
+            ]
+        )
+        divider = ft.Divider(height=2, color="black")
+        # classic, giga用
+        base_shield_i2c_fig = ft.Image(
+            src= url_header + str(PORT) + "/images/Grove_Base_Shield_pin_I2C.png",
+            width=600,
+            height=400,
+            fit=ft.BoxFit.CONTAIN,
+        )
+        base_shield_serial_fig = ft.Image(
+            src= url_header + str(PORT) + "/images/Grove_Base_Shield_pin_Uart.png",
+            width=600,
+            height=400,
+            fit=ft.BoxFit.CONTAIN,
+        )
+        base_shield_d2_fig = ft.Image(
+            src= url_header + str(PORT) + "/images/Grove_Base_Shield_pin_D2.png",
+            width=600,
+            height=400,
+            fit=ft.BoxFit.CONTAIN,
+        )
+        base_shield_d3_fig = ft.Image(
+            src= url_header + str(PORT) + "/images/Grove_Base_Shield_pin_D3.png",
+            width=600,
+            height=400,
+            fit=ft.BoxFit.CONTAIN,
+        )
+        base_shield_d4_fig = ft.Image(
+            src= url_header + str(PORT) + "/images/Grove_Base_Shield_pin_D4.png",
+            width=600,
+            height=400,
+            fit=ft.BoxFit.CONTAIN,
+        )
+        base_shield_d5_fig = ft.Image(
+            src= url_header + str(PORT) + "/images/Grove_Base_Shield_pin_D5.png",
+            width=600,
+            height=400,
+            fit=ft.BoxFit.CONTAIN,
+        )
+        base_shield_d6_fig = ft.Image(
+            src= url_header + str(PORT) + "/images/Grove_Base_Shield_pin_D6.png",
+            width=600,
+            height=400,
+            fit=ft.BoxFit.CONTAIN,
+        )
+        base_shield_d7_fig = ft.Image(
+            src= url_header + str(PORT) + "/images/Grove_Base_Shield_pin_D7.png",
+            width=600,
+            height=400,
+            fit=ft.BoxFit.CONTAIN,
+        )
+        base_shield_d8_fig = ft.Image(
+            src= url_header + str(PORT) + "/images/Grove_Base_Shield_pin_D8.png",
+            width=600,
+            height=400,
+            fit=ft.BoxFit.CONTAIN,
+        )
+        # for Nanoシリーズ
+        nano_shield_i2c_fig = ft.Image(
+            src= url_header + str(PORT) + "/images/Grove_Nano_Shield_pin_I2C.png",
+            width=600,
+            height=400,
+            fit=ft.BoxFit.CONTAIN,
+        )
+        nano_shield_serial_fig = ft.Image(
+            src= url_header + str(PORT) + "/images/Grove_Nano_Shield_pin_Uart.png",
+            width=600,
+            height=400,
+            fit=ft.BoxFit.CONTAIN,
+        )
+        nano_shield_d2_fig = ft.Image(
+            src= url_header + str(PORT) + "/images/Grove_Nano_Shield_pin_D2.png",
+            width=600,
+            height=400,
+            fit=ft.BoxFit.CONTAIN,
+        )
+        nano_shield_d4_fig = ft.Image(
+            src= url_header + str(PORT) + "/images/Grove_Nano_Shield_pin_D4.png",
+            width=600,
+            height=400,
+            fit=ft.BoxFit.CONTAIN,
+        )
+        nano_shield_d6_fig = ft.Image(
+            src= url_header + str(PORT) + "/images/Grove_Nano_Shield_pin_D6.png",
+            width=600,
+            height=400,
+            fit=ft.BoxFit.CONTAIN,
+        )
+        jumber_connection_msg = ft.Text('ジャンパーケーブル等を使って以下端子をArduinoに接続')
+        controls = [pageTitleBar, divider]
+        # Grove LCD RGB Backlight
+        if checkTFvalue(configuration['grove_lcd']['use_grove_lcd']):
+            grove_lcd_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['grove_lcd'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            subtitle = ft.Text("Grove LCDの配線", weight=ft.FontWeight.BOLD, size=20)
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : Grove LCD RGB Backlight', weight=ft.FontWeight.BOLD))
+            controls.append(grove_lcd_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            controls.append(ft.Text('このデバイスはI2C端子に接続してください．'))
+            if selected_arduino['shield_type']==0:
+                controls.append(base_shield_i2c_fig)
+            elif selected_arduino['shield_type']==1:
+                controls.append(nano_shield_i2c_fig)
+            controls.append(divider)
+        # ACM1602NI
+        if checkTFvalue(configuration['acm1602ni']['use_acm1602ni']):
+            subtitle = ft.Text("ACM1602やACM2004の配線", weight=ft.FontWeight.BOLD, size=20)
+            acm1602ni_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['acm1602ni'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : ACM1602NI-FLW-FBW-M01(秋月電子)', weight=ft.FontWeight.BOLD))
+            controls.append(acm1602ni_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            controls.append(ft.Text('このデバイスはI2C端子に接続してください．'))
+            if selected_arduino['shield_type']==0:
+                controls.append(base_shield_i2c_fig)
+            elif selected_arduino['shield_type']==1:
+                controls.append(nano_shield_i2c_fig)
+            controls.append(divider)
+        # Liquid crystal library sc1602bslb
+        if checkTFvalue(configuration['liquid_crystal']['use_liquid_crystal']):
+            subtitle = ft.Text("SC1602BSLB等(Liquid Crystal Libraryを使うデバイス)の配線", weight=ft.FontWeight.BOLD, size=20)
+            sc1602bslb_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['sc1602bslb'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : SC1602BSLB(秋月電子)', weight=ft.FontWeight.BOLD))
+            controls.append(sc1602bslb_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            controls.append(jumber_connection_msg)
+            controls.append(ft.Text('RSピン接続先 : '+configuration['liquid_crystal']['liquid_crystal_rs_pin']))
+            controls.append(ft.Text('ESピン接続先 : '+configuration['liquid_crystal']['liquid_crystal_es_pin']))
+            controls.append(ft.Text('D4ピン接続先 : '+configuration['liquid_crystal']['liquid_crystal_d4_pin']))
+            controls.append(ft.Text('D4ピン接続先 : '+configuration['liquid_crystal']['liquid_crystal_d5_pin']))
+            controls.append(ft.Text('D4ピン接続先 : '+configuration['liquid_crystal']['liquid_crystal_d6_pin']))
+            controls.append(ft.Text('D4ピン接続先 : '+configuration['liquid_crystal']['liquid_crystal_d7_pin']))
+            controls.append(divider)
+        # Simple mono LED
+        if checkTFvalue(configuration['simple_mono_led']['use_simple_mono_led']):
+            subtitle = ft.Text("GroveLED等(モノクロLED)の配線", weight=ft.FontWeight.BOLD, size=20)
+            grove_led_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['grove_led'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : Grove LED', weight=ft.FontWeight.BOLD))
+            controls.append(grove_led_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            pin = pinNumber(configuration['simple_mono_led']['simple_mono_led_pin'])
+            if isEffectivePinForShield(pin):
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['simple_mono_led']['simple_mono_led_pin']))
+                if selected_arduino['shield_type']==0:
+                    if pin == 2:
+                        controls.append(base_shield_d2_fig)
+                    elif pin == 3:
+                        controls.append(base_shield_d3_fig)
+                    elif pin == 4:
+                        controls.append(base_shield_d4_fig)
+                    elif pin == 5:
+                        controls.append(base_shield_d5_fig)
+                    elif pin == 6:
+                        controls.append(base_shield_d6_fig)
+                    elif pin == 7:
+                        controls.append(base_shield_d7_fig)
+                    elif pin == 8:
+                        controls.append(base_shield_d8_fig)
+                elif selected_arduino['shield_type']==1:
+                    if pin == 2:
+                        controls.append(nano_shield_d2_fig)
+                    elif pin == 4:
+                        controls.append(nano_shield_d4_fig)
+                    elif pin == 6:
+                        controls.append(nano_shield_d6_fig)
+            else:
+                controls.append(jumber_connection_msg)
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['simple_mono_led']['simple_mono_led_pin']))
+            controls.append(divider)
+        # Anode/Cathod common RGB LED
+        if checkTFvalue(configuration['simple_color_led']['use_simple_color_led']):
+            subtitle = ft.Text("アノード/カソードコモン カラーLEDの配線", weight=ft.FontWeight.BOLD, size=20)
+            simple_color_led_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['simple_color_led'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : OSTA5131A-R/PG/B(秋月電子)', weight=ft.FontWeight.BOLD))
+            controls.append(simple_color_led_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            controls.append(jumber_connection_msg)
+            controls.append(ft.Text('REDピン接続先 : '+configuration['simple_color_led']['simple_color_led_red_pin']))
+            controls.append(ft.Text('GREENピン接続先 : '+configuration['simple_color_led']['simple_color_led_green_pin']))
+            controls.append(ft.Text('BLUEピン接続先 : '+configuration['simple_color_led']['simple_color_led_blue_pin']))
+            controls.append(divider)
+        # Grove LED bar Grove_LED_bar
+        if checkTFvalue(configuration['grove_led_bar']['use_grove_led_bar']):
+            subtitle = ft.Text("Grove LED Barの配線", weight=ft.FontWeight.BOLD, size=20)
+            Grove_LED_bar_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['Grove_LED_bar'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : Grove LED Bar', weight=ft.FontWeight.BOLD))
+            controls.append(Grove_LED_bar_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            pin1 = pinNumber(configuration['grove_led_bar']['grove_led_bar_data_pin'])
+            pin2 = pinNumber(configuration['grove_led_bar']['grove_led_bar_clk_pin'])
+            if (isEffectivePinForShield(pin1)) and (pin2 == (pin1+1)):
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['grove_led_bar']['grove_led_bar_data_pin'] + "と" + configuration['grove_led_bar']['grove_led_bar_clk_pin'] ))
+                if selected_arduino['shield_type']==0:
+                    if pin1 == 2:
+                        controls.append(base_shield_d2_fig)
+                    elif pin1 == 3:
+                        controls.append(base_shield_d3_fig)
+                    elif pin1 == 4:
+                        controls.append(base_shield_d4_fig)
+                    elif pin1 == 5:
+                        controls.append(base_shield_d5_fig)
+                    elif pin1 == 6:
+                        controls.append(base_shield_d6_fig)
+                    elif pin1 == 7:
+                        controls.append(base_shield_d7_fig)
+                    elif pin1 == 8:
+                        controls.append(base_shield_d8_fig)
+                elif selected_arduino['shield_type']==1:
+                    if pin1 == 2:
+                        controls.append(nano_shield_d2_fig)
+                    elif pin1 == 4:
+                        controls.append(nano_shield_d4_fig)
+                    elif pin1 == 6:
+                        controls.append(nano_shield_d6_fig)
+            else:
+                controls.append(jumber_connection_msg)
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['grove_led_bar']['grove_led_bar_data_pin'] + "と" + configuration['grove_led_bar']['grove_led_bar_clk_pin'] ))
+            controls.append(divider)
+        # Grove LED circular
+        if checkTFvalue(configuration['grove_led_circular']['use_grove_led_circular']):
+            subtitle = ft.Text("Grove Circular LEDの配線", weight=ft.FontWeight.BOLD, size=20)
+            grove_led_circular_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['grove_led_circular'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : Grove - Circular LED', weight=ft.FontWeight.BOLD))
+            controls.append(grove_led_circular_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            pin1 = pinNumber(configuration['grove_led_circular']['grove_led_circular_data_pin'])
+            pin2 = pinNumber(configuration['grove_led_circular']['grove_led_circular_clk_pin'])
+            if (isEffectivePinForShield(pin1)) and (pin2 == (pin1+1)):
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['grove_led_circular']['grove_led_circular_data_pin'] + "と" + configuration['grove_led_circular']['grove_led_circular_clk_pin'] ))
+                if selected_arduino['shield_type']==0:
+                    if pin1 == 2:
+                        controls.append(base_shield_d2_fig)
+                    elif pin1 == 3:
+                        controls.append(base_shield_d3_fig)
+                    elif pin1 == 4:
+                        controls.append(base_shield_d4_fig)
+                    elif pin1 == 5:
+                        controls.append(base_shield_d5_fig)
+                    elif pin1 == 6:
+                        controls.append(base_shield_d6_fig)
+                    elif pin1 == 7:
+                        controls.append(base_shield_d7_fig)
+                    elif pin1 == 8:
+                        controls.append(base_shield_d8_fig)
+                elif selected_arduino['shield_type']==1:
+                    if pin1 == 2:
+                        controls.append(nano_shield_d2_fig)
+                    elif pin1 == 4:
+                        controls.append(nano_shield_d4_fig)
+                    elif pin1 == 6:
+                        controls.append(nano_shield_d6_fig)
+            else:
+                controls.append(jumber_connection_msg)
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['grove_led_circular']['grove_led_circular_data_pin'] + "と" + configuration['grove_led_circular']['grove_led_circular_clk_pin'] ))
+            controls.append(divider)
+        # Grove chainable LED
+        if checkTFvalue(configuration['grove_chainable_led']['use_grove_chainable_led']):
+            subtitle = ft.Text("Grove Chainable RGB LEDの配線", weight=ft.FontWeight.BOLD, size=20)
+            grove_chainable_led_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['grove_chainable_led'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : Grove - Chainable RGB LED', weight=ft.FontWeight.BOLD))
+            controls.append(grove_chainable_led_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            pin1 = pinNumber(configuration['grove_chainable_led']['grove_chainable_led_clk_pin'])
+            pin2 = pinNumber(configuration['grove_chainable_led']['grove_chainable_led_data_pin'])
+            if (isEffectivePinForShield(pin1)) and (pin2 == (pin1+1)):
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['grove_chainable_led']['grove_chainable_led_clk_pin'] + "と" + configuration['grove_chainable_led']['grove_chainable_led_data_pin'] ))
+                if selected_arduino['shield_type']==0:
+                    if pin1 == 2:
+                        controls.append(base_shield_d2_fig)
+                    elif pin1 == 3:
+                        controls.append(base_shield_d3_fig)
+                    elif pin1 == 4:
+                        controls.append(base_shield_d4_fig)
+                    elif pin1 == 5:
+                        controls.append(base_shield_d5_fig)
+                    elif pin1 == 6:
+                        controls.append(base_shield_d6_fig)
+                    elif pin1 == 7:
+                        controls.append(base_shield_d7_fig)
+                    elif pin1 == 8:
+                        controls.append(base_shield_d8_fig)
+                elif selected_arduino['shield_type']==1:
+                    if pin1 == 2:
+                        controls.append(nano_shield_d2_fig)
+                    elif pin1 == 4:
+                        controls.append(nano_shield_d4_fig)
+                    elif pin1 == 6:
+                        controls.append(nano_shield_d6_fig)
+            else:
+                controls.append(jumber_connection_msg)
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['grove_chainable_led']['grove_chainable_led_clk_pin'] + "と" + configuration['grove_chainable_led']['grove_chainable_led_data_pin'] ))
+            controls.append(divider)
+        # Adafruit NeoPixel
+        if checkTFvalue(configuration['adafuit_neopixel']['use_adafuit_neopixel']):
+            subtitle = ft.Text("Grove LED stick等(adafruit Neo Pixelライブラリを使うカラーLED)の配線", weight=ft.FontWeight.BOLD, size=20)
+            grove_led_stick_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['grove_led_stick'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : Grove LED Stick', weight=ft.FontWeight.BOLD))
+            controls.append(grove_led_stick_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            pin = pinNumber(configuration['adafuit_neopixel']['adafuit_neopixel_pin'])
+            if isEffectivePinForShield(pin):
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['adafuit_neopixel']['adafuit_neopixel_pin']))
+                if selected_arduino['shield_type']==0:
+                    if pin == 2:
+                        controls.append(base_shield_d2_fig)
+                    elif pin == 3:
+                        controls.append(base_shield_d3_fig)
+                    elif pin == 4:
+                        controls.append(base_shield_d4_fig)
+                    elif pin == 5:
+                        controls.append(base_shield_d5_fig)
+                    elif pin == 6:
+                        controls.append(base_shield_d6_fig)
+                    elif pin == 7:
+                        controls.append(base_shield_d7_fig)
+                    elif pin == 8:
+                        controls.append(base_shield_d8_fig)
+                elif selected_arduino['shield_type']==1:
+                    if pin == 2:
+                        controls.append(nano_shield_d2_fig)
+                    elif pin == 4:
+                        controls.append(nano_shield_d4_fig)
+                    elif pin == 6:
+                        controls.append(nano_shield_d6_fig)
+            else:
+                controls.append(jumber_connection_msg)
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['adafuit_neopixel']['adafuit_neopixel_pin']))
+            controls.append(divider)
+        # OSL12306-16 (16セグメントLED)
+        if checkTFvalue(configuration['osl12306_16']['use_osl12306_16']):
+            subtitle = ft.Text("OSL12306-16 (16セグメントLED)の配線", weight=ft.FontWeight.BOLD, size=20)
+            OSL12306_16_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['OSL12306_16'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : OSL12306-16 (秋月電子)', weight=ft.FontWeight.BOLD))
+            controls.append(OSL12306_16_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            controls.append(jumber_connection_msg)
+            controls.append(ft.Text('A1ピン接続先 : '+configuration['osl12306_16']['osl12306_16_a1_pin']))
+            controls.append(ft.Text('A2ピン接続先 : '+configuration['osl12306_16']['osl12306_16_a2_pin']))
+            controls.append(ft.Text('Bピン接続先 : '+configuration['osl12306_16']['osl12306_16_b_pin']))
+            controls.append(ft.Text('Cピン接続先 : '+configuration['osl12306_16']['osl12306_16_c_pin']))
+            controls.append(ft.Text('D1ピン接続先 : '+configuration['osl12306_16']['osl12306_16_d1_pin']))
+            controls.append(ft.Text('D2ピン接続先 : '+configuration['osl12306_16']['osl12306_16_d2_pin']))
+            controls.append(ft.Text('Eピン接続先 : '+configuration['osl12306_16']['osl12306_16_e_pin']))
+            controls.append(ft.Text('Fピン接続先 : '+configuration['osl12306_16']['osl12306_16_f_pin']))
+            controls.append(ft.Text('G1ピン接続先 : '+configuration['osl12306_16']['osl12306_16_g1_pin']))
+            controls.append(ft.Text('G2ピン接続先 : '+configuration['osl12306_16']['osl12306_16_g2_pin']))
+            controls.append(ft.Text('Jピン接続先 : '+configuration['osl12306_16']['osl12306_16_j_pin']))
+            controls.append(ft.Text('Kピン接続先 : '+configuration['osl12306_16']['osl12306_16_k_pin']))
+            controls.append(ft.Text('Lピン接続先 : '+configuration['osl12306_16']['osl12306_16_l_pin']))
+            controls.append(ft.Text('Mピン接続先 : '+configuration['osl12306_16']['osl12306_16_m_pin']))
+            controls.append(ft.Text('Nピン接続先 : '+configuration['osl12306_16']['osl12306_16_n_pin']))
+            controls.append(ft.Text('Pピン接続先 : '+configuration['osl12306_16']['osl12306_16_p_pin']))
+            controls.append(ft.Text('DPピン接続先 : '+configuration['osl12306_16']['osl12306_16_dp_pin']))
+            controls.append(ft.Text('Digitピン接続先 : '+configuration['osl12306_16']['osl12306_16_digit_pin']))
+            controls.append(divider)
+        # OSL20541 (2桁14セグメントLED)
+        if checkTFvalue(configuration['osl20541']['use_osl20541']):
+            subtitle = ft.Text("OSL20541 (2桁14セグメントLED)の配線", weight=ft.FontWeight.BOLD, size=20)
+            OSL20541_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['OSL20541'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : OSL20541-IR (秋月電子)', weight=ft.FontWeight.BOLD))
+            controls.append(OSL20541_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            controls.append(jumber_connection_msg)
+            controls.append(ft.Text('Aピン接続先 : '+configuration['osl20541']['osl20541_a_pin']))
+            controls.append(ft.Text('Bピン接続先 : '+configuration['osl20541']['osl20541_b_pin']))
+            controls.append(ft.Text('Cピン接続先 : '+configuration['osl20541']['osl20541_c_pin']))
+            controls.append(ft.Text('Dピン接続先 : '+configuration['osl20541']['osl20541_d_pin']))
+            controls.append(ft.Text('Eピン接続先 : '+configuration['osl20541']['osl20541_e_pin']))
+            controls.append(ft.Text('Fピン接続先 : '+configuration['osl20541']['osl20541_f_pin']))
+            controls.append(ft.Text('G1ピン接続先 : '+configuration['osl20541']['osl20541_g1_pin']))
+            controls.append(ft.Text('G2ピン接続先 : '+configuration['osl20541']['osl20541_g2_pin']))
+            controls.append(ft.Text('Hピン接続先 : '+configuration['osl20541']['osl20541_h_pin']))
+            controls.append(ft.Text('Jピン接続先 : '+configuration['osl20541']['osl20541_j_pin']))
+            controls.append(ft.Text('Kピン接続先 : '+configuration['osl20541']['osl20541_k_pin']))
+            controls.append(ft.Text('Lピン接続先 : '+configuration['osl20541']['osl20541_l_pin']))
+            controls.append(ft.Text('Mピン接続先 : '+configuration['osl20541']['osl20541_m_pin']))
+            controls.append(ft.Text('Nピン接続先 : '+configuration['osl20541']['osl20541_n_pin']))
+            controls.append(ft.Text('DPピン接続先 : '+configuration['osl20541']['osl20541_dp_pin']))
+            controls.append(ft.Text('Digit1ピン接続先 : '+configuration['osl20541']['osl20541_digit1_pin']))
+            controls.append(ft.Text('Digit2ピン接続先 : '+configuration['osl20541']['osl20541_digit2_pin']))
+            controls.append(divider)
+        # OSL30561 (3桁7セグメントLED)
+        if checkTFvalue(configuration['osl30561']['use_osl30561']):
+            subtitle = ft.Text("OSL30561 (3桁7セグメントLED)の配線", weight=ft.FontWeight.BOLD, size=20)
+            OSL30561_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['OSL30561'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : OSL30561-IRA (秋月電子)', weight=ft.FontWeight.BOLD))
+            controls.append(OSL30561_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            controls.append(jumber_connection_msg)
+            controls.append(ft.Text('Aピン接続先 : '+configuration['osl30561']['osl30561_a_pin']))
+            controls.append(ft.Text('Bピン接続先 : '+configuration['osl30561']['osl30561_b_pin']))
+            controls.append(ft.Text('Cピン接続先 : '+configuration['osl30561']['osl30561_c_pin']))
+            controls.append(ft.Text('Dピン接続先 : '+configuration['osl30561']['osl30561_d_pin']))
+            controls.append(ft.Text('Eピン接続先 : '+configuration['osl30561']['osl30561_e_pin']))
+            controls.append(ft.Text('Fピン接続先 : '+configuration['osl30561']['osl30561_f_pin']))
+            controls.append(ft.Text('Gピン接続先 : '+configuration['osl30561']['osl30561_g_pin']))
+            controls.append(ft.Text('DPピン接続先 : '+configuration['osl30561']['osl30561_dp_pin']))
+            controls.append(ft.Text('Digit1ピン接続先 : '+configuration['osl30561']['osl30561_digit1_pin']))
+            controls.append(ft.Text('Digit2ピン接続先 : '+configuration['osl30561']['osl30561_digit2_pin']))
+            controls.append(ft.Text('Digit3ピン接続先 : '+configuration['osl30561']['osl30561_digit3_pin']))
+            controls.append(divider)
+        # Grove - 4-Digit Display (TM1637)
+        if checkTFvalue(configuration['grove_tm1637']['use_grove_tm1637']):
+            subtitle = ft.Text("Grove - 4-Digit Displayの配線", weight=ft.FontWeight.BOLD, size=20)
+            grove_4_digit_LED_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['grove_4_digit_LED'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : Grove-4桁7セグメント赤色LEDモジュール', weight=ft.FontWeight.BOLD))
+            controls.append(grove_4_digit_LED_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            pin1 = pinNumber(configuration['grove_tm1637']['grove_tm1637_clk_pin'])
+            pin2 = pinNumber(configuration['grove_tm1637']['grove_tm1637_data_pin'])
+            if (isEffectivePinForShield(pin1)) and (pin2 == (pin1+1)):
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['grove_tm1637']['grove_tm1637_clk_pin'] + "と" + configuration['grove_tm1637']['grove_tm1637_data_pin'] ))
+                if selected_arduino['shield_type']==0:
+                    if pin1 == 2:
+                        controls.append(base_shield_d2_fig)
+                    elif pin1 == 3:
+                        controls.append(base_shield_d3_fig)
+                    elif pin1 == 4:
+                        controls.append(base_shield_d4_fig)
+                    elif pin1 == 5:
+                        controls.append(base_shield_d5_fig)
+                    elif pin1 == 6:
+                        controls.append(base_shield_d6_fig)
+                    elif pin1 == 7:
+                        controls.append(base_shield_d7_fig)
+                    elif pin1 == 8:
+                        controls.append(base_shield_d8_fig)
+                elif selected_arduino['shield_type']==1:
+                    if pin1 == 2:
+                        controls.append(nano_shield_d2_fig)
+                    elif pin1 == 4:
+                        controls.append(nano_shield_d4_fig)
+                    elif pin1 == 6:
+                        controls.append(nano_shield_d6_fig)
+            else:
+                controls.append(jumber_connection_msg)
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['grove_tm1637']['grove_tm1637_clk_pin'] + "と" + configuration['grove_tm1637']['grove_tm1637_data_pin'] ))
+            controls.append(divider)
+        # DFRobot DFR0090 (8桁7セグメントLED)
+        if checkTFvalue(configuration['dfr0090']['use_dfr0090']):
+            subtitle = ft.Text("DFR0090の配線", weight=ft.FontWeight.BOLD, size=20)
+            dfr0090_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['dfr0090'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : DFRobot DFR0090 (8桁7セグメントLED)', weight=ft.FontWeight.BOLD))
+            controls.append(dfr0090_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            controls.append(jumber_connection_msg)
+            controls.append(ft.Text('ラッチピン接続先 : '+configuration['osl30561']['dfr0090_latch_pin']))
+            controls.append(ft.Text('クロックピン接続先 : '+configuration['osl30561']['dfr0090_clk_pin']))
+            controls.append(ft.Text('データピン接続先 : '+configuration['osl30561']['dfr0090_data_pin']))
+            controls.append(divider)
+        # サーボ
+        if checkTFvalue(configuration['servo']['use_servo']):
+            subtitle = ft.Text("サーボモータの配線", weight=ft.FontWeight.BOLD, size=20)
+            grove_servo_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['grove_servo'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : Grove - サーボ', weight=ft.FontWeight.BOLD))
+            controls.append(grove_servo_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            pin = pinNumber(configuration['servo']['servo_pin'])
+            if isEffectivePinForShield(pin):
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['servo']['servo_pin']))
+                if selected_arduino['shield_type']==0:
+                    if pin == 2:
+                        controls.append(base_shield_d2_fig)
+                    elif pin == 3:
+                        controls.append(base_shield_d3_fig)
+                    elif pin == 4:
+                        controls.append(base_shield_d4_fig)
+                    elif pin == 5:
+                        controls.append(base_shield_d5_fig)
+                    elif pin == 6:
+                        controls.append(base_shield_d6_fig)
+                    elif pin == 7:
+                        controls.append(base_shield_d7_fig)
+                    elif pin == 8:
+                        controls.append(base_shield_d8_fig)
+                elif selected_arduino['shield_type']==1:
+                    if pin == 2:
+                        controls.append(nano_shield_d2_fig)
+                    elif pin == 4:
+                        controls.append(nano_shield_d4_fig)
+                    elif pin == 6:
+                        controls.append(nano_shield_d6_fig)
+            else:
+                controls.append(jumber_connection_msg)
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['servo']['servo_pin']))
+            controls.append(divider)
+        # スピーカー
+        if checkTFvalue(configuration['speaker']['use_speaker']):
+            subtitle = ft.Text("スピーカーの配線", weight=ft.FontWeight.BOLD, size=20)
+            grove_speaker_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['grove_speaker'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : Groveスピーカー', weight=ft.FontWeight.BOLD))
+            controls.append(grove_speaker_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            pin = pinNumber(configuration['speaker']['speaker_pin'])
+            if isEffectivePinForShield(pin):
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['speaker']['speaker_pin']))
+                if selected_arduino['shield_type']==0:
+                    if pin == 2:
+                        controls.append(base_shield_d2_fig)
+                    elif pin == 3:
+                        controls.append(base_shield_d3_fig)
+                    elif pin == 4:
+                        controls.append(base_shield_d4_fig)
+                    elif pin == 5:
+                        controls.append(base_shield_d5_fig)
+                    elif pin == 6:
+                        controls.append(base_shield_d6_fig)
+                    elif pin == 7:
+                        controls.append(base_shield_d7_fig)
+                    elif pin == 8:
+                        controls.append(base_shield_d8_fig)
+                elif selected_arduino['shield_type']==1:
+                    if pin == 2:
+                        controls.append(nano_shield_d2_fig)
+                    elif pin == 4:
+                        controls.append(nano_shield_d4_fig)
+                    elif pin == 6:
+                        controls.append(nano_shield_d6_fig)
+            else:
+                controls.append(jumber_connection_msg)
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['speaker']['speaker_pin']))
+            controls.append(divider)
+        # ブザー
+        if checkTFvalue(configuration['buzzer']['use_buzzer']):
+            subtitle = ft.Text("ブザーの配線", weight=ft.FontWeight.BOLD, size=20)
+            grove_buzzer_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['grove_buzzer'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : Groveブザー', weight=ft.FontWeight.BOLD))
+            controls.append(grove_buzzer_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            pin = pinNumber(configuration['buzzer']['buzzer_pin'])
+            if isEffectivePinForShield(pin):
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['buzzer']['buzzer_pin']))
+                if selected_arduino['shield_type']==0:
+                    if pin == 2:
+                        controls.append(base_shield_d2_fig)
+                    elif pin == 3:
+                        controls.append(base_shield_d3_fig)
+                    elif pin == 4:
+                        controls.append(base_shield_d4_fig)
+                    elif pin == 5:
+                        controls.append(base_shield_d5_fig)
+                    elif pin == 6:
+                        controls.append(base_shield_d6_fig)
+                    elif pin == 7:
+                        controls.append(base_shield_d7_fig)
+                    elif pin == 8:
+                        controls.append(base_shield_d8_fig)
+                elif selected_arduino['shield_type']==1:
+                    if pin == 2:
+                        controls.append(nano_shield_d2_fig)
+                    elif pin == 4:
+                        controls.append(nano_shield_d4_fig)
+                    elif pin == 6:
+                        controls.append(nano_shield_d6_fig)
+            else:
+                controls.append(jumber_connection_msg)
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['buzzer']['buzzer_pin']))
+            controls.append(divider)
+        # MP3プレーヤー
+        if checkTFvalue(configuration['mp3_player']['use_mp3_player']):
+            subtitle = ft.Text("MP3プレーヤーの配線", weight=ft.FontWeight.BOLD, size=20)
+            grove_mp3_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['grove_mp3'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : Grove MP3 player v4.0', weight=ft.FontWeight.BOLD))
+            controls.append(grove_mp3_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            controls.append(ft.Text('このデバイスはシリアル(uart)端子に接続してください．'))
+            if selected_arduino['shield_type']==0:
+                controls.append(base_shield_serial_fig)
+            elif selected_arduino['shield_type']==1:
+                controls.append(nano_shield_serial_fig)
+            controls.append(divider)
+        # simple PWM device
+        if checkTFvalue(configuration['pwm']['use_pwm']):
+            subtitle = ft.Text("単純PWMデバイス(LED等)の配線", weight=ft.FontWeight.BOLD, size=20)
+            grove_led_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['grove_led'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : Grove LED', weight=ft.FontWeight.BOLD))
+            controls.append(grove_led_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            pin = pinNumber(configuration['pwm']['pwm_pin'])
+            if isEffectivePinForShield(pin):
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['pwm']['pwm_pin']))
+                if selected_arduino['shield_type']==0:
+                    if pin == 2:
+                        controls.append(base_shield_d2_fig)
+                    elif pin == 3:
+                        controls.append(base_shield_d3_fig)
+                    elif pin == 4:
+                        controls.append(base_shield_d4_fig)
+                    elif pin == 5:
+                        controls.append(base_shield_d5_fig)
+                    elif pin == 6:
+                        controls.append(base_shield_d6_fig)
+                    elif pin == 7:
+                        controls.append(base_shield_d7_fig)
+                    elif pin == 8:
+                        controls.append(base_shield_d8_fig)
+                elif selected_arduino['shield_type']==1:
+                    if pin == 2:
+                        controls.append(nano_shield_d2_fig)
+                    elif pin == 4:
+                        controls.append(nano_shield_d4_fig)
+                    elif pin == 6:
+                        controls.append(nano_shield_d6_fig)
+            else:
+                controls.append(jumber_connection_msg)
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['pwm']['pwm_pin']))
+            controls.append(divider)
+        # simple デジタル device
+        if checkTFvalue(configuration['switch']['use_switch']):
+            subtitle = ft.Text("単純デジタルデバイス(リレー等)の配線", weight=ft.FontWeight.BOLD, size=20)
+            grove_relay_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['grove_relay'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : Groveリレー', weight=ft.FontWeight.BOLD))
+            controls.append(grove_relay_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            pin = pinNumber(configuration['switch']['switch_pin'])
+            if isEffectivePinForShield(pin):
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['switch']['switch_pin']))
+                if selected_arduino['shield_type']==0:
+                    if pin == 2:
+                        controls.append(base_shield_d2_fig)
+                    elif pin == 3:
+                        controls.append(base_shield_d3_fig)
+                    elif pin == 4:
+                        controls.append(base_shield_d4_fig)
+                    elif pin == 5:
+                        controls.append(base_shield_d5_fig)
+                    elif pin == 6:
+                        controls.append(base_shield_d6_fig)
+                    elif pin == 7:
+                        controls.append(base_shield_d7_fig)
+                    elif pin == 8:
+                        controls.append(base_shield_d8_fig)
+                elif selected_arduino['shield_type']==1:
+                    if pin == 2:
+                        controls.append(nano_shield_d2_fig)
+                    elif pin == 4:
+                        controls.append(nano_shield_d4_fig)
+                    elif pin == 6:
+                        controls.append(nano_shield_d6_fig)
+            else:
+                controls.append(jumber_connection_msg)
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['switch']['switch_pin']))
+            controls.append(divider)
+        # 赤外線リモコン
+        if checkTFvalue(configuration['ir_remote']['use_ir_remote']):
+            subtitle = ft.Text("赤外線リモコンの配線", weight=ft.FontWeight.BOLD, size=20)
+            grove_ir_emitter_image = ft.Image(
+                src= url_header + str(PORT) + "/images/" + device_image['grove_ir_emitter'],
+                width=300,
+                height=200,
+                fit=ft.BoxFit.CONTAIN,
+            )
+            controls.append(subtitle)
+            controls.append(ft.Text('代表的なデバイス : Grove IR Emitter', weight=ft.FontWeight.BOLD))
+            controls.append(grove_ir_emitter_image)
+            controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+            pin = pinNumber(configuration['ir_remote']['ir_remote_pin'])
+            if isEffectivePinForShield(pin):
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['ir_remote']['ir_remote_pin']))
+                if selected_arduino['shield_type']==0:
+                    if pin == 2:
+                        controls.append(base_shield_d2_fig)
+                    elif pin == 3:
+                        controls.append(base_shield_d3_fig)
+                    elif pin == 4:
+                        controls.append(base_shield_d4_fig)
+                    elif pin == 5:
+                        controls.append(base_shield_d5_fig)
+                    elif pin == 6:
+                        controls.append(base_shield_d6_fig)
+                    elif pin == 7:
+                        controls.append(base_shield_d7_fig)
+                    elif pin == 8:
+                        controls.append(base_shield_d8_fig)
+                elif selected_arduino['shield_type']==1:
+                    if pin == 2:
+                        controls.append(nano_shield_d2_fig)
+                    elif pin == 4:
+                        controls.append(nano_shield_d4_fig)
+                    elif pin == 6:
+                        controls.append(nano_shield_d6_fig)
+            else:
+                controls.append(jumber_connection_msg)
+                controls.append(ft.Text('このデバイスの接続先 : ' + configuration['ir_remote']['ir_remote_pin']))
+            controls.append(divider)
+        # Graphic display
+        if checkTFvalue(configuration['graphic_display']['use_graphic_display']):
+            graphic_display_type = configuration['graphic_display']['graphic_display_type']
+            if graphic_display_type == 0: # Arduino Gigaディスプレイシールド
+                subtitle = ft.Text("Arduino Gigaディスプレイシールドの配線", weight=ft.FontWeight.BOLD, size=20)
+                giga_display_image = ft.Image(
+                    src= url_header + str(PORT) + "/images/" + device_image['giga_display'],
+                    width=300,
+                    height=200,
+                    fit=ft.BoxFit.CONTAIN,
+                )
+                controls.append(subtitle)
+                controls.append(ft.Text('代表的なデバイス : Arduino Gigaディスプレイシールド', weight=ft.FontWeight.BOLD))
+                controls.append(giga_display_image)
+                controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+                special_message = ft.Text('公式マニュアルを参照して，Arduino Gigaの底面に装着してください．')
+                controls.append(special_message)
+                controls.append(divider)
+            elif graphic_display_type == 2:
+                subtitle = ft.Text("ILI9341搭載ディスプレイ(ハードウェアSPI接続)の配線", weight=ft.FontWeight.BOLD, size=20)
+                ILI9341_image = ft.Image(
+                    src= url_header + str(PORT) + "/images/" + device_image['ILI9341'],
+                    width=300,
+                    height=200,
+                    fit=ft.BoxFit.CONTAIN,
+                )
+                controls.append(subtitle)
+                controls.append(ft.Text('代表的なデバイス : MSP2807 (秋月電子)', weight=ft.FontWeight.BOLD))
+                controls.append(ILI9341_image)
+                controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+                controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+                controls.append(jumber_connection_msg)
+                controls.append(ft.Text('CSピン接続先 : '+configuration['graphic_display']['graphic_display_cs_pin']))
+                controls.append(ft.Text('RSTピン接続先 : '+configuration['graphic_display']['graphic_display_rst_pin']))
+                controls.append(ft.Text('DCピン接続先 : '+configuration['graphic_display']['graphic_display_dc_pin']))
+                controls.append(divider)
+            elif graphic_display_type == 3:
+                subtitle = ft.Text("ILI9341搭載ディスプレイ(ソフトウェアSPI接続)の配線", weight=ft.FontWeight.BOLD, size=20)
+                ILI9341_image = ft.Image(
+                    src= url_header + str(PORT) + "/images/" + device_image['ILI9341'],
+                    width=300,
+                    height=200,
+                    fit=ft.BoxFit.CONTAIN,
+                )
+                controls.append(subtitle)
+                controls.append(ft.Text('代表的なデバイス : MSP2807 (秋月電子)', weight=ft.FontWeight.BOLD))
+                controls.append(ILI9341_image)
+                controls.append(ft.Text('接続方法', weight=ft.FontWeight.BOLD))
+                controls.append(jumber_connection_msg)
+                controls.append(ft.Text('CSピン接続先 : '+configuration['graphic_display']['graphic_display_cs_pin']))
+                controls.append(ft.Text('RSTピン接続先 : '+configuration['graphic_display']['graphic_display_rst_pin']))
+                controls.append(ft.Text('DCピン接続先 : '+configuration['graphic_display']['graphic_display_dc_pin']))
+                controls.append(ft.Text('MOSIピン接続先 : '+configuration['graphic_display']['graphic_display_mosi_pin']))
+                controls.append(ft.Text('MISOピン接続先 : '+configuration['graphic_display']['graphic_display_miso_pin']))
+                controls.append(ft.Text('CLKピン接続先 : '+configuration['graphic_display']['graphic_display_clk_pin']))
+                controls.append(divider)
+        controls.append(ft.Button(content="戻る", on_click=back_button_clicked))
+        page.window.height = 1000
+        return ft.View(route="/viewAssemblyInstruction", controls=[
+            ft.SafeArea(
+                expand=True,
+                content=ft.Column(
+                    expand=True,
+                    height=1000,
+                    scroll=ft.ScrollMode.ALWAYS,
+                    controls=controls,
+                ),
+            )
+        ])
+
+    def createViewMain():
+        def icon_clicked(e):
+            global PORT, url_header
+            url = url_header + str(PORT) + "/About.html"
+            webbrowser.open(url)
+
+        async def exec_button_clicked(e):
+            global selected_arduino, voltage_check
+            selected_arduino['name'] = arduino_menu.value
+            selected_arduino['shield_type'] = arduino_info['Arduino'][arduino_menu.value]['shield_type']
+            if source_file_name=="":
+                warning_message.value = "入力の仕様ファイルを選択してください．"
+                warning_message.update()
+                return
+            if '' != exec_command():
+                asyncio.create_task(page.push_route("/viewError"))
+            else:
+                await page.push_route("/viewAssemblyInstruction")
+
+        async def pick_input_file_dialog(e: ft.Event[ft.Button]):
+            global source_file_name
+            files = await ft.FilePicker().pick_files(allow_multiple=False)
+            if files:
+                selected_input_file.value = files[0].path
+                source_file_name = selected_input_file.value
+            else:
+                selected_input_file.value = "キャンセルされました."
+                source_file_name = ""
+            selected_input_file.update()
+
+        async def applicationFinish(e: ft.Event[ft.Button]):
+            await page.window.destroy()
+
+        global selected_arduino, arduino_info, configuration
+        pageTitleBar = ft.AppBar(
+            title=ft.Text("仕様ファイルとArduino機種の指定"),
+            bgcolor=ft.Colors.BLUE,
+            actions=[
+                ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
+            ]
+        )
+        selected_input_file = ft.Text()
+        #selected_output_file = ft.Text()
+        arduino_selection_message = ft.Text("アクチュエータ端末の制作に利用するArduinoの機種を選択してください．")
+        arduino_menu_options = []
+        for i in arduino_info['Arduino']['deviceList']:
+            arduino_menu_options.append(ft.dropdown.Option(key = i, text = arduino_info['Arduino'][i]['name']))
+        arduino_menu = ft.Dropdown(
+                            value=selected_arduino['name'],
+                            options = arduino_menu_options,
+                        )
+        exec_button = ft.Button(content="仕様ロード", on_click=exec_button_clicked)
+        warning_message = ft.Text()
+        finish_button = ft.Button(content="終了", on_click=applicationFinish)
+        specFileSelectionButton = ft.Button(
+            content="ファイル選択",
+            icon=ft.Icons.UPLOAD_FILE,
+            on_click=pick_input_file_dialog,
+        )
+        page.window.height = 500
+        return ft.View(route="/viewMain", controls=[
+            ft.SafeArea(
+                content=ft.Column(
+                    height=550,
+                    scroll=ft.ScrollMode.ALWAYS,
+                    controls=[
+                        pageTitleBar,
+                        arduino_selection_message,
+                        arduino_menu,
+                        ft.Divider(height=2, color="black"),
+                        ft.Text("仕様ファイル指定", theme_style=ft.TextThemeStyle.TITLE_MEDIUM),
+                        specFileSelectionButton,
+                        selected_input_file,
+                        ft.Divider(height=2, color="black"),
+                        warning_message,
+                        ft.Row(
+                            [exec_button,finish_button,]
+                        ),
+                    ],
+                ),
+            )   
+        ])
+
+    def route_change(handler):
+        global configuration
+        page.views.clear()
+        if page.route == "/viewMain":
+            page.views.append(createViewMain())
+        if page.route == "/viewAssemblyInstruction":
+            page.views.append(createViewAssemblyInstruction())
+        if page.route == "/viewError":
+            page.views.append(createViewError())
+        page.update()
+    page.on_route_change = route_change
+    page.title = "アクチュエータ端末組み立て手順書"
+    page.window.width = 800
+    page.autoscroll = True
+    asyncio.create_task(page.push_route("/viewMain"))
+
+
+
+
+def checkApplicationEnvironment():
+    global error, arduino_info, actuator_info, HELP_DIRECTORY, HELP_FILES, CONFIG_FILE_DIR, CONFIG_FILES
+    error=''
+    pwd=os.getcwd()
+    pwd = pwd.replace('\\', '/')
+    pwd = pwd.replace(' ', '\\ ')
+    pwd = pwd + "/"
+    # check configuration files.
+    for file in CONFIG_FILES:
+        target_path = CONFIG_FILE_DIR + file
+        if not (os.path.isfile(pwd+target_path)):
+            error += "本プログラムの設定ファィル「"
+            error += file
+            error += "」が「"
+            error += CONFIG_FILE_DIR
+            error += "」にありません．\n"
+        else:
+            if file == "Arduino.yaml":
+                try:
+                    with open(target_path, mode='r', encoding='utf-8') as f:
+                        arduino_info = yaml.safe_load(f)
+                except Exception as e:
+                    error += 'Arduinoの機種情報ファイル(Arduino.yaml)が読み読み込みできません．\n'
+            elif file == "ActuatorDevices.yaml":
+                try:
+                    with open(target_path, mode='r', encoding='utf-8') as f:
+                        actuator_info = yaml.safe_load(f)
+                except Exception as e:
+                    error += 'アクチュエータの情報ファイル(ActuatorDevices.yaml)が読み読み込みできません．\n'
+    # check help files.
+    for file in HELP_FILES:
+        target_path = HELP_DIRECTORY + file
+        if not (os.path.isfile(pwd+target_path)):
+            error += "本プログラムのヘルプファィル「"
+            error += file
+            error += "」が「"
+            error += HELP_DIRECTORY
+            error += "」にありません．\n"
+    return error
+
+if __name__ == "__main__":
+    global actuator_info
+    if "" == checkApplicationEnvironment():
+        thread = threading.Thread(target=documentServer, daemon=True) # 処理を割り当てる
+        thread.start() # スレッドを起動する
+        predefineActuatorGroupNeedsDeviceSelection()
+        predefineActuatorDeviceConnectionType()
+        ft.run(fileWindow)
+    else:
+        ft.run(errorWindow)
+
+

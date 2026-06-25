@@ -1,19 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import flet as ft
+
 import http.server
 import socketserver
-
 import threading
-
-import flet as ft
 import asyncio
-
 import webbrowser
-
 import yaml
 import os
-
-
 
 # IP configuration for help
 PORT_RANGE=100
@@ -200,7 +195,7 @@ def pinNumber(pinStr):
 
 def configurationPinMap():
     global configuration, pin_assignment, selected_arduino, arduino_info
-    #
+    # ベースシステムのピンの使用状況の確認
     if configuration['platform']['network_hardware']['network_type']=='ethernet':
         pin_num = pinNumber(configuration['platform']['network_hardware']['ethernet_chip_select'])
         pin_assignment['digital'][pin_num] += 1
@@ -788,6 +783,43 @@ def checkActuatorVoltage():
                 controls.append(ft.Text(device_name))
     return controls
 
+def checkPwmPin(pin):
+    global arduino_info, selected_arduino
+    pin_number = pinNumber(pin)
+    arduino_name = selected_arduino['name']
+    return arduino_info['Arduino'][arduino_name]['pwm'][pin_number]
+
+def checkActuatorEnabled(actuator_name):
+    global configuration
+    flag='use_' + actuator_name
+    return configuration[actuator_name][flag]
+
+def checkActuatorUsePwm(category, actuator_name):
+    global actuator_info
+    return actuator_info[category][actuator_name]['pwm']
+
+def checkActuatorPWM():
+    global configuration, actuator_info
+    controls = []
+    #
+    # さまざまなLED
+    #
+    # Simple mono LED
+    if checkActuatorEnabled('simple_mono_led') and checkActuatorUsePwm('led', 'grove_mono_led'):
+        if not checkPwmPin(configuration['simple_mono_led']['simple_mono_led_pin']):
+            controls.append(ft.Text(actuator_info['led']['grove_mono_led']['name']))
+    # Simple color LED
+    if checkActuatorEnabled('simple_color_led') and checkActuatorUsePwm('led', 'cathod_common_color_led'):
+        if not checkPwmPin(configuration['simple_color_led']['simple_color_led_red_pin']) or checkPwmPin(configuration['simple_color_led']['simple_color_led_green_pin']) or checkPwmPin(configuration['simple_color_led']['simple_color_led_blue_pin']):
+            controls.append(ft.Text(actuator_info['led']['simple_color_led']['name']))
+    # simple PWM device
+    if checkActuatorEnabled('pwm') and checkActuatorUsePwm('pwm', 'grove_mono_led'):
+        if not checkPwmPin(configuration['pwm']['pwm_pin']):
+            controls.append(ft.Text(actuator_info['pwm']['grove_mono_led']['name']))
+    if len(controls)==0:
+        controls.append(ft.Text('PWMに問題があるデバイスはありません．'))
+    return controls
+
 def listupActuators():
     global configuration, actuator_info
     controls = []
@@ -883,13 +915,11 @@ def listupActuators():
             controls.append(ft.Text(device_name))
     # simple PWM device
     if configuration['pwm']['use_pwm']:
-        device_name = "LED等"
-        #device_name = actuator_info['pwm']['grove_mono_led']['name']
+        device_name = "LED等" # actuator_info['pwm']['xxx']['name']
         controls.append(ft.Text(device_name))
     # simple digital(ON/OFF) device (like switch)
     if configuration['switch']['use_switch']:
-        device_name = "LEDやリレー等"
-        #device_name = actuator_info['switch']['grove_mono_led']['name']
+        device_name = "LEDやリレー等" # actuator_info['switch']['xxx']['name']
         controls.append(ft.Text(device_name))
     # IR LED remote control device
     if configuration['ir_remote']['use_ir_remote']:
@@ -897,11 +927,16 @@ def listupActuators():
         controls.append(ft.Text(device_name))
     # Graphic display
     if configuration['graphic_display']['use_graphic_display']:
+        print(configuration['graphic_display']['graphic_display_type'])
         device_name = ""
         if configuration['graphic_display']['graphic_display_type']==0:
             # Giga Display Shield
             device_name = actuator_info['graphic_display']['giga_display_shield']['name']
             controls.append(ft.Text(device_name))
+        #if configuration['graphic_display']['graphic_display_type']==1:
+        #    # BODMER_TFT_ESPIライブラリを使うディスプレイ
+        #    device_name = actuator_info['graphic_display']['bodmer_tft_espi']['name']
+        #    controls.append(ft.Text(device_name))
         if configuration['graphic_display']['graphic_display_type']==2:
             # ILI9341コントローラ搭載ディスプレイtype1(ハードウェアSPI接続)
             device_name = actuator_info['graphic_display']['ili9341_type_1']['name']
@@ -923,8 +958,6 @@ def mainWindow(page: ft.Page):
         async def next_button_clicked(e):
             await page.push_route("/viewArduino")
         page.title = "このアプリについて"
-        #page.autoscroll = True
-        #page.window.height = 550
         pageTitleBar = ft.AppBar(
             title=ft.Text("このアプリについて"),
             bgcolor=ft.Colors.YELLOW,
@@ -994,9 +1027,7 @@ def mainWindow(page: ft.Page):
             await page.push_route("/viewLoadFile")
 
         global arduino_info, selected_arduino, voltage_check
-        #lastView="/createViewArduino"
         page.title = "Arduino機種選択"
-        #page.autoscroll = True
         pageTitleBar = ft.AppBar(
             title=ft.Text("Arduino機種選択"),
             bgcolor=ft.Colors.YELLOW,
@@ -1018,7 +1049,7 @@ def mainWindow(page: ft.Page):
         return ft.View(route="/viewArduino", controls=[
             ft.SafeArea(
                 content=ft.Column(
-                    height=600,
+                    height=550,
                     scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitleBar,
@@ -1069,7 +1100,6 @@ def mainWindow(page: ft.Page):
         async def finish_button_clicked(e: ft.Event[ft.Button]):
             await page.window.destroy()
 
-        #page.autoscroll = True
         pageTitleBar = ft.AppBar(
             title=ft.Text("仕様ファイルロード"),
             bgcolor=ft.Colors.BLUE,
@@ -1089,7 +1119,7 @@ def mainWindow(page: ft.Page):
         return ft.View(route="/viewLoadFile", controls=[
             ft.SafeArea(
                 content=ft.Column(
-                    height=600,
+                    height=550,
                     scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitleBar,
@@ -1101,7 +1131,6 @@ def mainWindow(page: ft.Page):
                         ft.Row(
                             [next_button,finish_button,]
                         ),
-                        #finish_button,
                     ],
                 ),
             )   
@@ -1124,7 +1153,6 @@ def mainWindow(page: ft.Page):
             await page.push_route("/viewArduino")
 
         global configuration, actuator_info, selected_arduino, voltage_check, pin_assignment
-        #page.autoscroll = True
         pageTitleBar = ft.AppBar(
             title=ft.Text("仕様の一覧"),
             bgcolor=ft.Colors.YELLOW,
@@ -1182,7 +1210,7 @@ def mainWindow(page: ft.Page):
         return ft.View(route="/viewSummary", controls=[
             ft.SafeArea(
                 content=ft.Column(
-                    height=600,
+                    height=550,
                     scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitleBar,
@@ -1224,8 +1252,6 @@ def mainWindow(page: ft.Page):
             await page.push_route("/viewArduino")
 
         global configuration, actuator_info, selected_arduino, voltage_check, pin_assignment
-        #page.autoscroll = True
-        #page.window.height = 1200
         pageTitleBar = ft.AppBar(
             title=ft.Text("仕様分析結果"),
             bgcolor=ft.Colors.YELLOW,
@@ -1255,17 +1281,20 @@ def mainWindow(page: ft.Page):
         # pinの重複利用の確認
         configurationPinMap()
         pinmap_title = ft.Text('接続先ピンの問題', weight=ft.FontWeight.BOLD, size=20)
-        #pinmap_lv = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=True)
         pinmap_lv = ft.ListView(spacing=10, padding=20, auto_scroll=True)
         pinmap_lv.controls = checkPinMap()
         if len(pinmap_lv.controls)==0:
             pinmap_lv.controls.append(ft.Text('接続先ピン番号に問題があるデバイスはありません'))
+        # PWM機能とピンの対応
+        pwm_title = ft.Text('ピンの接続先をPWM対応端子に変更する必要があるデバイス', weight=ft.FontWeight.BOLD, size=20)
+        pwm_lv = ft.ListView(spacing=10, padding=20, auto_scroll=True)
+        pwm_lv.controls = checkActuatorPWM()
         back_button = ft.Button(content="戻る", on_click=back_button_clicked)
         finish_button = ft.Button(content="閉じる", on_click=finish_button_clicked)
         return ft.View(route="/viewAnalyzeResulty", controls=[
             ft.SafeArea(
                 content=ft.Column(
-                    height=600,
+                    height=550,
                     scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitleBar,
@@ -1282,6 +1311,9 @@ def mainWindow(page: ft.Page):
                         pinmap_title,
                         pinmap_lv,
                         divider,
+                        pwm_title,
+                        pwm_lv,
+                        divider,
                         ft.Row(
                             [back_button, finish_button,]
                         ),
@@ -1291,7 +1323,7 @@ def mainWindow(page: ft.Page):
         ])
 
     def route_change(handler):
-        global configuration #, lastView
+        global configuration
         page.views.clear()
         if page.route == "/viewTop":
             page.views.append(createViewTop())
@@ -1306,6 +1338,7 @@ def mainWindow(page: ft.Page):
         page.update()
     page.on_route_change = route_change
     page.window.height = 600
+    page.autoscroll = True
     asyncio.create_task(page.push_route("/viewTop"))
 
 def errorWindow(page: ft.Page):
