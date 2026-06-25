@@ -2331,7 +2331,7 @@ def editWindow(page: ft.Page):
                 await page.push_route("/viewPlatformStorage")
 
         async def back_button_clicked(e):
-            await page.push_route("/viewRTC")
+            await page.push_route("/viewPlatformRTC")
 
         async def save_button_clicked(e):
             await page.push_route("/viewSaveConfig")

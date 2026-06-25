@@ -37,8 +37,8 @@ common:
 
 network:
   wifi:
-    ssid: "Buffalo-G-9C50" # ssid名
-    wifi_pass: "jxgdekvmujfyh" # wifiパスワード
+    ssid: "foo" # ssid名
+    wifi_pass: "bar" # wifiパスワード
   ethernet:
     mac_addr: [ '0x90', '0xa2', '0xda', '0x10', '0x11', '0x51']  # macアドレス
   ip:
