@@ -60,7 +60,7 @@ HELP_FILES = [
     "/OSL12306_16.html", 
     "/OSL20541.html", 
     "/OSL30561.html", 
-    "/grove_4_digit_display.html", 
+    "/grove_4_digit_LED.html", 
     "/dfrobot_dfr0090.html", 
     "/servo.html", 
     "/sound_device.html", 
@@ -717,7 +717,7 @@ osl30561_digit1_pin = ft.TextField(label="digit1ピン") # configuration['osl305
 osl30561_digit2_pin = ft.TextField(label="digit2ピン") # configuration['osl30561']['osl30561_digit2_pin']
 osl30561_digit3_pin = ft.TextField(label="digit3ピン") # configuration['osl30561']['osl30561_digit3_pin']
 
-# Grove - 4-Digit Display (TM1637)
+# Grove - 4-Digit LED (TM1637)
 def grove_tm1637_flag_changed(e):
     configuration['grove_tm1637']['use_grove_tm1637'] = grove_tm1637_flag.value
 
@@ -1117,7 +1117,7 @@ def saveMenuValue():
     configuration['osl30561']['osl30561_digit1_pin'] = osl30561_digit1_pin.value
     configuration['osl30561']['osl30561_digit2_pin'] = osl30561_digit2_pin.value
     configuration['osl30561']['osl30561_digit3_pin'] = osl30561_digit3_pin.value
-    # Grove - 4-Digit Display (TM1637)
+    # Grove - 4-Digit LED (TM1637)
     configuration['grove_tm1637']['use_grove_tm1637'] = grove_tm1637_flag.value
     configuration['grove_tm1637']['grove_tm1637_clk_pin'] = grove_tm1637_clk_pin.value
     configuration['grove_tm1637']['grove_tm1637_data_pin'] = grove_tm1637_data_pin.value
@@ -1354,7 +1354,7 @@ def loadMenuValue():
     osl30561_digit1_pin.value = configuration['osl30561']['osl30561_digit1_pin']
     osl30561_digit2_pin.value = configuration['osl30561']['osl30561_digit2_pin']
     osl30561_digit3_pin.value = configuration['osl30561']['osl30561_digit3_pin']
-    # Grove - 4-Digit Display (TM1637)
+    # Grove - 4-Digit LED (TM1637)
     grove_tm1637_flag.value = configuration['grove_tm1637']['use_grove_tm1637']
     grove_tm1637_clk_pin.value = configuration['grove_tm1637']['grove_tm1637_clk_pin']
     grove_tm1637_data_pin.value = configuration['grove_tm1637']['grove_tm1637_data_pin']
@@ -1709,7 +1709,7 @@ def saveConfig(output_file_name):
     print('  osl30561_digit1_pin: \"%s\" # OSL30561_PIN_DIGIT_1' % configuration['osl30561']['osl30561_digit1_pin'], file=output_file)
     print('  osl30561_digit2_pin: \"%s\" # OSL30561_PIN_DIGIT_2' % configuration['osl30561']['osl30561_digit2_pin'], file=output_file)
     print('  osl30561_digit3_pin: \"%s\" # OSL30561_PIN_DIGIT_3' % configuration['osl30561']['osl30561_digit3_pin'], file=output_file)
-    print('# Grove - 4-Digit Display (TM1637)', file=output_file)
+    print('# Grove - 4-Digit LED (TM1637)', file=output_file)
     print('grove_tm1637:', file=output_file)
     if checkYamlVal(configuration['grove_tm1637']['use_grove_tm1637']):
         print('  use_grove_tm1637: true # true(使う) , false(使わない)' , file=output_file)
@@ -2621,6 +2621,7 @@ def editWindow(page: ft.Page):
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
         )
+        attention_message = ft.Text("注 : MP3プレーヤーのようにシリアル(UART)インターフェースで接続するデバイスを利用する際は，ヘルプ(右上の「?」をクリック)を参照して設定してください．", color=ft.Colors.RED)
         next_button = ft.Button(content="次", on_click=next_button_clicked)
         back_button = ft.Button(content="戻る", on_click=back_button_clicked)
         save_button = ft.Button(content="保存", on_click=save_button_clicked)
@@ -2634,6 +2635,7 @@ def editWindow(page: ft.Page):
                         pageTitle,
                         logfile_flag,
                         serial_log_flag,
+                        attention_message,
                         ft.Row(
                             [next_button, back_button,]
                         ),
@@ -2671,12 +2673,13 @@ def editWindow(page: ft.Page):
         global serial_log_flag
         page.autoscroll = True
         pageTitle = ft.AppBar(
-            title=ft.Text("シリアル"),
+            title=ft.Text("シリアルログ"),
             bgcolor=ft.Colors.CYAN_ACCENT,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
         )
+        attention_message = ft.Text("注 : MP3プレーヤーのようにシリアル(UART)インターフェースで接続するデバイスを利用する際は，ヘルプ(右上の「?」をクリック)を参照して設定してください．", color=ft.Colors.RED)
         next_button = ft.Button(content="次", on_click=next_button_clicked)
         back_button = ft.Button(content="戻る", on_click=back_button_clicked)
         save_button = ft.Button(content="保存", on_click=save_button_clicked)
@@ -2689,6 +2692,7 @@ def editWindow(page: ft.Page):
                     controls=[
                         pageTitle,
                         serial_log_flag,
+                        attention_message,
                         ft.Row(
                             [next_button, back_button,]
                         ),
@@ -3614,7 +3618,7 @@ def editWindow(page: ft.Page):
                 ft.dropdown.Option(key=7, text="OSL12306-16 (16セグメントLED)"),
                 ft.dropdown.Option(key=8, text="OSL20541 (2桁14セグメントLED)"),
                 ft.dropdown.Option(key=9, text="OSL30561 (3桁7セグメントLED)"),
-                ft.dropdown.Option(key=10, text="Grove - 4-Digit Display"),
+                ft.dropdown.Option(key=10, text="Grove - 4-Digit LED"),
                 ft.dropdown.Option(key=11, text="DFRobot DFR0090 (8桁7セグメントLED)"),
             ],
         )
@@ -4668,10 +4672,10 @@ def editWindow(page: ft.Page):
             )   
         ])
 
-    def createViewGrove4DigitDisplay(): # Grove - 4-Digit Display (TM1637)
+    def createViewGrove4DigitDisplay(): # Grove - 4-Digit LED (TM1637)
         def icon_clicked(e):
             global PORT, url_header
-            url = url_header + str(PORT) + "/grove_4_digit_display.html" # helpPageName = 'grove_4_digit_display'
+            url = url_header + str(PORT) + "/grove_4_digit_LED.html" # helpPageName = 'grove_4_digit_LED'
             webbrowser.open(url)
 
         async def checkPinNumber(destination):
@@ -4715,7 +4719,7 @@ def editWindow(page: ft.Page):
         global grove_tm1637_flag, grove_tm1637_clk_pin, grove_tm1637_data_pin
         page.autoscroll = True
         pageTitle = ft.AppBar(
-            title=ft.Text("Grove - 4-Digit Display"),
+            title=ft.Text("Grove - 4-Digit LED"),
             bgcolor=ft.Colors.DEEP_PURPLE_ACCENT_100,
             actions=[
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
@@ -5160,6 +5164,8 @@ def editWindow(page: ft.Page):
                 ft.IconButton(icon = ft.Icons.HELP_CENTER, on_click=icon_clicked),
             ]
         )
+        attention_message1 = ft.Text("注 : MP3プレーヤーを利用する際は，ログやシリアルインターフェースの通信速度の設定を確認する必要があります．", color=ft.Colors.RED)
+        attention_message2 = ft.Text("     詳細はプラットフォームのシリアルインターフェースとログの設定画面で，画面上の注意とヘルプを参照してください．", color=ft.Colors.RED)
         checkResult = ft.Text()
         toc_button = ft.Button(content="目次", on_click=toc_button_clicked)
         save_button = ft.Button(content="保存", on_click=save_button_clicked)
@@ -5171,6 +5177,8 @@ def editWindow(page: ft.Page):
                     scroll=ft.ScrollMode.ALWAYS,
                     controls=[
                         pageTitle,
+                        attention_message1,
+                        attention_message2,
                         mp3_player_flag,
                         ft.Divider(height=2, color="black"),
                         mp3_player_type,
@@ -5422,14 +5430,14 @@ def editWindow(page: ft.Page):
                 graphic_display_mosi_pin.disabled=True
                 graphic_display_miso_pin.disabled=True
                 graphic_display_clk_pin.disabled=True
-            if graphic_display_type.value =='1':
+            if graphic_display_type.value =='2':
                 graphic_display_cs_pin.disabled=False
                 graphic_display_rst_pin.disabled=False
                 graphic_display_dc_pin.disabled=False
                 graphic_display_mosi_pin.disabled=True
                 graphic_display_miso_pin.disabled=True
                 graphic_display_clk_pin.disabled=True
-            if graphic_display_type.value =='2':
+            if graphic_display_type.value =='3':
                 graphic_display_cs_pin.disabled=False
                 graphic_display_rst_pin.disabled=False
                 graphic_display_dc_pin.disabled=False

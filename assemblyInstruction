@@ -26,7 +26,7 @@ CONFIG_FILES = [
 # Help file
 HELP_DIRECTORY = "parts/Help/Assembly_Instruction/"
 HELP_FILES = [
-    "About.html",
+    "About_Assembly_Instruction.html",
     "BuildInstruction.html"
 ]
 
@@ -1649,7 +1649,7 @@ def fileWindow(page: ft.Page):
     def createViewMain():
         def icon_clicked(e):
             global PORT, url_header
-            url = url_header + str(PORT) + "/About.html"
+            url = url_header + str(PORT) + "/About_Assembly_Instruction.html"
             webbrowser.open(url)
 
         async def exec_button_clicked(e):

@@ -17,7 +17,7 @@ PORT_LOWER_LIMIT = 8000
 # Help file
 HELP_DIRECTORY = "parts/Help/checkSpec/"
 HELP_FILES = [
-    "About.html",
+    "About_checkSpec.html",
     "ArduinoSelection.html",
     "LoadSpec.html",
     "Summary.html"
@@ -951,7 +951,7 @@ def mainWindow(page: ft.Page):
     def createViewTop():
         def icon_clicked(e):
             global PORT, url_header
-            url = url_header + str(PORT) + "/About.html"
+            url = url_header + str(PORT) + "/About_checkSpec.html"
             webbrowser.open(url)
         async def finish_button_clicked(e):
             await page.window.destroy()

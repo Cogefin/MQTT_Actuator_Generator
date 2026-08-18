@@ -17,7 +17,7 @@ PORT_LOWER_LIMIT = 8000
 # Help file
 HELP_DIRECTORY = "parts/Help/actuatorSelector/"
 HELP_FILES = [
-    "About.html",
+    "About_actuatorSelector.html",
     "ArduinoSelection.html",
     "ActuatorCategory.html"
 ]
@@ -63,7 +63,7 @@ def mainWindow(page: ft.Page):
     def createViewTop():
         def icon_clicked(e):
             global PORT, url_header
-            url = url_header + str(PORT) + "/About.html"
+            url = url_header + str(PORT) + "/About_actuatorSelector.html"
             webbrowser.open(url)
 
         async def finish_button_clicked(e):
@@ -379,14 +379,18 @@ def init():
     pwd = pwd + "/"
     # check configuration files.
     for file in CONFIG_FILES:
+        print(file)
         target_path = CONFIG_FILE_DIR + file
+        print(pwd+target_path)
         if not (os.path.isfile(pwd+target_path)):
+            print('foo2')
             error += "本プログラムの設定ファィル「"
             error += file
             error += "」が「"
             error += CONFIG_FILE_DIR
             error += "」にありません．\n"
         else:
+            print('bar')
             if file == "Arduino.yaml":
                 try:
                     with open(target_path, mode='r', encoding='utf-8') as f:
@@ -394,6 +398,7 @@ def init():
                 except Exception as e:
                     error += 'Arduinoの機種情報ファイル(Arduino.yaml)が読み読み込みできません．\n'
             elif file == "ActuatorDevices.yaml":
+                print('foo')
                 try:
                     with open(target_path, mode='r', encoding='utf-8') as f:
                         actuator_info = yaml.safe_load(f)
