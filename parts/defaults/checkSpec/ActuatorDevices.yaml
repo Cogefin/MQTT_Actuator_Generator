@@ -75,7 +75,7 @@ characterDisplay:
     voltage:
       3V3: true
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 1
       serial: 0
@@ -97,7 +97,7 @@ characterDisplay:
     voltage:
       3V3: true
       5V : false
-    connecter:
+    connector:
       spi: 0
       i2c: 1
       serial: 0
@@ -119,7 +119,7 @@ characterDisplay:
     voltage:
       3V3: false
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 1
       serial: 0
@@ -141,7 +141,7 @@ characterDisplay:
     voltage:
       3V3: true
       5V : false
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -163,7 +163,7 @@ characterDisplay:
     voltage:
       3V3: false
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -185,7 +185,7 @@ characterDisplay:
     voltage:
       3V3: false
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -228,7 +228,7 @@ led:
     voltage:
       3V3: true
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -250,7 +250,7 @@ led:
     voltage:
       3V3: true
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -272,7 +272,7 @@ led:
     voltage:
       3V3: true
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -294,7 +294,7 @@ led:
     voltage:
       3V3: false
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -316,7 +316,7 @@ led:
     voltage:
       3V3: false
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -338,7 +338,7 @@ led:
     voltage:
       3V3: true
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -379,7 +379,7 @@ nseg_led:
     voltage:
       3V3: false
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -401,7 +401,7 @@ nseg_led:
     voltage:
       3V3: true
       5V : false
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -423,7 +423,7 @@ nseg_led:
     voltage:
       3V3: true
       5V : false
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -445,7 +445,7 @@ nseg_led:
     voltage:
       3V3: true
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -467,7 +467,7 @@ nseg_led:
     voltage:
       3V3: true
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -500,7 +500,7 @@ servo:
     voltage:
       3V3: false
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -537,7 +537,7 @@ soundDevice:
     voltage:
       3V3: false
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -559,7 +559,7 @@ soundDevice:
     voltage:
       3V3: true
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -581,7 +581,7 @@ soundDevice:
     voltage:
       3V3: false
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 1
@@ -603,7 +603,7 @@ soundDevice:
     voltage:
       3V3: true
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 1
@@ -636,7 +636,7 @@ pwm:
     voltage:
       3V3: true
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -670,7 +670,7 @@ switch:
     voltage:
       3V3: true
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -692,7 +692,7 @@ switch:
     voltage:
       3V3: true
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -724,7 +724,7 @@ ir_remote_controller:
     voltage:
       3V3: true
       5V : true
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -759,7 +759,7 @@ graphic_display:
     voltage:
       3V3: true
       5V : false
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0
@@ -779,7 +779,7 @@ graphic_display:
     voltage:
       3V3: true
       5V : false
-    connecter:
+    connector:
       spi: 1
       i2c: 0
       serial: 0
@@ -799,7 +799,7 @@ graphic_display:
     voltage:
       3V3: true
       5V : false
-    connecter:
+    connector:
       spi: 0
       i2c: 0
       serial: 0

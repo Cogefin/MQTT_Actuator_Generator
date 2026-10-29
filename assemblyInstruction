@@ -673,16 +673,16 @@ def predefineActuatorDeviceConnectionType():
     for i in (getActuatorCategoryList()):
         for j in (actuator_info[i]['deviceList']):
             # type 整数 : 0 - spi, 1 - i2c, 2 - シリアル, 3 - groveコネクタ1個, 4 - その他
-            if int(actuator_info[i][j]['connecter']['spi'])>0:
-                actuator_info[i][j]['connecter']['type']=0
-            elif int(actuator_info[i][j]['connecter']['i2c'])>0:
-                actuator_info[i][j]['connecter']['type']=1
-            elif int(actuator_info[i][j]['connecter']['serial'])>0:
-                actuator_info[i][j]['connecter']['type']=2
-            elif (int(actuator_info[i][j]['connecter']['digital'])==1) or (int(actuator_info[i][j]['connecter']['digital'])==2):
-                actuator_info[i][j]['connecter']['type']=3
+            if int(actuator_info[i][j]['connector']['spi'])>0:
+                actuator_info[i][j]['connector']['type']=0
+            elif int(actuator_info[i][j]['connector']['i2c'])>0:
+                actuator_info[i][j]['connector']['type']=1
+            elif int(actuator_info[i][j]['connector']['serial'])>0:
+                actuator_info[i][j]['connector']['type']=2
+            elif (int(actuator_info[i][j]['connector']['digital'])==1) or (int(actuator_info[i][j]['connector']['digital'])==2):
+                actuator_info[i][j]['connector']['type']=3
             else:
-                actuator_info[i][j]['connecter']['type']=4
+                actuator_info[i][j]['connector']['type']=4
 
 def checkTFvalue(value):
     if value == "True" or value == "true" or value == True:

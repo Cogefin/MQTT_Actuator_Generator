@@ -293,14 +293,14 @@ def mainWindow(page: ft.Page):
                 continue
             deviceName = actuator_info[selected_actuator['category']][deviceSymbol]['name']
             appendText_name = ft.Text(deviceName, color=textColor)
-            if actuator_info[selected_actuator['category']][deviceSymbol]['connecter']['spi'] > 0:
+            if actuator_info[selected_actuator['category']][deviceSymbol]['connector']['spi'] > 0:
                 deviceConnection = 'SPI接続'
-            elif actuator_info[selected_actuator['category']][deviceSymbol]['connecter']['i2c'] > 0:
+            elif actuator_info[selected_actuator['category']][deviceSymbol]['connector']['i2c'] > 0:
                 deviceConnection = 'I2C接続'
-            elif actuator_info[selected_actuator['category']][deviceSymbol]['connecter']['serial'] > 0:
+            elif actuator_info[selected_actuator['category']][deviceSymbol]['connector']['serial'] > 0:
                 deviceConnection = 'シリアル接続'
-            elif actuator_info[selected_actuator['category']][deviceSymbol]['connecter']['digital'] > 0:
-                deviceConnection = 'デジタル端子' + str(actuator_info[selected_actuator['category']][deviceSymbol]['connecter']['digital']) + '個'
+            elif actuator_info[selected_actuator['category']][deviceSymbol]['connector']['digital'] > 0:
+                deviceConnection = 'デジタル端子' + str(actuator_info[selected_actuator['category']][deviceSymbol]['connector']['digital']) + '個'
             else:
                 deviceConnection = '不明'
             appendText_connection = ft.Text(deviceConnection, color=textColor)
